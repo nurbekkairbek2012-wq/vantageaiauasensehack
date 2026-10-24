@@ -57,10 +57,18 @@ export function HowLong({ features }: { features: Feature[] }) {
     ['тонн отходов в списке', Math.round(mass).toLocaleString('ru-RU')],
   ];
 
+  /* Заголовок берёт то же число, что и плитка под ним.
+     Раньше в нём стояло «Шесть лет» словами, а плитка считалась из данных.
+     После пересчёта они разошлись: заголовок обещал шесть, число под ним
+     показывало 4,4. Читатель видит оба одновременно, и это разрушает
+     доверие ко всей странице быстрее, чем любая неточность по отдельности. */
+  const typical = Math.round(median(ages));
+  const said = typical === 1 ? 'Год' : typical < 5 ? `${typical} года` : `${typical} лет`;
+
   return (
     <section className="mt-14 border-t border-grid pt-12">
       <h2 className="max-w-[24ch] text-[clamp(1.6rem,3.4vw,2.4rem)] text-line">
-        Шесть лет — столько объект лежит, пока его никто не считает
+        {said} — столько объект лежит, пока его никто не считает
       </h2>
 
       <dl className="mt-8 grid gap-8 sm:grid-cols-3">
@@ -84,7 +92,7 @@ export function HowLong({ features }: { features: Feature[] }) {
       <p className="mt-4 max-w-[62ch] leading-relaxed text-muted">
         Спутник заметил эти объекты через годы после появления — раньше было
         физически нечего увидеть. Человек, проходящий мимо, замечает в первую
-        неделю. Одна точка из телефона сокращает шесть лет до семи дней.
+        неделю. Одна точка из телефона сокращает {said.toLowerCase()} до семи дней.
       </p>
     </section>
   );

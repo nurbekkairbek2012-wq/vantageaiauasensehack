@@ -33,6 +33,18 @@ const PLAY_SECONDS = 18;
 /** Хвост шкалы за последним наблюдением, на котором проступает прогноз. */
 const FORECAST_SPAN = 1.2;
 
+/* Склонение числительных. «в 64 раз точнее» — мелочь, которую замечают
+   все и сразу, а на слайде с метрикой она особенно неуместна: рядом
+   стоит интервал по бутстрэпу. */
+const plural = (count: number, one: string, few: string, many: string) => {
+  const mod100 = Math.abs(Math.round(count)) % 100;
+  if (mod100 >= 11 && mod100 <= 14) return many;
+  const mod10 = mod100 % 10;
+  if (mod10 === 1) return one;
+  if (mod10 >= 2 && mod10 <= 4) return few;
+  return many;
+};
+
 export default function Timelapse() {
   const host = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
@@ -316,7 +328,7 @@ export default function Timelapse() {
             <p className="text-sm text-line">Тепло без объектов — где свалок ещё нет</p>
             <p className="mt-1 text-xs leading-snug text-muted">
               Модель обучена на объектах до сентября 2023 и проверена на
-              возникших после.{lift ? ` Попадает не хуже чем в ${lift} раз точнее случайного выбора.` : ''}
+              возникших после.{lift ? ` Попадает не хуже чем в ${lift} ${plural(lift, 'раз', 'раза', 'раз')} точнее случайного выбора.` : ''}
             </p>
           </div>
         )}

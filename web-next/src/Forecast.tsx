@@ -267,10 +267,11 @@ export default function Forecast() {
 
               {metrics.positives_future !== undefined && metrics.positives_future < 15 && (
                 <p className="mt-3 text-sm leading-relaxed text-muted-2">
-                  Проверять было на чем немного: свалок, возникших после отсечки,{' '}
-                  <span className="tabular text-line">{metrics.positives_future}</span>. Поэтому
-                  здесь стоит интервал по бутстрэпу и его нижняя граница, а не одно число:
-                  на такой выборке середина сместилась бы от одного объекта.
+                  Свалок, возникших после отсечки, всего{' '}
+                  <span className="tabular text-line">{metrics.positives_future}</span> — и это
+                  всё, на чём модель проверялась. Поэтому здесь стоит интервал по бутстрэпу и
+                  называется его нижняя граница, а не одно число: на такой выборке середина
+                  сместилась бы от одного объекта.
                 </p>
               )}
 
