@@ -83,6 +83,35 @@ items.forEach(function (item) {
 </script></body></html>"""
 
 
+def already_labelled() -> gpd.GeoDataFrame | None:
+    """Уже размеченные места.
+
+    Разметка стоит времени глаз, и переспрашивать про то же место после
+    каждого прогона — самый дешёвый способ её обесценить. Метки хранятся
+    геометрией, поэтому переживают пересчёт: новый кандидат в том же месте
+    сопоставляется со старой меткой пространственно.
+    """
+    path = Path("labels_manual.geojson")
+    if not path.exists():
+        return None
+    return gpd.read_file(path)
+
+
+def drop_labelled(selection: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """Убрать из показа то, про что уже спрашивали."""
+    known = already_labelled()
+    if known is None or known.empty or selection.empty:
+        return selection
+    joined = gpd.sjoin(
+        selection, known.to_crs(selection.crs)[["geometry"]], predicate="contains", how="left"
+    )
+    fresh = selection[joined["index_right"].isna().reindex(selection.index, fill_value=True)]
+    skipped = len(selection) - len(fresh)
+    if skipped:
+        print(f"пропущено уже размеченных: {skipped}")
+    return fresh
+
+
 def build_selection() -> gpd.GeoDataFrame:
     """Что показывать: смесь прошедших отсев и отклонённых.
 
@@ -118,7 +147,7 @@ def build_selection() -> gpd.GeoDataFrame:
         parts.append(frame if limit is None else frame.head(limit))
 
     selection = gpd.GeoDataFrame(pd.concat(parts, ignore_index=True), crs=kept.crs)
-    return selection.to_crs(4326)
+    return drop_labelled(selection).to_crs(4326)
 
 
 def main() -> int:
