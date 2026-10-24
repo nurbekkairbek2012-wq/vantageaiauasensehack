@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Vantage AI — сценарий видео</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Golos+Text:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --ink: #17122b;
+    --muted: #5a5175;
+    --dim: #8a83a3;
+    --violet: #6d28d9;
+    --violet-soft: #f1ecfe;
+    --rule: #ddd6f0;
+    --paper: #ffffff;
+  }
+
+  @page { size: A4; margin: 15mm 15mm 16mm; }
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: 'Golos Text', system-ui, sans-serif;
+    font-size: 10pt; line-height: 1.5;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  h1, h2, h3 { font-family: 'Oswald', 'Arial Narrow', sans-serif; font-weight: 600; }
+
+  .cover { padding-bottom: 7mm; border-bottom: 2px solid var(--violet); margin-bottom: 6mm; }
+  .brand { display: flex; align-items: center; gap: 3mm; margin-bottom: 6mm; }
+  .brand .name { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 18pt; }
+  .brand .ai { color: var(--violet); font-size: 13.5pt; letter-spacing: .03em; }
+
+  h1 { font-size: 24pt; line-height: 1.05; margin: 0 0 3mm; }
+  .lede { font-size: 11pt; color: var(--muted); margin: 0; max-width: 152mm; }
+
+  .meta { display: flex; gap: 8mm; margin-top: 5mm; flex-wrap: wrap; }
+  .meta div { font-size: 9pt; color: var(--muted); }
+  .meta b { display: block; font-family: 'Oswald', sans-serif; font-size: 12pt; color: var(--ink); font-weight: 500; }
+
+  /* ── Сцены ───────────────────────────────────────────────────────── */
+  .scene {
+    display: grid; grid-template-columns: 20mm 1fr; gap: 0 5mm;
+    padding: 4mm 0; border-bottom: 1px solid var(--rule);
+    break-inside: avoid;
+  }
+  .scene:first-of-type { border-top: 1px solid var(--rule); }
+
+  .time { font-family: 'Oswald', sans-serif; font-size: 12pt; color: var(--violet); line-height: 1.1; }
+  .time span { display: block; font-family: 'Golos Text', sans-serif; font-size: 8pt; color: var(--dim); margin-top: .5mm; }
+
+  .scene h3 { font-size: 11.5pt; margin: 0 0 2mm; }
+
+  .row { display: grid; grid-template-columns: 17mm 1fr; gap: 2mm; margin-bottom: 2mm; }
+  .row:last-child { margin-bottom: 0; }
+  .row .k {
+    font-family: 'Oswald', sans-serif; font-size: 8pt; text-transform: uppercase;
+    letter-spacing: .07em; color: var(--dim); padding-top: .6mm;
+  }
+  .row .v { margin: 0; }
+  .say { font-size: 10.5pt; }
+  .say em { font-style: normal; background: var(--violet-soft); padding: .3mm .8mm; }
+  .who { font-weight: 600; }
+
+  section.tail { margin-top: 8mm; break-before: page; }
+  h2 { font-size: 15pt; margin: 0 0 3mm; padding-bottom: 1.5mm; border-bottom: 1px solid var(--rule); }
+  h3.sub { font-size: 11pt; margin: 5mm 0 2mm; }
+  p { margin: 0 0 3mm; max-width: 165mm; }
+  ul { margin: 0 0 3mm; padding-left: 5mm; }
+  li { margin-bottom: 1.5mm; }
+
+  .note {
+    background: var(--violet-soft); border-left: 3px solid var(--violet);
+    padding: 3mm 4mm; margin: 3mm 0; break-inside: avoid;
+  }
+  .note p:last-child { margin-bottom: 0; }
+  .note .label {
+    display: block; font-family: 'Oswald', sans-serif; font-size: 8.5pt;
+    text-transform: uppercase; letter-spacing: .1em; color: var(--violet); margin-bottom: 1mm;
+  }
+
+  table { width: 100%; border-collapse: collapse; margin: 3mm 0; }
+  th, td { text-align: left; padding: 2mm 3mm 2mm 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 9pt; text-transform: uppercase; letter-spacing: .08em; color: var(--dim); }
+  td.what { width: 36mm; font-weight: 600; }
+
+  footer { margin-top: 8mm; padding-top: 3mm; border-top: 1px solid var(--rule); font-size: 8.5pt; color: var(--dim); }
+  code { font-family: ui-monospace, monospace; font-size: 9pt; background: var(--violet-soft); padding: .3mm 1mm; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="brand">
+    <svg width="30" height="30" viewBox="0 0 64 64" fill="none">
+      <ellipse cx="32" cy="29" rx="30" ry="15.5" transform="rotate(-20 32 29)" stroke="#8b5cf6" stroke-width="1.9" fill="none"/>
+      <path d="M8 14 L19 14 L28.2 40.5 L38.5 14 L49.5 14 L28.2 51 Z" stroke="#ffffff" stroke-width="3.4" fill="none"/>
+      <path d="M8 14 L19 14 L28.2 40.5 L38.5 14 L49.5 14 L28.2 51 Z" stroke="#17122b" stroke-width="1.7" fill="none"/>
+      <path d="M28.2 36.4a5.7 5.7 0 0 0-5.7 5.7c0 4.2 4.6 9 5.4 9.8.2.2.4.2.6 0 .8-.8 5.4-5.6 5.4-9.8a5.7 5.7 0 0 0-5.7-5.7z" fill="#8b5cf6" stroke="#ffffff" stroke-width="1.1"/>
+      <circle cx="28.2" cy="42.1" r="2.1" fill="#ffffff"/>
+    </svg>
+    <span class="name">Vantage <span class="ai">AI</span></span>
+  </div>
+
+  <h1>Сценарий видео, три минуты</h1>
+  <p class="lede">
+    Без записи экрана. Снимаем людей, место и бумагу: команда говорит в
+    кадр, объект показывается там, где он есть, цифры — плашками. Такое
+    видео убедительнее скринкаста, потому что за ним видно людей, а не
+    интерфейс.
+  </p>
+
+  <div class="meta">
+    <div><b>3:00</b>полная длина</div>
+    <div><b>8</b>сцен</div>
+    <div><b>2</b>места съёмки</div>
+    <div><b>~380</b>слов вслух</div>
+  </div>
+</div>
+
+<div class="note" style="margin-bottom:6mm">
+  <span class="label">Что нужно приготовить</span>
+  <p>
+    <strong>Два места.</strong> Первое — пустырь или свалка на окраине,
+    лучше настоящий объект из нашего списка. Второе — любая комната со
+    стеной без узоров, там снимаются реплики в кадр.
+  </p>
+  <p>
+    <strong>Три предмета.</strong> Распечатанная карта наших объектов на
+    A3, распечатанный черновик акта, телефон.
+    <strong>Двое говорящих</strong> — одному три минуты держать внимание
+    трудно, вдвоём разговор живее.
+  </p>
+</div>
+
+<!-- ═══ 1 ═══════════════════════════════════════════════════════════ -->
+<div class="scene">
+  <div class="time">0:00<span>20 сек</span></div>
+  <div>
+    <h3>Начало на месте. Человек стоит там, где свалка</h3>
+    <div class="row">
+      <div class="k">Кадр</div>
+      <p class="v">
+        Пустырь. Общий план: человек стоит спиной к куче, лицом в камеру,
+        сама куча в кадре целиком. Ветер, никакой музыки.
+      </p>
+    </div>
+    <div class="row">
+      <div class="k">Реплика</div>
+      <p class="v say">
+        <span class="who">Первый:</span> Я стою на свалке. Её здесь не
+        должно быть: это не полигон, разрешения нет.
+        <em>И её нет ни в одном реестре</em> — ни у города, ни у экологов.
+        Формально этого места не существует.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 2 ═══════════════════════════════════════════════════════════ -->
+<div class="scene">
+  <div class="time">0:20<span>25 сек</span></div>
+  <div>
+    <h3>Почему это не мелочь</h3>
+    <div class="row">
+      <div class="k">Кадр</div>
+      <p class="v">
+        Тот же человек, крупнее. Между фразами — короткие плашки на весь
+        экран, белым по тёмному: <strong>9,2 га</strong>,
+        <strong>229 млн ₸</strong>, <strong>0 в реестре</strong>.
+      </p>
+    </div>
+    <div class="row">
+      <div class="k">Реплика</div>
+      <p class="v say">
+        <span class="who">Первый:</span> Чем дольше её не находят, тем
+        дороже вывоз: убрать тысячу тонн стоит намного больше, чем убрать
+        сто. Без даты появления нельзя ни назначить ответственного, ни
+        посчитать ущерб по закону. А убранную свалку иногда просто
+        засыпают грунтом: сверху чисто, акт закрыт, отходы на месте.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 3 ═══════════════════════════════════════════════════════════ -->
+<div class="scene">
+  <div class="time">0:45<span>25 сек</span></div>
+  <div>
+    <h3>Идея. Всё это уже снято сверху</h3>
+    <div class="row">
+      <div class="k">Кадр</div>
+      <p class="v">
+        Переход в комнату. Второй человек в кадре, в руках распечатанная
+        карта наших объектов. Он поднимает её к камере на словах «вот они».
+      </p>
+    </div>
+    <div class="row">
+      <div class="k">Реплика</div>
+      <p class="v say">
+        <span class="who">Второй:</span> Спутники снимают это место каждые
+        несколько дней и делают это уже восемь лет. Снимки лежат в
+        открытом архиве, бесплатно, и их никто не смотрит — их слишком
+        много, чтобы просматривать глазами. Мы написали программу, которая
+        их читает. <em>Вот они</em> — тридцать свалок, которые она нашла.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 4 ═══════════════════════════════════════════════════════════ -->
+<div class="scene">
+  <div class="time">1:10<span>25 сек</span></div>
+  <div>
+    <h3>Что именно ищет программа</h3>
+    <div class="row">
+      <div class="k">Кадр</div>
+      <p class="v">
+        Крупно: человек рисует на листе простую линию — волны, потом
+        падение, дальше ровно внизу. Достаточно маркера и бумаги, никакой
+        анимации.
+      </p>
+    </div>
+    <div class="row">
+      <div class="k">Реплика</div>
+      <p class="v say">
+        <span class="who">Второй:</span> Она ищет одно: место, где трава
+        исчезла и <em>больше не выросла</em>. Вот как выглядит обычная
+        земля — лето, зима, лето, зима. А вот свалка: линия упала и назад
+        не пошла. Поле зарастёт к следующему сезону. Гарь зарастёт за год.
+        Свалка не зарастёт никогда — пока её не вывезут.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 5 ═══════════════════════════════════════════════════════════ -->
+<div class="scene">
+  <div class="time">1:35<span>30 сек</span></div>
+  <div>
+    <h3>Пять проверок вместо одной нейросети</h3>
+    <div class="row">
+      <div class="k">Кадр</div>
+      <p class="v">
+        Первый и второй в кадре вдвоём. Пять карточек, выкладываются на
+        стол одна за другой по реплике: «зелень», «грунт», «пластик»,
+        «радар», «тепло».
+      </p>
+    </div>
+    <div class="row">
+      <div class="k">Реплика</div>
+      <p class="v say">
+        <span class="who">Первый:</span> Одного признака мало — карьер тоже
+        выглядит как исчезнувшая трава.<br>
+        <span class="who">Второй:</span> Поэтому проверок пять, и они
+        независимые. Пластик отражает невидимый свет иначе, чем земля.
+        Радар видит, что поверхность меняется от съёмки к съёмке — значит,
+        туда возят. А зимой куча теплее снега вокруг: внутри гниёт
+        органика. <em>У карьера гнить нечему.</em>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 6 ═══════════════════════════════════════════════════════════ -->
+<div class="scene">
+  <div class="time">2:05<span>25 сек</span></div>
+  <div>
+    <h3>Что получилось на самом деле</h3>
+    <div class="row">
+      <div class="k">Кадр</div>
+      <p class="v">
+        Карта на столе сверху, рука ведёт по ней. Плашки поверх кадра:
+        <strong>429 проверено</strong> → <strong>30 осталось</strong> →
+        <strong>24 подтверждены</strong>.
+      </p>
+    </div>
+    <div class="row">
+      <div class="k">Реплика</div>
+      <p class="v say">
+        <span class="who">Второй:</span> Мы прошли квадрат двадцать на
+        двадцать километров к северу от Астаны. Программа проверила
+        четыреста двадцать девять подозрительных мест и оставила тридцать —
+        по каждому отброшенному есть причина, её видно. Двадцать четыре
+        объекта из тридцати подтверждены снимками высокого разрешения.
+        <em>Это не демонстрация, это настоящий прогон.</em>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 7 ═══════════════════════════════════════════════════════════ -->
+<div class="scene">
+  <div class="time">2:30<span>20 сек</span></div>
+  <div>
+    <h3>Польза: бумага и телефон</h3>
+    <div class="row">
+      <div class="k">Кадр</div>
+      <p class="v">
+        Крупно: из принтера выходит черновик акта, человек берёт лист.
+        Следом — телефон в руке, отправляется точка в бота.
+      </p>
+    </div>
+    <div class="row">
+      <div class="k">Реплика</div>
+      <p class="v say">
+        <span class="who">Первый:</span> Инспектор получает не картинку, а
+        готовый черновик: координаты, дата появления, площадь, сумма,
+        статья. Осталось съездить и подписать.<br>
+        <span class="who">Второй:</span> А житель может прислать точку сам.
+        Спутник не видит кучу в три квадратных метра. Человек рядом — видит.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 8 ═══════════════════════════════════════════════════════════ -->
+<div class="scene">
+  <div class="time">2:50<span>10 сек</span></div>
+  <div>
+    <h3>Финал. Обратно на пустырь</h3>
+    <div class="row">
+      <div class="k">Кадр</div>
+      <p class="v">
+        Тот же общий план, что в начале, — но теперь пустой, без человека.
+        Логотип и адрес сайта поверх. Держать три секунды, звук не резать.
+      </p>
+    </div>
+    <div class="row">
+      <div class="k">Реплика</div>
+      <p class="v say">
+        <span class="who">Голос за кадром:</span> Убрать свалку стоит
+        миллионы. Не дать ей появиться — стоит знака и фотоловушки.
+        <em>Мы говорим, куда их ставить.</em>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ХВОСТ ═══════════════════════════════════════════════════════ -->
+<section class="tail">
+  <h2>Как это снимать</h2>
+
+  <h3 class="sub">Порядок съёмки</h3>
+  <p>
+    Сначала пустырь: сцены 1, 2 и 8 снимаются за один выезд, светлым днём,
+    в облачную погоду или до одиннадцати утра. Прямое солнце в полдень даёт
+    жёсткие тени на лице. Потом комната: сцены 3–7 подряд, они все за одним
+    столом.
+  </p>
+
+  <h3 class="sub">Звук важнее картинки</h3>
+  <p>
+    Плохую картинку простят, плохой звук выключат. На улице снимайте с
+    петличкой или хотя бы держите телефон в метре от говорящего и спиной к
+    ветру. В комнате не снимайте в пустой комнате с голыми стенами — там
+    эхо; шкаф, диван или занавеска глушат его бесплатно.
+  </p>
+
+  <h3 class="sub">Кадр</h3>
+  <ul>
+    <li><strong>Горизонталь.</strong> Вертикальное видео на проекторе занимает треть экрана.</li>
+    <li><strong>Глаза на верхней трети кадра</strong>, не по центру и не под срез.</li>
+    <li><strong>Камера на уровне глаз.</strong> Съёмка снизу вверх выглядит высокомерно, сверху вниз — жалко.</li>
+    <li><strong>Одежда однотонная</strong>, без мелкой клетки и полоски: они рябят при сжатии.</li>
+    <li><strong>Каждый дубль — по три раза.</strong> Лишние минуты на площадке дешевле повторного выезда.</li>
+  </ul>
+
+  <div class="note">
+    <span class="label">Если на пустырь не выбраться</span>
+    <p>
+      Снимите сцены 1, 2 и 8 у любой городской свалки — их хватает у
+      гаражей и за рынками. Главное, чтобы это было настоящее место, а не
+      стоковый кадр. Настоящее видно: там ветер, мусор шевелится, свет
+      неровный. Стоковое видно тоже.
+    </p>
+  </div>
+
+  <h3 class="sub">Чего в видео быть не должно</h3>
+  <ul>
+    <li><strong>Слов «инновационный», «уникальный», «не имеет аналогов».</strong> Их говорят все, и они ничего не значат. У нас есть числа — они убедительнее.</li>
+    <li><strong>Грустной музыки под кадры мусора.</strong> Мы показываем работу, а не собираем пожертвования.</li>
+    <li><strong>Обещаний, которых система не выполняет.</strong> Не «находит все свалки»: мельче тридцати квадратных метров не находит, свежие не подтверждает.</li>
+    <li><strong>Слова «нейросеть» вместо объяснения.</strong> Объяснение — пять проверок. Про модели сказать отдельно и точно.</li>
+    <li><strong>Чтения с листа.</strong> Выучите смысл, а не текст. Реплики здесь — опора, а не диктант.</li>
+  </ul>
+
+  <h3 class="sub">Если спросят после видео</h3>
+  <table>
+    <tr><th>Вопрос</th><th>Короткий ответ</th></tr>
+    <tr><td class="what">А вдруг это карьер?</td><td>Карьеры вычитаем по открытым картам — 124 объекта отсеяны именно так. И у карьера нет тепловой аномалии зимой: гнить нечему.</td></tr>
+    <tr><td class="what">Откуда сумма ущерба?</td><td>Из площади — масса, из массы — вывоз, штраф по статье и метан. Восемь допущений, у каждого указан источник. Поэтому и вилка, а не одно число.</td></tr>
+    <tr><td class="what">Это точно работает?</td><td>Настоящий прогон по настоящим снимкам, код и данные открыты. 24 объекта из 30 подтверждены независимыми снимками высокого разрешения.</td></tr>
+    <tr><td class="what">Где здесь ИИ?</td><td>Три обученные модели: сеть по парам снимков, модель прогноза, зрительная модель. Каждая проверена на данных, которых не видела.</td></tr>
+    <tr><td class="what">Что не умеет?</td><td>Не видит мельче 30 м², не подтверждает свалки последних полутора лет, и это оценка, а не юридический документ.</td></tr>
+    <tr><td class="what">Почему не показали сайт?</td><td>Сайт открыт, ссылка в описании — его можно потрогать. В видео три минуты, и мы потратили их на суть, а не на клики мышью.</td></tr>
+  </table>
+</section>
+
+<footer>
+  Vantage AI · Future Minds Hackathon 2026 · трек EcoFin · Астана.
+  Все числа в сценарии — из настоящего прогона. Если прогон обновится,
+  сверьте цифры на сайте перед записью.
+</footer>
+
+</body>
+</html>
