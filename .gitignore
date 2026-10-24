@@ -1,0 +1,59 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.python-version
+
+# --- Тесты и линтеры ---
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# --- Секреты ---
+.env
+*.key
+secrets/
+
+# --- Данные (тяжёлые, не версионируем) ---
+data/raw/
+data/interim/
+data/cache/
+data/chips/
+*.tif
+*.tiff
+*.nc
+*.zarr/
+*.parquet
+
+# --- Артефакты моделей ---
+models/*.pt
+models/*.pth
+models/*.onnx
+mlruns/
+
+# --- Выходные артефакты ---
+outputs/
+*.pdf
+!docs/**/*.pdf
+
+# --- Фронтенд ---
+web/node_modules/
+web/dist/
+
+# --- ОС / IDE ---
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# --- Разрешённые исключения ---
+# Малые эталонные данные для тестов версионируем явно
+!tests/fixtures/**
