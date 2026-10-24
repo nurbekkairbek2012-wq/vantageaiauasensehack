@@ -51,28 +51,66 @@ TILE = 420
 ZOOM = 18
 
 
+#: Ниже этого разброса цвета кадр считается заглушкой.
+#:
+#: Поставщик снимков на месте, где съёмки нет, отдаёт не ошибку, а ровный
+#: серый квадрат с надписью «Map data not yet available». Формально это
+#: картинка, и код принимал её за снимок: в восточном поясе так пришли
+#: восемь листов из девяти, и заметить это можно было только глазами.
+#:
+#: Настоящий снимок местности даёт разброс не меньше пятнадцати даже на
+#: однотонной степи; заглушка — около пяти.
+PLACEHOLDER_STD = 12.0
+
+#: Зумы в порядке предпочтения. Восемнадцатый даёт около полуметра на
+#: пиксель, но покрыт не везде: у Esri в восточном поясе Астаны его нет, а
+#: семнадцатый есть. Полметра лучше метра, но метр несравнимо лучше
+#: серого квадрата.
+ZOOM_LADDER = (18, 17, 16)
+
+
+def looks_like_placeholder(grid) -> bool:
+    """Серый квадрат «съёмки нет» вместо снимка."""
+    import numpy as np
+
+    return float(np.asarray(grid).std()) < PLACEHOLDER_STD
+
+
 def picture(lat: float, lon: float, name: str, cfg, refresh: bool = False):
-    """Снимок высокого разрешения вокруг точки, из кэша или из сети."""
+    """Снимок высокого разрешения вокруг точки, из кэша или из сети.
+
+    Перебираются и поставщики, и зумы: у одного поставщика может не быть
+    съёмки в этом месте, а у другого — быть; у того же поставщика может не
+    быть восемнадцатого зума, но быть семнадцатый.
+    """
     from PIL import Image
 
     from vantage.verify import PROVIDERS, fetch_tile_grid
 
     CACHE.mkdir(parents=True, exist_ok=True)
-    path = CACHE / f"{name}.png"
-    if path.exists() and not refresh:
-        return Image.open(path).convert("RGB")
+    # Зум в имени файла: см. тот же комментарий в eval_on_ours.py. Здесь
+    # зум ещё и подбирается лесенкой, так что без него в ключе кэш вообще
+    # не говорит, что в нём лежит.
+    for zoom in ZOOM_LADDER:
+        path = CACHE / f"{name}_z{zoom}.png"
+        if path.exists() and not refresh:
+            return Image.open(path).convert("RGB")
 
-    for key in cfg.providers:
-        provider = PROVIDERS.get(key)
-        if provider is None:
-            continue
-        try:
-            grid = fetch_tile_grid(provider, lat, lon, ZOOM, cfg.tile_grid, timeout=cfg.timeout_s)
-        except Exception:
-            continue
-        image = Image.fromarray(grid.astype("uint8"))
-        image.save(path)
-        return image
+    for zoom in ZOOM_LADDER:
+        for key in cfg.providers:
+            provider = PROVIDERS.get(key)
+            if provider is None or zoom > provider.max_zoom:
+                continue
+            try:
+                grid = fetch_tile_grid(provider, lat, lon, zoom, cfg.tile_grid,
+                                       timeout=cfg.timeout_s)
+            except Exception:
+                continue
+            if looks_like_placeholder(grid):
+                continue
+            image = Image.fromarray(grid.astype("uint8"))
+            image.save(CACHE / f"{name}_z{zoom}.png")
+            return image
     return None
 
 

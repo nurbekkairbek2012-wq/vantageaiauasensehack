@@ -66,9 +66,19 @@ def picture(lat: float, lon: float, name: str, cfg, refresh: bool):
     from vantage.verify import PROVIDERS, fetch_tile_grid
 
     CACHE.mkdir(parents=True, exist_ok=True)
-    path = CACHE / f"{name}.png"
+    # Зум в имени файла обязателен. Два скрипта делят этот кэш и качают
+    # на разном зуме: доверификация на 17-м, листы просмотра на 18-м. При
+    # ключе из одного идентификатора тот, кто записал первым, определял,
+    # что увидит второй — и одно и то же измерение давало то 0,643, то
+    # 0,333 в зависимости от порядка запуска.
+    path = CACHE / f"{name}_z{cfg.zoom}.png"
+    legacy = CACHE / f"{name}.png"
     if path.exists() and not refresh:
         return Image.open(path).convert("RGB")
+    if legacy.exists() and not refresh:
+        # Старый файл неизвестного зума не используем: лучше скачать
+        # заново, чем сравнивать модели на разных снимках.
+        legacy.unlink()
 
     # Первый доступный поставщик: расхождения между ними здесь не важны —
     # доверификация уже сравнила их между собой, а нам нужен снимок.
