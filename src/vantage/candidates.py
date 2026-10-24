@@ -27,6 +27,7 @@ from dataclasses import dataclass
 
 import geopandas as gpd
 import numpy as np
+import pandas as pd
 from shapely.geometry import shape
 
 from .change import BreakpointResult
@@ -206,6 +207,15 @@ def build_candidates(
     gdf["ndvi_drop"] = _aggregate(ndvi_drop, labels, present, np.median)
     gdf["bsi_rise"] = _aggregate(bsi_rise, labels, present, np.median)
 
+    # Уровни NDVI до и после разрыва выгружаются отдельно от величины
+    # падения. Карточка объекта показывает «было → стало», и без этих
+    # двух чисел интерфейсу пришлось бы придумывать базовый уровень —
+    # то есть показывать пользователю выдуманное значение как факт.
+    ndvi_before = result.ndvi_before.reshape(ny, nx)
+    ndvi_after = result.ndvi_after.reshape(ny, nx)
+    gdf["ndvi_before"] = _aggregate(ndvi_before, labels, present, np.median)
+    gdf["ndvi_after"] = _aggregate(ndvi_after, labels, present, np.median)
+
     if dates is not None:
         break_index = result.break_index.reshape(ny, nx).astype(float)
         break_index[break_index < 0] = np.nan
@@ -213,6 +223,15 @@ def build_candidates(
         date_array = np.asarray(dates, dtype="datetime64[D]")
         gdf["break_date"] = [
             date_array[round(idx)] if np.isfinite(idx) else np.datetime64("NaT")
+            for idx in median_index
+        ]
+        # Индекс разрыва нужен чипам: сеть смотрит на пару эпох «до / после»,
+        # и границу между ними задаёт именно номер наблюдения, а не дата —
+        # ряд идёт не по всем месяцам года, а только по пригодным.
+        gdf["break_index"] = [
+            # round() от numpy-скаляра возвращает numpy-скаляр, а не int:
+            # приведение здесь нужно, чтобы в GeoJSON ушло обычное число.
+            int(round(idx)) if np.isfinite(idx) else -1  # noqa: RUF046
             for idx in median_index
         ]
 
@@ -225,6 +244,86 @@ def build_candidates(
         gdf["area_m2"].sum() / 10_000,
     )
     return gdf
+
+
+#: Атрибуты, которые при склейке плиток усредняются по площади,
+#: а не берутся от случайного куска объекта.
+_AREA_WEIGHTED = ("ndvi_drop", "bsi_rise", "zscore_median", "ndvi_before", "ndvi_after")
+
+#: Атрибуты, от которых при склейке берётся максимум: уверенность объекта
+#: определяется его лучшим пикселем, и разрез по границе плитки не должен
+#: её занижать.
+_MAX_AGGREGATED = ("zscore_max",)
+
+
+def merge_across_tiles(parts: list[gpd.GeoDataFrame], *, crs: str) -> gpd.GeoDataFrame:
+    """Склеить кандидатов, найденных на разных плитках, в один слой.
+
+    Объект, лежащий на границе двух плиток, находится дважды — двумя
+    половинами. Просто сложить таблицы нельзя: получится два кандидата
+    вдвое меньшей площади, и оба провалят фильтр по минимальной площади
+    или дадут вдвое заниженный ущерб.
+
+    Поэтому геометрии объединяются, распадаются на связные части, и
+    атрибуты собираются заново: площадь пересчитывается по итоговой
+    геометрии, оценки признаков — как средневзвешенные по площади
+    исходных кусков, уверенность — как максимум.
+    """
+    from shapely.ops import unary_union
+
+    frames = [p for p in parts if p is not None and not p.empty]
+    if not frames:
+        return gpd.GeoDataFrame({"geometry": []}, geometry="geometry", crs=crs)
+
+    stacked = gpd.GeoDataFrame(
+        pd.concat([f.to_crs(crs) for f in frames], ignore_index=True), crs=crs
+    )
+    stacked["_piece_area"] = stacked.geometry.area
+
+    dissolved = unary_union(stacked.geometry.values)
+    pieces = gpd.GeoSeries([dissolved], crs=crs).explode(index_parts=False).reset_index(drop=True)
+    merged = gpd.GeoDataFrame({"geometry": pieces}, crs=crs)
+    merged["_merged_id"] = range(len(merged))
+
+    # representative_point гарантированно лежит внутри полигона, в отличие
+    # от центроида: у вытянутого или подковообразного объекта центроид
+    # может оказаться снаружи и не сматчиться ни с одним куском.
+    probes = stacked.copy()
+    probes["geometry"] = probes.geometry.representative_point()
+    joined = gpd.sjoin(probes, merged, how="left", predicate="within")
+
+    records = []
+    for merged_id, group in joined.groupby("_merged_id"):
+        weights = group["_piece_area"].to_numpy(dtype=float)
+        row: dict = {"_merged_id": int(merged_id), "n_pieces": len(group)}
+        if "n_pixels" in group:
+            row["n_pixels"] = int(group["n_pixels"].sum())
+        for column in _AREA_WEIGHTED:
+            if column in group:
+                values = group[column].to_numpy(dtype=float)
+                ok = np.isfinite(values) & (weights > 0)
+                row[column] = float(np.average(values[ok], weights=weights[ok])) if ok.any() else np.nan
+        for column in _MAX_AGGREGATED:
+            if column in group:
+                row[column] = float(np.nanmax(group[column].to_numpy(dtype=float)))
+        if "break_date" in group:
+            dates_series = pd.to_datetime(group["break_date"], errors="coerce")
+            row["break_date"] = dates_series.min()
+        if "break_index" in group:
+            valid = group["break_index"][group["break_index"] >= 0]
+            row["break_index"] = int(valid.min()) if len(valid) else -1
+        records.append(row)
+
+    attributes = pd.DataFrame.from_records(records)
+    out = merged.merge(attributes, on="_merged_id", how="left").drop(columns=["_merged_id"])
+    out["area_m2"] = out.geometry.area
+    out = out.sort_values("area_m2", ascending=False).reset_index(drop=True)
+    out.insert(0, "candidate_id", [f"C{i:05d}" for i in range(len(out))])
+    log.info(
+        "Склейка плиток: %d кусков → %d объектов, из них разрезанных границей %d",
+        len(stacked), len(out), int((out["n_pieces"] > 1).sum()),
+    )
+    return out
 
 
 #: Знаков после запятой в выгружаемых координатах.
@@ -294,6 +393,7 @@ __all__ = [
     "RasterGrid",
     "build_candidates",
     "clean_mask",
+    "merge_across_tiles",
     "polygonize",
     "simplify_for_web",
     "to_geojson",

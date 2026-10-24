@@ -49,7 +49,7 @@ class TestPhysicalEvidence:
             ndvi_drop=0.30,
             bsi_rise=0.20,
             pmli_response=0.12,
-            sar_incoherence=0.40,
+            sar_incoherence=2.4,  # дБ прироста дисперсии; полная шкала — 3 дБ
             thermal_anomaly=2.5,
         )
         assert ev.n_agreeing == 5
@@ -74,7 +74,7 @@ class TestPhysicalEvidence:
             ndvi_drop=0.30,
             bsi_rise=0.20,
             pmli_response=0.12,
-            sar_incoherence=0.40,
+            sar_incoherence=2.4,  # дБ прироста дисперсии; полная шкала — 3 дБ
             thermal_anomaly=2.5,
         )
         assert quarry.combined_score < landfill.combined_score
@@ -273,3 +273,77 @@ class TestChannelAttribution:
         assert set(attribution) == set(dataset.channels)
         for values in attribution.values():
             assert values.shape == (20,)
+
+
+class TestAttachEvidence:
+    """Согласие признаков как отдельная оценка рядом с вероятностью модели.
+
+    Понадобилось после первого настоящего прогона. Положительные примеры
+    для сети берутся из полигонов ТБО в OpenStreetMap, но внутри
+    существующего полигона детектор изменений не находит ничего: там и в
+    2018 году была голая поверхность, разрыва нет. Ноль положительных
+    меток — значит, ``probability`` остаётся пустой, и колонку
+    уверенности на карте нечем заполнить.
+    """
+
+    def _frame(self, **columns):
+        import geopandas as gpd
+        from shapely.geometry import box
+
+        n = len(next(iter(columns.values())))
+        return gpd.GeoDataFrame(
+            {
+                "candidate_id": [f"C{i:05d}" for i in range(n)],
+                **columns,
+                "geometry": [box(i, i, i + 1, i + 1) for i in range(n)],
+            },
+            crs="EPSG:32642",
+        )
+
+    def test_adds_score_and_agreement(self):
+        from vantage.explain import attach_evidence
+
+        result = attach_evidence(self._frame(ndvi_drop=[0.35], bsi_rise=[0.25]))
+        assert result["evidence_score"].iat[0] > 0.9
+        assert result["n_agreeing"].iat[0] == 2
+
+    def test_quarry_scores_lower_than_landfill(self):
+        """Тот же смысл, что и у пяти признаков: решает согласие, не сила."""
+        from vantage.explain import attach_evidence
+
+        result = attach_evidence(
+            self._frame(
+                ndvi_drop=[0.30, 0.30],
+                bsi_rise=[0.20, 0.25],
+                pmli_response=[0.12, 0.0],
+                sar_incoherence=[2.4, 0.1],
+                thermal_anomaly=[2.5, 0.0],
+            )
+        )
+        landfill, quarry = result["evidence_score"]
+        assert landfill > quarry
+        assert result["n_agreeing"].iat[0] > result["n_agreeing"].iat[1]
+
+    def test_missing_signals_do_not_zero_the_score(self):
+        """Непосчитанный признак — это отсутствие данных, а не нулевая сила.
+
+        Радар и тепло считаются отдельной веткой и могут быть недоступны.
+        Если бы они обнуляли согласие, объект с двумя сильными оптическими
+        признаками выглядел бы хуже, чем он есть.
+        """
+        from vantage.explain import attach_evidence
+
+        both = attach_evidence(self._frame(ndvi_drop=[0.35], bsi_rise=[0.25]))
+        assert both["evidence_score"].iat[0] > 0.9
+
+    def test_empty_input_gets_the_columns_anyway(self):
+        import geopandas as gpd
+
+        from vantage.explain import attach_evidence
+
+        empty = gpd.GeoDataFrame(
+            {"candidate_id": [], "geometry": []}, geometry="geometry", crs="EPSG:32642"
+        )
+        result = attach_evidence(empty)
+        assert "evidence_score" in result.columns
+        assert "n_agreeing" in result.columns

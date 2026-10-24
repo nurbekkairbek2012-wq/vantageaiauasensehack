@@ -30,6 +30,9 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from .sar import FULL_SCALE_INCOHERENCE_DB
+from .thermal import FULL_SCALE_ANOMALY_K
+
 log = logging.getLogger(__name__)
 
 #: Пять физических признаков свалки в порядке, в котором они показываются
@@ -39,12 +42,18 @@ PHYSICAL_SIGNALS = ("ndvi_drop", "bsi_rise", "pmli_response", "sar_incoherence",
 #: Шкалы нормировки: значение признака, которое считается «полной силой».
 #: Величины подобраны по физике процесса, а не по данным, поэтому панель
 #: остаётся интерпретируемой и не переобучается под конкретную выборку.
+#:
+#: Шкалы радара и тепла НЕ дублируются здесь числом, а берутся из модулей,
+#: которые эти величины считают. Так уже случилась ошибка: здесь стояло
+#: 0.50, а sar.FULL_SCALE_INCOHERENCE_DB равнялся 3.0 — одна и та же
+#: физическая величина имела две шкалы, различающиеся в шесть раз, и
+#: панель признаков показывала радар вшестеро сильнее, чем он есть.
 SIGNAL_FULL_SCALE = {
     "ndvi_drop": 0.35,        # падение NDVI на 0.35 — полное исчезновение растительности
     "bsi_rise": 0.25,         # рост BSI на 0.25 — переход к полностью открытой поверхности
     "pmli_response": 0.15,    # отклик полимеров в SWIR
-    "sar_incoherence": 0.50,  # потеря когерентности вдвое
-    "thermal_anomaly": 3.0,   # превышение фона на 3 K
+    "sar_incoherence": FULL_SCALE_INCOHERENCE_DB,
+    "thermal_anomaly": FULL_SCALE_ANOMALY_K,
 }
 
 
@@ -162,6 +171,46 @@ def evidence_table(candidates, predictions=None) -> list[Evidence]:
     return result
 
 
+def attach_evidence(candidates, predictions=None):
+    """Добавить в таблицу согласие признаков как отдельную оценку.
+
+    Зачем это нужно отдельно от вероятности модели
+    ----------------------------------------------
+    Сеть учится на парах «до / после», и положительные примеры для неё
+    берутся из OSM — полигоны ТБО. Но первый настоящий прогон показал,
+    что так их не набрать в принципе: внутри существующего полигона
+    детектор изменений ничего не находит, потому что там и в 2018 году
+    была голая поверхность. Разрыва нет — значит, нет и кандидата,
+    которому можно поставить метку «свалка».
+
+    Без ручной разметки колонка ``probability`` остаётся пустой. Ставить
+    туда ноль нельзя: ноль читается как «модель уверена, что это не
+    свалка». Придумывать число — тем более.
+
+    Поэтому рядом живёт вторая оценка, которая не зависит от обучения
+    вообще: согласие пяти физических признаков. Она слабее модели, зато
+    объясняется без слова «нейросеть» и есть всегда.
+
+    Добавляет колонки ``evidence_score`` (0..1) и ``n_agreeing`` (0..5).
+    """
+    result = candidates.copy()
+    if result.empty:
+        result["evidence_score"] = []
+        result["n_agreeing"] = []
+        return result
+
+    table = evidence_table(result, predictions)
+    result["evidence_score"] = [item.combined_score for item in table]
+    result["n_agreeing"] = [item.n_agreeing for item in table]
+    log.info(
+        "Согласие признаков: медиана %.2f, объектов с тремя и более признаками %d из %d",
+        float(np.median(result["evidence_score"])),
+        int((result["n_agreeing"] >= 3).sum()),
+        len(result),
+    )
+    return result
+
+
 # --------------------------------------------------------------------------- #
 #  Вклад каналов в решение модели
 # --------------------------------------------------------------------------- #
@@ -253,6 +302,7 @@ __all__ = [
     "PHYSICAL_SIGNALS",
     "SIGNAL_FULL_SCALE",
     "Evidence",
+    "attach_evidence",
     "channel_attribution",
     "disagreement",
     "evidence_table",

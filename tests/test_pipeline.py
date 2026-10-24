@@ -157,9 +157,20 @@ class TestDemoData:
         assert demo_candidates["is_demo"].all()
 
     def test_story_is_marked(self, demo_candidates):
-        story = build_story(demo_candidates)
+        story = build_story(demo_candidates, is_demo=True)
         assert story["is_demo"] is True
         assert "СИНТЕТИЧЕСКИЕ" in story["warning"]
+
+    def test_story_of_real_run_is_not_marked(self, demo_candidates):
+        """Обратная сторона той же проверки.
+
+        Пометка обязана исчезать, когда данные настоящие: пока
+        ``build_story`` ставила её безусловно, результат честного прогона
+        выходил помеченным как отладочный, и показать его было нельзя.
+        """
+        story = build_story(demo_candidates, is_demo=False)
+        assert story["is_demo"] is False
+        assert "warning" not in story
 
     def test_marker_shouts(self):
         assert DEMO_MARKER["is_demo"] is True

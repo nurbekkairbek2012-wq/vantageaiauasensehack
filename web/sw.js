@@ -18,7 +18,7 @@
  *       природе, ходить за ним повторно бессмысленно.
  */
 
-const VERSION = 'vantage-v4';
+const VERSION = 'vantage-v5';
 const SHELL_CACHE = `${VERSION}-shell`;
 const DATA_CACHE = `${VERSION}-data`;
 const TILE_CACHE = `${VERSION}-tiles`;
@@ -42,6 +42,15 @@ const TILE_HOSTS = new Set([
 ]);
 
 const MAX_TILES = 4000;
+
+/* Подрезка кеша стоит перечисления всех ключей, то есть O(n). Вызывать её
+   на каждый записанный тайл — это O(n²): при прогреве офлайн-кеша, где
+   тайлов тысячи, вкладка встаёт колом ещё до того, как кеш переполнится.
+   Поэтому проверяем не чаще, чем раз в TRIM_EVERY записей, и допускаем
+   небольшое переполнение сверх MAX_TILES. */
+const TRIM_EVERY = 200;
+let tilesSinceTrim = 0;
+let trimming = false;
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -81,10 +90,25 @@ const isData = (url) =>
   url.pathname.endsWith('.json');
 
 async function trimTileCache() {
-  const cache = await caches.open(TILE_CACHE);
-  const keys = await cache.keys();
-  if (keys.length <= MAX_TILES) return;
-  await Promise.all(keys.slice(0, keys.length - MAX_TILES).map((k) => cache.delete(k)));
+  if (trimming) return;
+  trimming = true;
+  try {
+    const cache = await caches.open(TILE_CACHE);
+    const keys = await cache.keys();
+    if (keys.length <= MAX_TILES) return;
+    // Вытесняется начало: порядок ключей в Cache Storage — порядок
+    // записи, то есть первыми уходят самые старые тайлы.
+    await Promise.all(keys.slice(0, keys.length - MAX_TILES).map((k) => cache.delete(k)));
+  } finally {
+    trimming = false;
+  }
+}
+
+function scheduleTileTrim() {
+  tilesSinceTrim += 1;
+  if (tilesSinceTrim < TRIM_EVERY) return;
+  tilesSinceTrim = 0;
+  trimTileCache().catch(() => {});
 }
 
 self.addEventListener('fetch', (event) => {
@@ -103,7 +127,7 @@ self.addEventListener('fetch', (event) => {
           const response = await fetch(request);
           if (response && (response.ok || response.type === 'opaque')) {
             cache.put(request, response.clone());
-            trimTileCache();
+            scheduleTileTrim();
           }
           return response;
         } catch {
@@ -158,8 +182,14 @@ self.addEventListener('fetch', (event) => {
           if (response.ok) cache.put(request, response.clone());
           return response;
         })
-        .catch(() => cached);
-      return cached || network;
+        // Без сети и без кеша вернуть нечего — но вернуть надо именно
+        // Response: respondWith(undefined) роняет обработчик, и браузер
+        // показывает ошибку сети вместо страницы.
+        .catch(() => cached || new Response(null, { status: 504 }));
+      if (!cached) return network;
+      // Фоновое обновление не должно оставлять необработанный отказ.
+      network.catch(() => {});
+      return cached;
     })
   );
 });

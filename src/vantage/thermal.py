@@ -55,18 +55,34 @@ LANDSAT_ST_OFFSET = 149.0
 SNOW_DUMP_THRESHOLD_K = -1.5
 
 
+def _float32(values):
+    """Привести к float32, не потеряв обёртку xarray.
+
+    ``np.asarray`` на DataArray возвращает голый массив: пропадают и оси,
+    и координаты. Присвоить такой массив обратно в Dataset уже нельзя —
+    xarray требует явных имён измерений и падает с MissingDimensionsError.
+
+    Ошибка была настоящей и жила ровно до первого прогона: юнит-тесты
+    подают сюда numpy, где разницы нет, а куб из odc-stac — DataArray.
+    То есть обе ветки, радарная и тепловая, не могли отработать ни разу,
+    и заметно это стало только на настоящих данных.
+    """
+    if hasattr(values, "dims"):  # xarray.DataArray
+        return values.astype("float32")
+    return np.asarray(values, dtype="float32")
+
+
 def to_kelvin(digital_number):
     """Перевести DN теплового продукта Landsat в кельвины.
 
     Без масштабирования значения выглядят как десятки тысяч, и любое
     сравнение с порогом в кельвинах даёт бессмыслицу, не падая с ошибкой.
     """
-    dn = np.asarray(digital_number, dtype="float32")
-    return dn * LANDSAT_ST_SCALE + LANDSAT_ST_OFFSET
+    return _float32(digital_number) * LANDSAT_ST_SCALE + LANDSAT_ST_OFFSET
 
 
 def to_celsius(kelvin):
-    return np.asarray(kelvin, dtype="float32") - 273.15
+    return _float32(kelvin) - 273.15
 
 
 def local_background(

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from pathlib import Path
 
 import typer
@@ -23,6 +24,11 @@ from rich.table import Table
 from . import __version__
 from .aoi import AOI
 from .config import load_economics, load_settings
+from .env import configure_console
+
+# Вывод переводится в UTF-8 до создания Console: rich запоминает кодировку
+# потока при инициализации, и после этого менять её поздно.
+configure_console()
 
 app = typer.Typer(
     name="vantage",
@@ -85,9 +91,62 @@ def info(
     console.print(table)
 
 
+def _check_raster_access() -> tuple[bool, str]:
+    """Прочитать окно настоящего COG из облака.
+
+    Самая полезная проверка во всём ``doctor``, потому что ловит поломку,
+    которая иначе выглядит как «интернет не работает». На пути с
+    казахскими буквами GDAL не может открыть файл сертификатов, schannel
+    отбрасывает его целиком, и ни один снимок не читается — при этом
+    поиск сцен в STAC продолжает работать, а сообщение об ошибке
+    теряется внутри rasterio (см. env.py). Отличить это от настоящих
+    сетевых проблем можно только фактическим чтением пикселей.
+    """
+    import pystac_client
+    import rasterio
+
+    from .catalog import PLANETARY_COMPUTER_STAC
+
+    try:
+        import planetary_computer
+
+        client = pystac_client.Client.open(
+            PLANETARY_COMPUTER_STAC, modifier=planetary_computer.sign_inplace
+        )
+        item = next(
+            iter(
+                client.search(
+                    collections=["sentinel-2-l2a"],
+                    bbox=[71.40, 51.05, 71.50, 51.10],
+                    datetime="2024-07-01/2024-07-31",
+                    limit=1,
+                ).items()
+            )
+        )
+    except StopIteration:
+        return False, "STAC не вернул ни одной сцены по контрольному запросу"
+    except Exception as exc:
+        return False, f"STAC недоступен: {type(exc).__name__}"
+
+    try:
+        with rasterio.open(item.assets["B04"].href) as dataset:
+            dataset.read(1, window=((0, 64), (0, 64)))
+    except UnicodeDecodeError:
+        # Ровно тот случай: сообщение GDAL пришло в кодовой странице
+        # системы, и rasterio не смог его прочитать.
+        return False, "GDAL не может открыть файл сертификатов — проверьте GDAL_CURL_CA_BUNDLE"
+    except Exception as exc:
+        return False, f"чтение COG не удалось: {type(exc).__name__}"
+
+    return True, f"снимок {item.id[:24]}… читается"
+
+
 @app.command()
 def doctor(
     config: str | None = typer.Option(None, "--config", "-c"),
+    network: bool = typer.Option(
+        False, "--network", "-n", help="Проверить доступ к STAC и чтение снимков"
+    ),
 ) -> None:
     """Проверка готовности к сдаче.
 
@@ -143,6 +202,23 @@ def doctor(
 
     for w in warnings:
         console.print(f"  [yellow]![/yellow] {w}")
+
+    if network:
+        console.print("\n[bold]Доступ к данным[/bold]")
+        bundle = os.environ.get("GDAL_CURL_CA_BUNDLE")
+        if bundle:
+            console.print(f"  [dim]сертификаты для GDAL: {bundle}[/dim]")
+        with console.status("Читаю окно настоящего снимка…"):
+            ok, detail = _check_raster_access()
+        if ok:
+            console.print(f"  [green]OK[/green] {detail}")
+        else:
+            console.print(f"  [red]x[/red] {detail}")
+            console.print(
+                "  [dim]Без этого прогон дойдёт до поиска сцен и остановится: "
+                "STAC отвечает, а пиксели не читаются.[/dim]"
+            )
+            problems.append(f"данные: {detail}")
 
     if problems:
         raise typer.Exit(code=1)
@@ -309,7 +385,14 @@ def web(
     data_dir.mkdir(parents=True, exist_ok=True)
 
     copied = 0
-    for name in ("candidates.geojson", "risk_public.geojson", "risk_private.geojson", "story.json"):
+    for name in (
+        "candidates.geojson",
+        "risk_public.geojson",
+        "risk_private.geojson",
+        "registry.geojson",
+        "story.json",
+        "metrics.json",
+    ):
         src = source / name
         if src.exists():
             shutil.copy2(src, data_dir / name)
@@ -354,7 +437,17 @@ def web(
 #: Список намеренно короткий и живёт в коде, а не в скрипте деплоя:
 #: расширить его должно быть заметным действием, а не правкой одной
 #: строки в YAML, которую никто не проверит.
-PUBLIC_WHITELIST = ("candidates.geojson", "risk_public.geojson", "registry.geojson", "story.json")
+PUBLIC_WHITELIST = (
+    "candidates.geojson",
+    "risk_public.geojson",
+    "registry.geojson",
+    "story.json",
+    # Метрики модели — это качество прогноза, а не адреса объектов.
+    # Публиковать их не только безопасно, но и нужно: без файла карта
+    # честно пишет «модель не обучена», и на защите это выглядит хуже,
+    # чем измеренные цифры.
+    "metrics.json",
+)
 
 #: Файлы, попадание которых в публикацию — утечка адресных данных.
 PUBLIC_DENYLIST = ("risk_private.geojson", "access.log", "citizen_reports.jsonl")
@@ -464,43 +557,105 @@ def publish(
 @app.command()
 def run(
     config: str | None = typer.Option(None, "--config", "-c"),
-    force: bool = typer.Option(False, "--force", help="Пересчитать даже готовые шаги"),
+    bbox: str | None = typer.Option(
+        None, "--bbox", help="Своя область: min_lon,min_lat,max_lon,max_lat"
+    ),
+    name: str = typer.Option("run", "--name", help="Имя области — в него именуются плитки и модель"),
+    tile_size: float = typer.Option(5000.0, "--tile-size", help="Сторона плитки, м"),
+    outputs: str | None = typer.Option(None, "--outputs", "-o", help="Куда писать артефакты"),
+    limit: int | None = typer.Option(None, "--limit", help="Взять только первые N плиток"),
+    force: bool = typer.Option(False, "--force", help="Пересчитать даже готовые плитки"),
+    skip_model: bool = typer.Option(False, "--skip-model", help="Не обучать сеть"),
+    skip_signals: bool = typer.Option(False, "--skip-signals", help="Без радара и тепла"),
+    skip_verify: bool = typer.Option(False, "--skip-verify", help="Без доверификации тайлами"),
     skip_risk: bool = typer.Option(False, "--skip-risk", help="Пропустить модель прогноза"),
 ) -> None:
-    """Сквозной прогон пайплайна по области из конфигурации.
+    """Сквозной прогон по области: от снимков до файлов карты.
 
-    Каждый шаг пишет артефакт в outputs/ и пропускается, если результат
-    уже есть. Полный прогон по области идёт часами, и падение на седьмом
-    шаге не должно означать повтор первых шести.
+    Область идёт плитками, каждая пишет результат в ``outputs/tiles/`` и при
+    повторе берётся из кеша: полный прогон занимает часы, и падение на
+    двадцатой плитке не должно означать повтор первых девятнадцати.
+
+    Порядок величин, измеренный на настоящих данных: около десяти минут на
+    100 км² за восемь лет. Область из конфигурации — 4834 км², это порядка
+    восьми часов. Для первого прогона берите ``--bbox`` поменьше.
     """
-    from .pipeline import Pipeline, timed
+    from .orchestrate import run_full
 
     settings = load_settings(config)
-    pipeline = Pipeline(settings, force=force)
 
-    console.rule(f"[bold]Прогон {pipeline.aoi.name}")
-    console.print(f"Область: {pipeline.aoi.area_km2:,.0f} км²".replace(",", " "))
-    console.print(f"Период: {settings.time.start} .. {settings.time.end}\n")
+    area = None
+    if bbox:
+        try:
+            values = tuple(float(v) for v in bbox.split(","))
+        except ValueError as exc:
+            raise typer.BadParameter("bbox должен быть четырьмя числами через запятую") from exc
+        if len(values) != 4:
+            raise typer.BadParameter("bbox должен быть четырьмя числами через запятую")
+        area = AOI.from_bbox(values, name=name, crs_working=settings.project.crs_working)
 
-    with console.status("Поиск сцен в STAC…"):
-        stats, seconds = timed(pipeline.step_scenes)
-    found = stats.get("sentinel2", {}).get("count", 0)
-    pipeline.report.record("scenes", seconds=seconds, sentinel2=found)
-    console.print(f"[green]✓[/green] Сцен Sentinel-2: {found}")
+    pipeline_aoi = area or AOI.from_settings(settings)
+    console.rule(f"[bold]Прогон {pipeline_aoi.name}")
+    console.print(f"Область: {pipeline_aoi.area_km2:,.0f} км²".replace(",", " "))
+    console.print(f"Период: {settings.time.start} .. {settings.time.end}")
+    console.print(f"Плитка: {tile_size:,.0f} м\n".replace(",", " "))
 
-    if not found:
-        console.print("[red]Сцен не найдено — дальнейшие шаги не имеют смысла.[/red]")
+    estimate_min = pipeline_aoi.area_km2 * 6.3 / 60
+    if estimate_min > 20:
+        console.print(
+            f"[yellow]Ожидаемое время загрузки снимков: около {estimate_min / 60:.1f} ч.[/yellow] "
+            "Прерывание безопасно — готовые плитки сохраняются."
+        )
+
+    outcome = run_full(
+        settings=settings,
+        aoi=area,
+        outputs=outputs,
+        tile_size_m=tile_size,
+        limit=limit,
+        force=force,
+        with_model=not skip_model,
+        with_signals=not skip_signals,
+        with_verify=not skip_verify,
+        with_risk=not skip_risk,
+    )
+
+    table = Table(title="Итог прогона", show_header=False)
+    table.add_column("", style="cyan", no_wrap=True)
+    table.add_column("")
+    table.add_row("Кусков по плиткам", str(outcome.raw_candidates))
+    table.add_row("Объектов после склейки", str(outcome.merged_candidates))
+    table.add_row("Прошли контекстный отсев", str(outcome.kept_candidates))
+    if outcome.labels:
+        table.add_row(
+            "Автоматическая разметка",
+            f"+{outcome.labels.get('positive', 0)} / -{outcome.labels.get('negative', 0)}",
+        )
+    if outcome.signals:
+        table.add_row("Признаки", outcome.signals)
+    if outcome.verified:
+        table.add_row("Доверификация", f"подтверждено {outcome.confirmed} из {outcome.verified}")
+    console.print(table)
+
+    if outcome.rejection:
+        rejects = Table(title="Почему отсеяно", show_header=True)
+        rejects.add_column("Причина", style="cyan")
+        rejects.add_column("Объектов", justify="right")
+        for reason, count in sorted(outcome.rejection.items(), key=lambda kv: -kv[1]):
+            rejects.add_row(reason, str(count))
+        console.print(rejects)
+
+    if outcome.model_note:
+        console.print(f"[yellow]Сеть не обучена:[/yellow] {outcome.model_note}")
+
+    if not outcome.artifacts:
+        console.print("[red]Артефактов не записано — показывать на карте нечего.[/red]")
         raise typer.Exit(code=1)
 
-    console.print(
-        "\n[yellow]Загрузка растров и детекция изменений по всей области "
-        "занимают часы и требуют устойчивой сети.[/yellow]\n"
-        "Запускайте их потайлово через Python API:\n"
-        "  [dim]from vantage.pipeline import Pipeline[/dim]\n"
-        "  [dim]for tile in aoi.tiles(20_000): ...[/dim]\n"
-    )
-    report_path = pipeline.finish()
-    console.print(f"Отчёт о прогоне: [green]{report_path}[/green]")
+    console.print("\n[bold]Записано:[/bold]")
+    for artifact, path in outcome.artifacts.items():
+        console.print(f"  [green]{artifact}[/green]: {path}")
+    console.print("\nДальше: [bold]vantage web[/bold]")
 
 
 if __name__ == "__main__":  # pragma: no cover

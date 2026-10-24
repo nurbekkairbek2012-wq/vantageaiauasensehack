@@ -65,6 +65,10 @@ class BreakpointResult:
     bsi_rise: np.ndarray
     recovered: np.ndarray
     n_valid: np.ndarray
+    #: Хватило ли наблюдений после разрыва, чтобы судить о необратимости.
+    #: Разрыв в конце ряда «не восстановился» просто потому, что смотреть
+    #: было не на что, — и такой вывод не является выводом.
+    observable: np.ndarray | None = None
 
     def __len__(self) -> int:
         return int(self.has_break.size)
@@ -151,6 +155,33 @@ def recovery_window_stops(dates: np.ndarray, break_index: np.ndarray, months: in
     return np.searchsorted(d, deadline, side="right").astype("int32")
 
 
+def last_observable_index(dates: np.ndarray, min_after_months: int) -> int | None:
+    """Последняя точка ряда, после которой ещё остаётся ``min_after_months``.
+
+    Возвращает ``None``, если ограничения нет. Если ряд короче требуемого
+    окна, возвращает ``-1`` — искать разрыв негде, и лучше честно не найти
+    ничего, чем найти то, что нельзя проверить.
+    """
+    if min_after_months <= 0:
+        return None
+    d = np.asarray(dates, dtype="datetime64[D]").astype("int64")
+    if d.size == 0:
+        return -1
+    # int() не лишний: _DAYS_PER_MONTH делает выражение numpy-скаляром.
+    limit = d[-1] - int(round(min_after_months * _DAYS_PER_MONTH))  # noqa: RUF046
+    fits = np.nonzero(d <= limit)[0]
+    return int(fits[-1]) if fits.size else -1
+
+
+def observed_after_months(dates: np.ndarray, break_index: np.ndarray) -> np.ndarray:
+    """Сколько календарных месяцев ряда осталось после каждой точки разрыва."""
+    d = np.asarray(dates, dtype="datetime64[D]").astype("int64")
+    if d.size == 0:
+        return np.zeros_like(break_index, dtype="float32")
+    safe_k = np.clip(break_index, 0, d.size - 1)
+    return ((d[-1] - d[safe_k]) / _DAYS_PER_MONTH).astype("float32")
+
+
 def deseasonalize(
     y: np.ndarray,
     design: np.ndarray,
@@ -214,7 +245,12 @@ def _nan_cumsum_and_count(x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     return np.cumsum(filled, axis=0), np.cumsum(mask, axis=0)
 
 
-def find_breakpoint(residuals: np.ndarray, min_segment: int) -> tuple[np.ndarray, np.ndarray]:
+def find_breakpoint(
+    residuals: np.ndarray,
+    min_segment: int,
+    *,
+    max_index: int | None = None,
+) -> tuple[np.ndarray, np.ndarray]:
     """Найти наиболее вероятную точку разрыва в остатках.
 
     Для каждой допустимой точки k сравниваются средние остатков до и после,
@@ -224,9 +260,22 @@ def find_breakpoint(residuals: np.ndarray, min_segment: int) -> tuple[np.ndarray
     Ограничение ``min_segment`` принципиально: разрыв на второй месяц ряда
     статистически неотличим от выброса, а разрыв за месяц до конца ряда
     невозможно проверить на необратимость.
+
+    ``max_index`` сужает область поиска сверху. Это не то же самое, что
+    отбросить неподходящий результат потом: у пикселя разрыв ищется как
+    **максимум** статистики по всем допустимым точкам, и если у настоящего
+    разрыва 2021 года окажется конкурент на хвосте ряда, максимум уйдёт
+    туда. Отбраковка постфактум выбросила бы такой пиксель целиком вместе
+    с настоящей находкой; сужение области поиска — оставляет её.
     """
     n_t, n_pix = residuals.shape
     if n_t < 2 * min_segment + 1:
+        return np.full(n_pix, -1, dtype="int32"), np.zeros(n_pix, dtype="float32")
+
+    stop = n_t - min_segment
+    if max_index is not None:
+        stop = min(stop, int(max_index) + 1)
+    if stop <= min_segment:
         return np.full(n_pix, -1, dtype="int32"), np.zeros(n_pix, dtype="float32")
 
     cumsum, count = _nan_cumsum_and_count(residuals)
@@ -247,7 +296,7 @@ def find_breakpoint(residuals: np.ndarray, min_segment: int) -> tuple[np.ndarray
     best_z = np.zeros(n_pix, dtype="float64")
     best_k = np.full(n_pix, -1, dtype="int32")
 
-    for k in range(min_segment, n_t - min_segment):
+    for k in range(min_segment, stop):
         n1 = count[k - 1].astype("float64")
         n2 = (total_n - count[k - 1]).astype("float64")
         with np.errstate(invalid="ignore", divide="ignore"):
@@ -319,7 +368,10 @@ def detect(
     # Календарные месяцы из конфига переводятся в число наблюдений ряда:
     # в году 7 композитов, а не 12 (см. months_to_observations).
     min_segment_obs = months_to_observations(dates, cfg.min_segment_months)
-    break_index, zscore = find_breakpoint(residuals, min_segment_obs)
+    # Верхняя граница поиска: дальше по ряду не остаётся наблюдений, на
+    # которых проверка необратимости могла бы что-то показать.
+    last_observable = last_observable_index(dates, cfg.min_observed_after_months)
+    break_index, zscore = find_breakpoint(residuals, min_segment_obs, max_index=last_observable)
     found = break_index >= 0
 
     zeros = np.zeros(n_pix, dtype="int32")
@@ -345,12 +397,18 @@ def detect(
     recovery_level = ndvi_before - cfg.recovery_tolerance * ndvi_drop
     recovered = np.isfinite(ndvi_peak_after) & (ndvi_peak_after >= recovery_level)
 
+    # Наблюдаемость гарантирована сужением области поиска выше; массив
+    # остаётся в результате для отчётности и для случая, когда detect
+    # вызывают с уже готовыми индексами разрыва.
+    observable = observed_after_months(dates, k) >= cfg.min_observed_after_months
+
     has_break = (
         found
         & (zscore >= cfg.breakpoint_zscore)
         & (ndvi_drop >= cfg.min_ndvi_drop)
         & (bsi_rise >= cfg.min_bsi_rise)
         & ~recovered
+        & observable
         & (n_valid >= _MIN_VALID_OBS)
     )
 
@@ -364,6 +422,7 @@ def detect(
         bsi_rise=bsi_rise.astype("float32"),
         recovered=recovered,
         n_valid=n_valid,
+        observable=observable,
     )
     log.info("Детекция изменений: %s", result.summary())
     return result
@@ -389,6 +448,8 @@ __all__ = [
     "detect",
     "find_breakpoint",
     "harmonic_design",
+    "last_observable_index",
     "months_to_observations",
+    "observed_after_months",
     "recovery_window_stops",
 ]

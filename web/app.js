@@ -36,13 +36,29 @@ const MAX_ZOOM = 18;
 const CLUSTER_ZOOM = 13;      // ниже этого масштаба точки объединяются
 const CLUSTER_PX = 46;        // радиус объединения в пикселях экрана
 
+/* Прогрев офлайн-кеша. Бюджет согласован с ёмкостью кеша тайлов в sw.js:
+   просить больше, чем кеш может удержать, бессмысленно — начало вытеснится
+   раньше, чем закончится закачка. */
+const MAX_PREWARM_ZOOM = 15;
+const PREWARM_BUDGET = 3000;
+
+/* Пять физических признаков. Шкала нормировки — запасная: настоящая
+   приезжает в story.json полем signal_scales, потому что считает эти
+   величины Python, и держать их вторую копию здесь означает рано или
+   поздно разойтись с ней. Так уже было с радаром: здесь стояло 0.50,
+   в sar.py — 3.0, и панель показывала признак вшестеро сильнее. */
 const SIGNALS = [
   ['ndvi_drop', 'Падение растительности', 0.35],
   ['bsi_rise', 'Рост открытого грунта', 0.25],
   ['pmli_response', 'Отклик полимеров (SWIR)', 0.15],
-  ['sar_incoherence', 'Нестабильность по радару', 0.50],
+  ['sar_incoherence', 'Нестабильность по радару', 3.0],
   ['thermal_anomaly', 'Тепловая аномалия', 3.0],
 ];
+
+const signalScale = (key, fallback) => {
+  const value = Number(state.story?.signal_scales?.[key]);
+  return Number.isFinite(value) && value > 0 ? value : fallback;
+};
 
 const REJECTS = [
   ['Карьер', 'пересекается с landuse=quarry в OSM; радарно стабилен'],
@@ -143,6 +159,31 @@ function toast(text, kind = '', ms = 5000) {
   setTimeout(() => { node.style.opacity = '0'; setTimeout(() => node.remove(), 320); }, ms);
 }
 
+/* Уверенность объекта. Источников два, и путать их нельзя.
+ *
+ * probability     — вероятность обученной сети;
+ * evidence_score  — согласие пяти физических признаков.
+ *
+ * Второе есть всегда, первое — только когда сеть удалось обучить. А
+ * обучить её без ручной разметки не выходит: положительные примеры
+ * берутся из полигонов ТБО в OSM, но внутри существующего полигона
+ * детектор изменений ничего не находит — там и в 2018 году была голая
+ * поверхность. Поэтому карта показывает то, что есть, и подписывает,
+ * что именно она показывает. Подставить ноль вместо пустой вероятности
+ * нельзя: ноль читается как «модель уверена, что это не свалка». */
+function confidence(p) {
+  const model = Number(p.probability);
+  if (Number.isFinite(model)) return { value: model, model: true };
+  const evidence = Number(p.evidence_score);
+  if (Number.isFinite(evidence)) return { value: evidence, model: false };
+  return { value: null, model: false };
+}
+
+const CONFIDENCE_LABEL = {
+  true: 'Уверенность модели',
+  false: 'Согласие признаков',
+};
+
 function levelClass(pct) {
   if (pct >= 60) return 'hi';
   if (pct >= 30) return 'mid';
@@ -190,7 +231,9 @@ function initMap() {
 }
 
 const objectStyle = (f) => {
-  const p = Number(f.properties?.probability) || 0.5;
+  // 0.5 как запасное значение: объект без оценки не должен ни выделяться,
+  // ни пропадать — он должен выглядеть ровно посередине.
+  const p = confidence(f.properties || {}).value ?? 0.5;
   return { color: '#b84a1f', weight: 1.6, fillColor: '#e0603a', fillOpacity: 0.18 + 0.4 * p };
 };
 
@@ -360,11 +403,23 @@ async function boot() {
   }
 }
 
+/** Границы ползунков-фильтров.
+ *  Через reduce, а не Math.min(...массив): спред раскладывает массив в
+ *  аргументы вызова, и на настоящем прогоне по области, где объектов
+ *  тысячи, вкладка падает с RangeError ещё до появления карты. */
+function minMax(values) {
+  let lo = Infinity;
+  let hi = -Infinity;
+  for (const v of values) {
+    if (v < lo) lo = v;
+    if (v > hi) hi = v;
+  }
+  return Number.isFinite(lo) ? [lo, hi] : [0, 1];
+}
+
 function computeBounds() {
-  const damages = state.features.map((f) => +f.properties.damage_p50 || 0);
-  const areas = state.features.map((f) => +f.properties.area_m2 || 0);
-  state.bounds.damage = [Math.min(...damages), Math.max(...damages)];
-  state.bounds.area = [Math.min(...areas), Math.max(...areas)];
+  state.bounds.damage = minMax(state.features.map((f) => +f.properties.damage_p50 || 0));
+  state.bounds.area = minMax(state.features.map((f) => +f.properties.area_m2 || 0));
 }
 
 // ═════════════════════════ Фильтры и список ═════════════════════════
@@ -378,7 +433,7 @@ function visibleFeatures() {
   return state.features.filter((x) => {
     const p = x.properties;
     if (q && !String(p.candidate_id || '').toLowerCase().includes(q)) return false;
-    if ((Number(p.probability) || 0) * 100 < f.prob) return false;
+    if ((confidence(p).value ?? 0) * 100 < f.prob) return false;
     if ((Number(p.damage_p50) || 0) < dmgMin) return false;
     if ((Number(p.area_m2) || 0) < areaMin) return false;
     if (f.verifiedOnly && (Number(p.verify_providers) || 0) < 2) return false;
@@ -393,19 +448,26 @@ function visibleFeatures() {
 function renderList() {
   const list = visibleFeatures();
   const key = state.sort;
-  state.list = [...list].sort((a, b) => key === 'break_date'
-    ? String(b.properties.break_date || '').localeCompare(String(a.properties.break_date || ''))
-    : (Number(b.properties[key]) || 0) - (Number(a.properties[key]) || 0));
+  state.list = [...list].sort((a, b) => {
+    if (key === 'break_date') {
+      return String(b.properties.break_date || '').localeCompare(String(a.properties.break_date || ''));
+    }
+    if (key === 'probability') {
+      return (confidence(b.properties).value ?? 0) - (confidence(a.properties).value ?? 0);
+    }
+    return (Number(b.properties[key]) || 0) - (Number(a.properties[key]) || 0);
+  });
 
   const selectedId = state.selected?.properties?.candidate_id;
 
   el('list').innerHTML = state.list.map((f) => {
     const p = f.properties;
-    const prob = p.probability != null ? Math.round(p.probability * 100) : null;
+    const conf = confidence(p);
+    const prob = conf.value != null ? Math.round(conf.value * 100) : null;
     return `<div class="row-item${p.candidate_id === selectedId ? ' on' : ''}" data-id="${p.candidate_id}">
       <div class="ri-top">
         <span class="ri-id">${p.candidate_id}</span>
-        ${prob != null ? `<span class="ri-prob ${levelClass(prob)}">${prob}%</span>` : ''}
+        ${prob != null ? `<span class="ri-prob ${levelClass(prob)}" title="${CONFIDENCE_LABEL[conf.model]}">${prob}%${conf.model ? '' : '*'}</span>` : ''}
       </div>
       <div class="ri-meta">
         <span>${num(p.area_m2)} м²</span><span>${kzt(p.damage_p50)}</span>
@@ -599,7 +661,7 @@ function bindSplitter() {
   box.addEventListener('pointerup', (e) => { dragging = false; box.releasePointerCapture(e.pointerId); });
 
   el('ba-swap').onclick = () => {
-    const years = Object.keys(WAYBACK).map(Number).sort();
+    const years = Object.keys(WAYBACK).map(Number).sort((a, b) => a - b);
     const i = years.indexOf(state.baYears[0]);
     state.baYears = [years[(i + 1) % (years.length - 1)], years[years.length - 1]];
     if (state.selected) renderBeforeAfter(polygonCenter(state.selected));
@@ -612,8 +674,14 @@ function renderObject(f) {
 
   el('obj-id').textContent = p.candidate_id || '—';
 
+  const conf = confidence(p);
   const badges = [];
-  if (p.probability >= 0.8) badges.push('<span class="badge hot">высокая уверенность</span>');
+  if (conf.value >= 0.8) {
+    badges.push(`<span class="badge hot">${conf.model ? 'высокая уверенность' : 'признаки согласны'}</span>`);
+  }
+  if (!conf.model && conf.value != null) {
+    badges.push('<span class="badge">оценка по признакам, не моделью</span>');
+  }
   if (p.verify_providers >= 2) badges.push(`<span class="badge ok">подтверждено: ${p.verify_providers}</span>`);
   if (p.is_demo) badges.push('<span class="badge">демо</span>');
   el('obj-badges').innerHTML = badges.join('');
@@ -622,11 +690,11 @@ function renderObject(f) {
     <div class="fact"><div class="k">Площадь</div><div class="v">${num(p.area_m2)} м²</div></div>
     <div class="fact"><div class="k">Масса</div><div class="v">${num(p.mass_t)} т</div></div>
     <div class="fact"><div class="k">Возник</div><div class="v">${humanDate(p.break_date)}</div></div>
-    <div class="fact"><div class="k">Уверенность</div><div class="v">${p.probability != null ? Math.round(p.probability * 100) + '%' : '—'}</div></div>
+    <div class="fact"><div class="k">${CONFIDENCE_LABEL[conf.model]}</div><div class="v">${conf.value != null ? Math.round(conf.value * 100) + '%' : '—'}</div></div>
     <div class="fact wide"><div class="k">Координаты</div><div class="v">${c[0].toFixed(6)}, ${c[1].toFixed(6)}</div></div>`;
 
   const appeared = yearOf(p.break_date);
-  const years = Object.keys(WAYBACK).map(Number).sort();
+  const years = Object.keys(WAYBACK).map(Number).sort((a, b) => a - b);
   state.baYears = [
     years.find((y) => y >= (appeared ? appeared - 2 : 2019)) || 2019,
     years[years.length - 1],
@@ -639,21 +707,35 @@ function renderObject(f) {
     <a href="https://www.openstreetmap.org/?mlat=${c[0]}&mlon=${c[1]}#map=18/${c[0]}/${c[1]}" target="_blank" rel="noopener">OSM</a>`;
 
   let agree = 0;
-  el('obj-signals').innerHTML = SIGNALS.map(([key, label, full]) => {
+  el('obj-signals').innerHTML = SIGNALS.map(([key, label, fallback]) => {
     const raw = Number(p[key]);
+    const full = signalScale(key, fallback);
     const pct = Math.round(Number.isFinite(raw) ? Math.max(0, Math.min(1, raw / full)) * 100 : 0);
     if (pct >= 30) agree++;
     return `<div class="sig${pct < 30 ? ' off' : ''}">
       <div class="sig-l"><span>${label}</span><span class="v ${levelClass(pct)}">${pct}%</span></div>
       ${trackHtml(pct)}</div>`;
   }).join('');
-  el('obj-agree').textContent = `${agree} из 5`;
+  // n_agreeing считается тем же кодом, что и evidence_score, — если оно
+  // приехало в данных, показываем его, а не пересчитанное по округлённым
+  // процентам: расхождение в одну единицу на защите пришлось бы объяснять.
+  const agreeing = Number.isFinite(Number(p.n_agreeing)) ? Number(p.n_agreeing) : agree;
+  el('obj-agree').textContent = `${agreeing} из 5`;
 
-  const drop = Number(p.ndvi_drop) || 0;
-  el('obj-ba').innerHTML = `
-    <div class="ba-c"><div class="k">NDVI до</div><div class="v">0.36</div></div>
+  // Уровни NDVI берутся из данных, а не подставляются. Раньше здесь стояло
+  // фиксированное «до = 0.36»: на защите это первый вопрос, на который
+  // нечего ответить, потому что цифра ничем не подтверждена.
+  const before = Number(p.ndvi_before);
+  const after = Number(p.ndvi_after);
+  const drop = Number(p.ndvi_drop);
+  el('obj-ba').innerHTML = Number.isFinite(before) && Number.isFinite(after) ? `
+    <div class="ba-c"><div class="k">NDVI до</div><div class="v">${before.toFixed(2)}</div></div>
     <div class="ba-a">→</div>
-    <div class="ba-c after"><div class="k">NDVI после</div><div class="v">${Math.max(0, 0.36 - drop).toFixed(2)}</div></div>`;
+    <div class="ba-c after"><div class="k">NDVI после</div><div class="v">${after.toFixed(2)}</div></div>`
+    : `
+    <div class="ba-c"><div class="k">Падение NDVI</div><div class="v">${Number.isFinite(drop) ? drop.toFixed(2) : '—'}</div></div>
+    <div class="ba-a"></div>
+    <div class="ba-c after"><div class="k">Уровни</div><div class="v muted">нет в данных</div></div>`;
 
   const p10 = +p.damage_p10, p50 = +p.damage_p50, p90 = +p.damage_p90;
   const pos = Number.isFinite(p10) && Number.isFinite(p90) && p90 > p10
@@ -692,6 +774,7 @@ el('obj-act').onclick = () => {
   const f = state.selected;
   if (!f) return;
   const p = f.properties;
+  const conf = confidence(p);
   const c = polygonCenter(f);
   el('act-print').innerHTML = `
     <div class="draft">ЧЕРНОВИК. Документ сформирован автоматически системой VANTAGE
@@ -711,7 +794,7 @@ el('obj-act').onclick = () => {
     <h2>2. Основания выявления</h2>
     <table>
       <tr><td>Метод</td><td>дистанционное зондирование: Sentinel-2, Sentinel-1, Landsat 8/9</td></tr>
-      <tr><td>Оценка модели</td><td>${p.probability != null ? Math.round(p.probability * 100) + '%' : '—'}</td></tr>
+      <tr><td>${conf.model ? 'Оценка модели' : 'Согласие физических признаков'}</td><td>${conf.value != null ? Math.round(conf.value * 100) + '%' : '—'}</td></tr>
       <tr><td>Подтверждено источников</td><td>${p.verify_providers ?? 0}</td></tr>
     </table>
 
@@ -970,18 +1053,27 @@ el('btn-offline').onclick = async () => {
 
   const b = L.latLngBounds(state.features.map(polygonCenter)).pad(0.2);
   const jobs = [];
-  for (const cfg of Object.values(BASEMAPS)) {
-    for (let z = 9; z <= 15; z++) {
+  // Глубина прогрева подбирается под размер области. На кольце вокруг
+  // города до z=15 это тысячи тайлов, на области целиком — сотни тысяч:
+  // такой прогрев не помещается в кеш браузера, вешает вкладку и выглядит
+  // для тайл-сервера как атака. Поэтому набор режется по бюджету.
+  outer:
+  for (let z = 9; z <= MAX_PREWARM_ZOOM; z++) {
+    for (const cfg of Object.values(BASEMAPS)) {
       const [x0, y0] = tileXY(b.getNorth(), b.getWest(), z);
       const [x1, y1] = tileXY(b.getSouth(), b.getEast(), z);
       for (let y = y0; y <= y1; y++) {
         for (let x = x0; x <= x1; x++) {
+          if (jobs.length >= PREWARM_BUDGET) break outer;
           jobs.push(cfg.url.replace('{z}', z).replace('{x}', x).replace('{y}', y));
         }
       }
     }
   }
 
+  if (jobs.length >= PREWARM_BUDGET) {
+    toast(`Область большая: прогреваю ${PREWARM_BUDGET} тайлов ближних масштабов.`, '', 6000);
+  }
   toast(`Скачиваю ${jobs.length} тайлов в кеш…`, '', 4000);
   let done = 0;
   for (let i = 0; i < jobs.length; i += 24) {

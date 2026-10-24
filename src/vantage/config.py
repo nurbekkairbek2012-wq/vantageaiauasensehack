@@ -98,6 +98,9 @@ class ChangeCfg(BaseModel):
     recovery_tolerance: float
     recovery_window_months: int
     breakpoint_zscore: float
+    # Сколько месяцев наблюдений после разрыва должно быть в ряду, чтобы
+    # вывод о необратимости вообще имел силу. Ноль означает «не проверять».
+    min_observed_after_months: int = 0
 
 
 class ContextCfg(BaseModel):

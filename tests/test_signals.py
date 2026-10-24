@@ -281,7 +281,7 @@ class TestSignalSeparation:
         # Свалка: те же оптические признаки плюс нестабильность и тепло
         landfill = physical_evidence(
             "L1", ndvi_drop=0.30, bsi_rise=0.22, pmli_response=0.10,
-            sar_incoherence=0.45, thermal_anomaly=2.5,
+            sar_incoherence=2.4, thermal_anomaly=2.5,
         )
         assert landfill.combined_score > quarry.combined_score * 1.5
         assert landfill.n_agreeing > quarry.n_agreeing
@@ -298,3 +298,107 @@ class TestSignalSeparation:
         quarry = physical_evidence("Q1", ndvi_drop=0.30, bsi_rise=0.22)
         landfill = physical_evidence("L1", ndvi_drop=0.30, bsi_rise=0.22)
         assert quarry.combined_score == pytest.approx(landfill.combined_score)
+
+
+class TestXarrayIsPreserved:
+    """Преобразования не должны терять обёртку xarray.
+
+    Ошибка, прожившая до первого настоящего прогона. ``to_kelvin`` и
+    ``to_db`` прогоняли вход через ``np.asarray`` и возвращали голый
+    массив: пропадали оси и координаты. Присвоить такой массив обратно в
+    Dataset нельзя — xarray падает с MissingDimensionsError.
+
+    Юнит-тесты этого не ловили, потому что подавали numpy, где разницы
+    нет. Куб из odc-stac — DataArray, и обе ветки, радарная и тепловая,
+    не могли отработать ни разу.
+    """
+
+    def _cube(self, value, dtype="float32"):
+        import xarray as xr
+
+        return xr.DataArray(
+            np.full((2, 3, 3), value, dtype=dtype),
+            dims=("time", "y", "x"),
+            coords={"time": np.array(["2020-01-01", "2020-02-01"], dtype="datetime64[D]")},
+        )
+
+    def test_thermal_keeps_dimensions(self):
+        from vantage.thermal import to_kelvin
+
+        result = to_kelvin(self._cube(30000, dtype="uint16"))
+        assert result.dims == ("time", "y", "x")
+        assert "time" in result.coords
+
+    def test_sar_keeps_dimensions(self):
+        from vantage.sar import to_db
+
+        result = to_db(self._cube(0.1))
+        assert result.dims == ("time", "y", "x")
+
+    def test_result_can_be_written_back_into_a_dataset(self):
+        """Именно эта операция и падала в build_thermal_stack."""
+        import xarray as xr
+
+        from vantage.thermal import to_kelvin
+
+        dataset = xr.Dataset({"lwir11": self._cube(30000, dtype="uint16")})
+        dataset["lwir11"] = to_kelvin(dataset["lwir11"])
+        assert dataset["lwir11"].dims == ("time", "y", "x")
+
+    def test_numpy_input_still_works(self):
+        from vantage.sar import to_db
+        from vantage.thermal import to_kelvin
+
+        assert to_kelvin(np.array([30000], dtype="uint16")).dtype == np.float32
+        assert np.isfinite(to_db(np.array([0.1], dtype="float32"))).all()
+
+
+class TestPolarizationAssetNames:
+    """Имена ассетов провайдера не совпадают с физическими именами.
+
+    В конфигурации поляризации записаны так, как их пишут в радиолокации:
+    ``VV`` и ``VH``. В коллекции ``sentinel-1-rtc`` на Planetary Computer
+    ассеты называются ``vv`` и ``vh``. odc-stac сверяет имена буквально и
+    падает с ``No such band/alias: VV`` — то есть радарная ветка не могла
+    отработать ни разу, и выяснилось это только на настоящем прогоне.
+
+    Чинится сопоставлением, а не правкой конфигурации: физическое имя
+    поляризации не зависит от того, кто раздаёт снимки.
+    """
+
+    class _Item:
+        def __init__(self, assets):
+            self.assets = dict.fromkeys(assets)
+
+    def test_lowercase_assets_are_matched(self):
+        from vantage.sar import resolve_polarization_assets
+
+        items = [self._Item(["vv", "vh", "tilejson"])]
+        assert resolve_polarization_assets(items, ["VV", "VH"]) == {"VV": "vv", "VH": "vh"}
+
+    def test_exact_names_pass_through(self):
+        from vantage.sar import resolve_polarization_assets
+
+        items = [self._Item(["VV", "VH"])]
+        assert resolve_polarization_assets(items, ["VV", "VH"]) == {"VV": "VV", "VH": "VH"}
+
+    def test_partial_coverage_is_allowed(self):
+        """У отдельных сцен бывает только одна поляризация — это не отказ."""
+        from vantage.sar import resolve_polarization_assets
+
+        items = [self._Item(["vv", "tilejson"])]
+        assert resolve_polarization_assets(items, ["VV", "VH"]) == {"VV": "vv"}
+
+    def test_several_items_are_probed(self):
+        from vantage.sar import resolve_polarization_assets
+
+        items = [self._Item(["vv"]), self._Item(["vh"])]
+        resolved = resolve_polarization_assets(items, ["VV", "VH"])
+        assert resolved == {"VV": "vv", "VH": "vh"}
+
+    def test_missing_polarizations_are_an_explicit_error(self):
+        from vantage.sar import resolve_polarization_assets
+
+        items = [self._Item(["rendered_preview", "tilejson"])]
+        with pytest.raises(KeyError, match="поляризац"):
+            resolve_polarization_assets(items, ["VV", "VH"])

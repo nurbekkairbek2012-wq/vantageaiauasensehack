@@ -24,7 +24,14 @@ from __future__ import annotations
 
 __version__ = "0.1.0"
 
-from .aoi import AOI
-from .config import Economics, Settings, load_economics, load_settings
+# Настройка окружения GDAL идёт до любых гео-импортов: pyogrio при импорте
+# выставляет путь к сертификатам через setdefault, и переопределить его
+# позже уже нельзя. Подробности и причина — в vantage/env.py.
+from .env import configure as _configure_env
+
+_configure_env()
+
+from .aoi import AOI  # noqa: E402
+from .config import Economics, Settings, load_economics, load_settings  # noqa: E402
 
 __all__ = ["AOI", "Economics", "Settings", "__version__", "load_economics", "load_settings"]

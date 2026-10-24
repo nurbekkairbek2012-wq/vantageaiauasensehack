@@ -156,19 +156,50 @@ def monthly_composite(ds, settings: Settings):
     return composite
 
 
-def build_feature_cube(aoi: AOI, settings: Settings, items: Sequence):
+def build_feature_cube(
+    aoi: AOI,
+    settings: Settings,
+    items: Sequence,
+    *,
+    keep_bands: bool = False,
+    variables: Sequence[str] | None = None,
+):
     """Полный путь от STAC-элементов до куба спектральных признаков.
 
     Возвращает Dataset с переменными ndvi, bsi, pmli, ndwi, ndmi, nbr
     по месячной сетке. Это вход детектора изменений.
+
+    ``items`` — это ``pystac.Item``, а не :class:`~vantage.catalog.SceneRef`:
+    загрузчику нужны ассеты с подписанными ссылками. Получить их можно
+    через :meth:`~vantage.catalog.StacCatalog.sentinel2_items`.
+
+    ``keep_bands`` оставляет в кубе и сами каналы — они нужны для чипов
+    сиамской сети. По умолчанию каналы выбрасываются: держать и их, и
+    индексы означает удвоить самый большой массив в пайплайне.
+
+    ``variables`` ограничивает набор индексов. Детектору нужны только
+    ndvi и bsi, и считать ради него ещё четыре индекса по всей плитке —
+    это лишние сотни мегабайт на ровном месте.
     """
     from .indices import compute_all
 
     ds = load_s2_stack(aoi, settings, items)
     ds = apply_scl_mask(ds, settings)
     ds = to_reflectance(ds)
-    ds = monthly_composite(ds, settings)
-    return compute_all(ds)
+    composite = monthly_composite(ds, settings)
+    features = compute_all(composite)
+
+    if variables is not None:
+        unknown = set(variables) - set(features.data_vars)
+        if unknown:
+            raise KeyError(f"неизвестные индексы: {sorted(unknown)}")
+        features = features[list(variables)]
+
+    if keep_bands:
+        import xarray as xr
+
+        features = xr.merge([composite[[b for b in composite.data_vars]], features])
+    return features
 
 
 def series_to_matrix(cube, variable: str) -> tuple[np.ndarray, np.ndarray, tuple[int, int]]:

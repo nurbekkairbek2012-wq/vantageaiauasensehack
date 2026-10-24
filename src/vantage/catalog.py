@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date
@@ -23,6 +24,9 @@ from .aoi import AOI
 from .config import Settings
 
 log = logging.getLogger(__name__)
+
+#: Пауза перед повтором запроса к STAC, множится на номер попытки.
+RETRY_BACKOFF_S = 3.0
 
 PLANETARY_COMPUTER_STAC = "https://planetarycomputer.microsoft.com/api/stac/v1"
 EARTH_SEARCH_STAC = "https://earth-search.aws.element84.com/v1"
@@ -80,6 +84,58 @@ class StacCatalog:
     #  Поиск
     # ------------------------------------------------------------------ #
 
+    def search_items(
+        self,
+        *,
+        collection: str,
+        aoi: AOI,
+        start: str,
+        end: str,
+        query: dict[str, Any] | None = None,
+        limit: int = 500,
+        attempts: int = 3,
+    ) -> list:
+        """Найти сцены и вернуть **сырые** ``pystac.Item``.
+
+        Отдельный метод от :meth:`search` нужен потому, что загрузчик
+        растров (``odc.stac.load``) принимает именно ``pystac.Item`` —
+        ему нужны ассеты с подписанными ссылками и проекционные
+        метаданные, которых в компактном :class:`SceneRef` нет.
+        Раньше в загрузчик передавались ``SceneRef``, и ветка растров
+        не могла отработать в принципе.
+
+        Ретраи здесь, а не у вызывающего: один сетевой таймаут не должен
+        ронять шаг пайплайна, который идёт часами.
+        """
+        last_error: Exception | None = None
+        for attempt in range(1, attempts + 1):
+            try:
+                search = self.client.search(
+                    collections=[collection],
+                    intersects=aoi.geo_interface,
+                    datetime=f"{start}/{end}",
+                    query=query or None,
+                    limit=limit,
+                )
+                items = list(search.items())
+                log.info(
+                    "STAC %s: найдено %d сцен для %s (%s..%s)",
+                    collection, len(items), aoi.name, start, end,
+                )
+                return items
+            except Exception as exc:  # сетевые ошибки pystac-client не типизирует
+                last_error = exc
+                # Клиент мог остаться в нерабочем состоянии — пересоздаём.
+                self._client = None
+                if attempt < attempts:
+                    delay = RETRY_BACKOFF_S * attempt
+                    log.warning(
+                        "STAC %s: попытка %d из %d не удалась (%s), повтор через %.0f с",
+                        collection, attempt, attempts, exc, delay,
+                    )
+                    time.sleep(delay)
+        raise RuntimeError(f"STAC {collection}: не удалось получить сцены") from last_error
+
     def search(
         self,
         *,
@@ -91,16 +147,27 @@ class StacCatalog:
         limit: int = 500,
     ) -> list[SceneRef]:
         """Найти сцены коллекции, пересекающие AOI в заданном интервале."""
-        search = self.client.search(
-            collections=[collection],
-            intersects=aoi.geo_interface,
-            datetime=f"{start}/{end}",
-            query=query or None,
-            limit=limit,
+        items = self.search_items(
+            collection=collection, aoi=aoi, start=start, end=end, query=query, limit=limit
         )
-        items = list(search.items())
-        log.info("STAC %s: найдено %d сцен для %s (%s..%s)", collection, len(items), aoi.name, start, end)
         return [_to_scene_ref(item) for item in items]
+
+    def sentinel2_items(self, aoi: AOI, settings: Settings) -> list:
+        """``pystac.Item`` Sentinel-2 с теми же фильтрами, что и :meth:`search_sentinel2`.
+
+        Фильтр по месяцам применяется здесь же: зимние снимки бесполезны
+        для спектральной ветки, а каждый лишний снимок в кубе — это
+        десятки HTTP-запросов при загрузке.
+        """
+        items = self.search_items(
+            collection=settings.sentinel2.collection,
+            aoi=aoi,
+            start=settings.time.start,
+            end=settings.time.end,
+            query={"eo:cloud_cover": {"lt": settings.sentinel2.max_scene_cloud_pct}},
+        )
+        allowed = set(settings.time.valid_months)
+        return [item for item in items if _item_month(item) in allowed]
 
     def search_sentinel2(self, aoi: AOI, settings: Settings) -> list[SceneRef]:
         """Sentinel-2 L2A с фильтром по облачности сцены.
@@ -142,6 +209,12 @@ class StacCatalog:
 # --------------------------------------------------------------------------- #
 #  Вспомогательное
 # --------------------------------------------------------------------------- #
+
+
+def _item_month(item) -> int:
+    """Месяц съёмки STAC-элемента."""
+    stamp = item.properties.get("datetime") or item.properties.get("start_datetime") or ""
+    return date.fromisoformat(stamp[:10]).month
 
 
 def _to_scene_ref(item) -> SceneRef:
@@ -190,6 +263,7 @@ def summarize(scenes: list[SceneRef]) -> dict[str, Any]:
 __all__ = [
     "EARTH_SEARCH_STAC",
     "PLANETARY_COMPUTER_STAC",
+    "RETRY_BACKOFF_S",
     "SceneRef",
     "StacCatalog",
     "filter_by_month",

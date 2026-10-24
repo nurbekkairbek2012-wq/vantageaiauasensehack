@@ -54,12 +54,29 @@ MIN_BACKSCATTER = 1e-5
 FULL_SCALE_INCOHERENCE_DB = 3.0
 
 
+def _float32(values):
+    """Привести к float32, не потеряв обёртку xarray.
+
+    ``np.asarray`` на DataArray возвращает голый массив: пропадают и оси,
+    и координаты. Присвоить такой массив обратно в Dataset уже нельзя —
+    xarray требует явных имён измерений и падает с MissingDimensionsError.
+
+    Ошибка была настоящей и жила ровно до первого прогона: юнит-тесты
+    подают сюда numpy, где разницы нет, а куб из odc-stac — DataArray.
+    То есть обе ветки, радарная и тепловая, не могли отработать ни разу,
+    и заметно это стало только на настоящих данных.
+    """
+    if hasattr(values, "dims"):  # xarray.DataArray
+        return values.astype("float32")
+    return np.asarray(values, dtype="float32")
+
+
 def to_db(backscatter):
     """Перевести линейное обратное рассеяние в децибелы.
 
     sigma0_dB = 10 * log10(sigma0)
     """
-    clipped = np.maximum(np.asarray(backscatter, dtype="float32"), MIN_BACKSCATTER)
+    clipped = np.maximum(_float32(backscatter), MIN_BACKSCATTER)
     return 10.0 * np.log10(clipped)
 
 
@@ -89,6 +106,10 @@ def temporal_incoherence(
             result[enough] = np.nanstd(backscatter_db[:, enough], axis=0)
     return result
 
+
+#: Сколько элементов каталога опросить, чтобы узнать имена ассетов.
+#: Одного мало: у отдельных сцен бывает только одна поляризация.
+_ASSET_PROBE_ITEMS = 5
 
 #: Минимальное число проходов в сегменте для устойчивой оценки дисперсии.
 #: Оценка СКО по выборке сама имеет разброс порядка sigma/sqrt(2n): при
@@ -169,6 +190,40 @@ def incoherence_strength(values, *, full_scale: float = FULL_SCALE_INCOHERENCE_D
         return np.clip(values / full_scale, 0.0, 1.0)
 
 
+def resolve_polarization_assets(items, polarizations) -> dict[str, str]:
+    """Сопоставить VV/VH фактическим именам ассетов в каталоге.
+
+    В конфигурации поляризации записаны так, как их пишут в радиолокации:
+    ``VV``, ``VH``. В коллекции ``sentinel-1-rtc`` на Planetary Computer
+    ассеты называются ``vv`` и ``vh`` — строчными. Загрузчик odc-stac
+    сверяет имена буквально и падает с ``No such band/alias: VV``.
+
+    Менять конфигурацию под конкретного провайдера неправильно: физическое
+    имя поляризации не зависит от того, кто раздаёт снимки, а следующий
+    каталог назовёт ассеты ещё как-нибудь. Поэтому сопоставление —
+    здесь, и оно без учёта регистра.
+
+    Возвращает ``{каноническое имя: имя ассета}``.
+    """
+    available: set[str] = set()
+    for item in list(items)[:_ASSET_PROBE_ITEMS]:
+        available.update(getattr(item, "assets", {}) or {})
+
+    resolved: dict[str, str] = {}
+    lowered = {name.lower(): name for name in available}
+    for canonical in polarizations:
+        actual = lowered.get(canonical.lower())
+        if actual is not None:
+            resolved[canonical] = actual
+
+    if not resolved:
+        raise KeyError(
+            f"ни одна из поляризаций {tuple(polarizations)} не нашлась среди "
+            f"ассетов {sorted(available)}"
+        )
+    return resolved
+
+
 def build_sar_stack(aoi, settings, items, *, chunks: dict | None = None):
     """Загрузить куб Sentinel-1 RTC и вернуть обратное рассеяние в дБ.
 
@@ -179,9 +234,10 @@ def build_sar_stack(aoi, settings, items, *, chunks: dict | None = None):
     """
     from odc.stac import load as odc_load
 
+    resolved = resolve_polarization_assets(items, settings.sentinel1.polarizations)
     ds = odc_load(
         items,
-        bands=tuple(settings.sentinel1.polarizations),
+        bands=tuple(resolved.values()),
         crs=settings.project.crs_working,
         resolution=settings.sentinel1.resolution_m,
         bbox=aoi.bbox,
@@ -189,7 +245,11 @@ def build_sar_stack(aoi, settings, items, *, chunks: dict | None = None):
         groupby="solar_day",
         resampling="bilinear",
     )
-    log.info("Загружен куб Sentinel-1: %d дат", ds.sizes.get("time", 0))
+    # Дальше по коду поляризации зовутся канонически, поэтому имена
+    # провайдера остаются только внутри загрузчика.
+    ds = ds.rename({actual: canonical for canonical, actual in resolved.items()})
+    log.info("Загружен куб Sentinel-1: %d дат, поляризации %s",
+             ds.sizes.get("time", 0), ", ".join(resolved))
 
     out = ds.copy()
     for name in out.data_vars:
@@ -221,6 +281,7 @@ __all__ = [
     "combined_polarization",
     "incoherence_change",
     "incoherence_strength",
+    "resolve_polarization_assets",
     "temporal_incoherence",
     "to_db",
 ]
