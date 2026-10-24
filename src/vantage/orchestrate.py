@@ -344,9 +344,13 @@ def finish_run(
         # разрешения тянутся для лучших кандидатов, а не для всех подряд,
         # и порядок «лучших» задаёт как раз вероятность модели.
         from .verify import attach_verification, verify_candidates
+        from .vlm import build_verifier
 
         try:
-            results = verify_candidates(kept, settings.verify)
+            # Зрительная модель подключается, только если есть ключ и пакет.
+            # Без неё доверификация работает на текстурном анализе — это
+            # штатный режим, а не деградация.
+            results = verify_candidates(kept, settings.verify, vlm=build_verifier())
             kept = attach_verification(kept, results, settings.verify)
             outcome.verified = int(sum(1 for r in results if r.n_providers))
             outcome.confirmed = int(

@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
+from pathlib import Path
 
 import geopandas as gpd
 import numpy as np
@@ -36,6 +37,11 @@ log = logging.getLogger(__name__)
 #: Запас вокруг облака объектов при загрузке. Тепловому признаку нужен фон
 #: вокруг объекта, иначе аномалию не с чем сравнивать.
 MARGIN_M = 1_500.0
+
+#: Сторона блока оптической загрузки. Двести квадратных километров одним
+#: куском — это двадцать минут непрерывной сети, и обрыв посреди стоит всей
+#: работы. Блок 5x5 км идёт три минуты и кладётся в кеш.
+BLOCK_M = 5_000.0
 
 
 @dataclass
@@ -84,32 +90,113 @@ def collect_optical(
     settings: Settings,
     *,
     aoi: AOI | None = None,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, object]:
+    block_m: float = BLOCK_M,
+    cache_dir: Path | None = None,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Полные ряды NDVI и BSI по каждому объекту за весь период.
 
-    Возвращает ``(ndvi, bsi, даты, куб)``. Разрезание на «до» и «после»
-    делается выше: индекс разрыва свой у каждого объекта.
+    Возвращает ``(ndvi, bsi, даты)``. Разрезание на «до» и «после» делается
+    выше: индекс разрыва свой у каждого объекта.
+
+    Считается блоками и с кешем на диске, и это не оптимизация. Один кусок
+    на все объекты — это две сотни квадратных километров и двадцать минут
+    непрерывной загрузки; любой обрыв сети посреди неё стоил бы всей
+    работы, и ровно это и произошло на первом запуске. Блок 5x5 км идёт
+    три минуты, кладётся в кеш и при повторе не перекачивается.
     """
+    from .signals import _spatial_blocks, bounding_aoi
+
+    area = aoi or bounding_aoi(candidates, settings, margin_m=MARGIN_M)
+    log.info("Пост-история: область %.1f км², блоками по %.0f м", area.area_km2, block_m)
+
+    cache = Path(cache_dir) if cache_dir else settings.paths.resolve("data_interim") / "posthistory"
+    cache.mkdir(parents=True, exist_ok=True)
+
+    working = candidates.to_crs(settings.project.crs_working)
+    blocks = _spatial_blocks(working, block_m)
+    log.info("Пост-история: %d блоков", len(blocks))
+
+    ndvi_out: np.ndarray | None = None
+    bsi_out: np.ndarray | None = None
+    dates_out: np.ndarray | None = None
+    failed: list[int] = []
+
+    for number, positions in enumerate(blocks, start=1):
+        subset = candidates.iloc[positions]
+        try:
+            ndvi, bsi, dates = _collect_block(subset, settings, cache, number, len(blocks))
+        except Exception as exc:
+            log.warning("[%d/%d] блок пропущен: %s", number, len(blocks), exc)
+            failed.append(number)
+            continue
+
+        if dates_out is None:
+            dates_out = dates
+            ndvi_out = np.full((len(candidates), dates.size), np.nan, dtype="float32")
+            bsi_out = np.full((len(candidates), dates.size), np.nan, dtype="float32")
+        elif dates.size != dates_out.size:
+            # Разные блоки могут дать разное число композитов: у одного
+            # месяц выбракован по облачности, у другого нет. Складывать их
+            # в одну матрицу по позиции нельзя — это молча сместит ряды.
+            log.warning(
+                "[%d/%d] блок пропущен: композитов %d, а у первого блока %d",
+                number, len(blocks), dates.size, dates_out.size,
+            )
+            failed.append(number)
+            continue
+
+        ndvi_out[positions] = ndvi  # type: ignore[index]
+        bsi_out[positions] = bsi  # type: ignore[index]
+
+    if dates_out is None:
+        raise RuntimeError("ни один блок не загрузился — нет сети или STAC недоступен")
+    if failed:
+        log.warning(
+            "Блоков не загрузилось: %d из %d. Повторный запуск доберёт их из сети, "
+            "уже посчитанные возьмутся из кеша.",
+            len(failed), len(blocks),
+        )
+    return ndvi_out, bsi_out, dates_out  # type: ignore[return-value]
+
+
+def _collect_block(
+    subset: gpd.GeoDataFrame,
+    settings: Settings,
+    cache: Path,
+    number: int,
+    total: int,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Один блок: из кеша или из сети."""
     from .catalog import StacCatalog
     from .raster import build_feature_cube
     from .signals import _transform_of, bounding_aoi
 
-    area = aoi or bounding_aoi(candidates, settings, margin_m=MARGIN_M)
-    log.info("Пост-история: область %.1f км²", area.area_km2)
+    area = bounding_aoi(subset, settings, margin_m=MARGIN_M / 3)
+    key = "_".join(f"{v:.4f}" for v in area.bbox)
+    target = cache / f"{key}.npz"
+
+    if target.exists():
+        stored = np.load(target, allow_pickle=False)
+        log.info("[%d/%d] блок из кеша, объектов %d", number, total, len(subset))
+        return stored["ndvi"], stored["bsi"], stored["dates"].astype("datetime64[D]")
 
     items = StacCatalog().sentinel2_items(area, settings)
     if not items:
-        raise RuntimeError("STAC не вернул сцен для области объектов")
+        raise RuntimeError("STAC не вернул сцен")
 
     cube = build_feature_cube(area, settings, items, variables=("ndvi", "bsi")).compute()
-    log.info("Пост-история: %d месячных композитов", cube.sizes.get("time", 0))
-
     transform = _transform_of(cube)
     crs = settings.project.crs_working
-    ndvi = _zonal_series(cube, "ndvi", candidates.geometry, transform, crs)
-    bsi = _zonal_series(cube, "bsi", candidates.geometry, transform, crs)
+    ndvi = _zonal_series(cube, "ndvi", subset.geometry, transform, crs)
+    bsi = _zonal_series(cube, "bsi", subset.geometry, transform, crs)
     dates = np.asarray(cube["time"].values, dtype="datetime64[D]")
-    return ndvi, bsi, dates, cube
+
+    np.savez_compressed(target, ndvi=ndvi, bsi=bsi, dates=dates.astype("int64"))
+    log.info(
+        "[%d/%d] блок посчитан: объектов %d, композитов %d",
+        number, total, len(subset), dates.size,
+    )
+    return ndvi, bsi, dates
 
 
 def collect_thermal_by_season(
@@ -190,7 +277,7 @@ def build_post_histories(
     """Собрать пост-историю по всем объектам одним проходом."""
     import pandas as pd
 
-    ndvi, bsi, dates, _cube = collect_optical(candidates, settings)
+    ndvi, bsi, dates = collect_optical(candidates, settings)
 
     thermal = None
     if with_thermal:
@@ -253,6 +340,7 @@ def assess_all(histories: list[PostHistory], settings: Settings):
 
 
 __all__ = [
+    "BLOCK_M",
     "MARGIN_M",
     "PostHistory",
     "assess_all",
