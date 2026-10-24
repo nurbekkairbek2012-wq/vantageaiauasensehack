@@ -155,7 +155,13 @@ class StacCatalog:
     #: Элементы, у которых метаданные есть, а ассеты отдают 404. Проверка
     #: делается один раз за процесс: сцены повторяются от плитки к плитке,
     #: и перепроверять их двадцать пять раз незачем.
+    #:
+    #: Рядом — множество уже проверенных и годных. Без него запоминались
+    #: только битые, а годные переспрашивались на каждой плитке: девятнадцать
+    #: свежих сцен по семь каналов, сто тридцать открытий по сети, и так
+    #: двадцать пять раз подряд.
     _broken_items: ClassVar[set[str]] = set()
+    _checked_items: ClassVar[set[str]] = set()
 
     #: Насколько свежие сцены проверять. Ассеты не доезжают до хранилища
     #: только у недавно принятых элементов; у снимка годичной давности
@@ -192,6 +198,7 @@ class StacCatalog:
             item
             for item in items
             if item.id not in self._broken_items
+            and item.id not in self._checked_items
             and item.datetime is not None
             and item.datetime >= fresh_after
         ]
@@ -223,6 +230,9 @@ class StacCatalog:
                     except Exception:  # важен факт отказа, а не его вид
                         self._broken_items.add(item.id)
                         break
+                else:
+                    # Все каналы открылись — больше эту сцену не трогаем.
+                    self._checked_items.add(item.id)
 
         if self._broken_items:
             kept = [item for item in items if item.id not in self._broken_items]

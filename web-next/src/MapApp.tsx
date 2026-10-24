@@ -44,6 +44,42 @@ const REMOVAL: Record<string, { label: string; tone: string; dot: string }> = {
    посмотреть глазами, а не повод спрятать число. */
 const DISAGREEMENT = 0.2;
 
+/* Проверка глазами по снимку 0,6 м на пиксель.
+ *
+ * Это сильнее любой модели, и не из-за качества модели. Модель обучена на
+ * слабой разметке и уверенно ошибается: складу под синей кровлей она
+ * ставит 0,97. Человек, посмотревший на тот же склад, ошибиться не может.
+ *
+ * Тридцать объектов проверяются за час, и на защите это разница между
+ * «модель считает» и «мы посмотрели каждый». Поэтому вердикт стоит в
+ * строке списка первым, а вероятность модели — после него.
+ */
+const VISUAL: Record<string, { short: string; full: string; tone: string; dot: string }> = {
+  landfill: {
+    short: 'свалка',
+    full: 'Проверено глазами на снимке 0,6 м/пиксель: это свалка.',
+    tone: 'text-line',
+    dot: '#a78bfa',
+  },
+  not_landfill: {
+    short: 'не свалка',
+    full: 'Проверено глазами: это не свалка — постройка, промплощадка, стройка или водоём. Детектор нашёл здесь необратимое исчезновение растительности, и это правда: именно так выглядит любая застройка. Отсечь такое должен был контекстный фильтр по OpenStreetMap, но новая застройка вокруг Астаны в него не нанесена.',
+    tone: 'text-amber',
+    dot: '#e3b341',
+  },
+  unclear: {
+    short: 'не разобрать',
+    full: 'Снимка недостаточно: похоже на нарушенный грунт, но отличить свалку от отвала или заброшенной площадки по одному снимку нельзя. Нужен выезд.',
+    tone: 'text-muted',
+    dot: '#8578ad',
+  },
+};
+
+const visualOf = (p: Props) => {
+  const code = typeof p.visual_check === 'string' ? p.visual_check : '';
+  return VISUAL[code] ?? null;
+};
+
 const SIGNALS: [string, string, number][] = [
   ['ndvi_drop', 'Падение вегетации', 0.35],
   ['bsi_rise', 'Открытый грунт', 0.25],
@@ -97,9 +133,10 @@ function humanDate(v: unknown) {
   return Number.isNaN(d.getTime()) ? '—' : `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-type SortKey = 'probability' | 'evidence_score' | 'damage_p50' | 'area_m2' | 'break_date' | 'risk_of_cover';
+type SortKey = 'visual' | 'probability' | 'evidence_score' | 'damage_p50' | 'area_m2' | 'break_date' | 'risk_of_cover';
 
 const SORTS: [SortKey, string][] = [
+  ['visual', 'сначала подтверждённые глазами'],
   ['risk_of_cover', 'сначала подозрение на присыпку'],
   ['probability', 'по вероятности модели'],
   ['evidence_score', 'по согласию признаков'],
@@ -113,7 +150,7 @@ export default function MapApp() {
   const [registry, setRegistry] = useState<GeoJSON.FeatureCollection | null>(null);
   const [risk, setRisk] = useState<GeoJSON.FeatureCollection | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
-  const [sort, setSort] = useState<SortKey>('risk_of_cover');
+  const [sort, setSort] = useState<SortKey>('visual');
   const [basemap, setBasemap] = useState<Basemap>('sat');
   // Прогноз выключен по умолчанию. Он покрывает всю область сплошной
   // заливкой и на старте прячет то, ради чего карту открыли, — сами
@@ -139,6 +176,16 @@ export default function MapApp() {
   const rows = useMemo(() => {
     const list = [...(candidates?.features ?? [])] as Feature[];
     list.sort((a, b) => {
+      if (sort === 'visual') {
+        // Подтверждённые вверх, отвергнутые вниз: список читается сверху,
+        // и первым должно стоять то, по чему можно ехать.
+        const weight = (f: Feature) =>
+          f.properties.visual_check === 'landfill' ? 3
+          : f.properties.visual_check === 'unclear' ? 2
+          : f.properties.visual_check === 'not_landfill' ? 0 : 1;
+        const diff = weight(b) - weight(a);
+        return diff || (Number(b.properties.area_m2) || 0) - (Number(a.properties.area_m2) || 0);
+      }
       if (sort === 'risk_of_cover') {
         // Подозрение на присыпку выше всего: по такому объекту может быть
         // закрыт акт, а отходы на месте. Внутри группы — по ущербу.
@@ -166,12 +213,18 @@ export default function MapApp() {
     row?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, [selected]);
 
+  /* Считаем отдельно найденное и подтверждённое. Показывать одно число
+     «30 объектов» больше нельзя: проверка глазами отвергла восемнадцать
+     из них, и цифра в шапке стала бы обещанием, которое карта тут же
+     опровергает — достаточно открыть первый попавшийся объект. */
   const totals = useMemo(() => {
     const list = candidates?.features ?? [];
+    const real = list.filter((f) => f.properties?.visual_check !== 'not_landfill');
     return {
       count: list.length,
-      damage: list.reduce((s, f) => s + (Number(f.properties?.damage_p50) || 0), 0),
-      area: list.reduce((s, f) => s + (Number(f.properties?.area_m2) || 0), 0),
+      confirmed: list.filter((f) => f.properties?.visual_check === 'landfill').length,
+      damage: real.reduce((s, f) => s + (Number(f.properties?.damage_p50) || 0), 0),
+      area: real.reduce((s, f) => s + (Number(f.properties?.area_m2) || 0), 0),
     };
   }, [candidates]);
 
@@ -184,8 +237,12 @@ export default function MapApp() {
       <Nav current="map">
         <dl className="flex min-w-0 flex-wrap items-baseline gap-x-6 gap-y-1 text-sm">
           <div className="flex items-baseline gap-2">
-            <dt className="text-muted-2">Объектов</dt>
+            <dt className="text-muted-2">Найдено</dt>
             <dd className="tabular font-display text-lg text-line">{totals.count}</dd>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <dt className="text-muted-2">Подтверждено глазами</dt>
+            <dd className="tabular font-display text-lg text-violet-lit">{totals.confirmed}</dd>
           </div>
           <div className="flex items-baseline gap-2">
             <dt className="text-muted-2">Площадь</dt>
@@ -218,8 +275,8 @@ export default function MapApp() {
               стоит дешевле, чем объяснение на защите. */}
           <div className="flex shrink-0 items-baseline justify-between gap-3 border-b border-grid px-4 py-1.5 text-[11px] uppercase tracking-[0.1em] text-muted-2">
             <span>Объект</span>
-            <span title="Вневыборочная вероятность модели: оценку дала модель, которая этот объект на обучении не видела">
-              Вероятность
+            <span title="Проверка глазами по снимку 0,6 м на пиксель">
+              Проверено глазами
             </span>
           </div>
 
@@ -256,12 +313,23 @@ export default function MapApp() {
                   >
                     <div className="flex items-baseline justify-between gap-3">
                       <span className="tabular font-display text-base text-line">{id}</span>
-                      <span
-                        className={`tabular text-sm ${hasModel ? 'text-violet-lit' : 'text-muted-2'}`}
-                        title={hasModel ? 'вероятность модели' : 'модель по этому объекту не высказывалась'}
-                      >
-                        {hasModel ? `${Math.round(model * 100)}%` : '—'}
-                      </span>
+                      {visualOf(p) ? (
+                        <span className={`flex items-center gap-1.5 text-sm ${visualOf(p)!.tone}`}>
+                          <span
+                            aria-hidden="true"
+                            className="inline-block h-2 w-2 rounded-full"
+                            style={{ background: visualOf(p)!.dot }}
+                          />
+                          {visualOf(p)!.short}
+                        </span>
+                      ) : (
+                        <span
+                          className={`tabular text-sm ${hasModel ? 'text-violet-lit' : 'text-muted-2'}`}
+                          title="вероятность модели"
+                        >
+                          {hasModel ? `${Math.round(model * 100)}%` : '—'}
+                        </span>
+                      )}
                     </div>
                     {/* Два ряда с постоянным составом, а не один плывущий.
                         При переносе по месту «признаков 4 из 5» уезжало на
@@ -351,9 +419,15 @@ export default function MapApp() {
             <div className="px-5 py-8">
               <h2 className="text-xl text-line">Выберите объект</h2>
               <p className="mt-3 max-w-[34ch] text-sm text-muted">
-                В реестре слева {totals.count} объектов, отобранных из 429
-                найденных. По каждому известны дата возникновения, площадь,
-                оценка ущерба и то, какие признаки за него сработали.
+                В реестре слева {totals.count} объектов, отобранных из 429.
+                Каждый просмотрен глазами на снимке 0,6 м на пиксель:{' '}
+                <span className="text-line">{totals.confirmed}</span> подтверждены как
+                свалки, остальные оказались постройками, промплощадками и
+                нарушенным грунтом либо требуют выезда.
+              </p>
+              <p className="mt-3 max-w-[34ch] text-sm leading-snug text-muted-2">
+                Отвергнутые оставлены на карте намеренно. Ошибка, которую
+                видно и объяснили, честнее списка, из которого её вычистили.
               </p>
             </div>
           ) : (
@@ -394,6 +468,23 @@ function ObjectCard({ f }: { f: Feature }) {
           Вневыборочная: каждый объект оценён моделью, которая его на
           обучении не встречала. Первая версия показывала медиану 0,999 —
           модель просто помнила свои же обучающие примеры. */}
+      {visualOf(p) && (
+        <div className="mt-3 rounded-sm border border-grid bg-soot-2 px-3 py-2.5">
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="text-xs text-muted-2">Проверено глазами</span>
+            <span className={`flex items-center gap-1.5 text-sm ${visualOf(p)!.tone}`}>
+              <span
+                aria-hidden="true"
+                className="inline-block h-2 w-2 rounded-full"
+                style={{ background: visualOf(p)!.dot }}
+              />
+              {visualOf(p)!.short}
+            </span>
+          </div>
+          <p className="mt-1.5 text-xs leading-snug text-muted-2">{visualOf(p)!.full}</p>
+        </div>
+      )}
+
       <div className="mt-3 rounded-sm border border-grid bg-soot-2 px-3 py-2.5">
         <div className="flex items-baseline justify-between gap-3">
           <span className="text-xs text-muted-2">Вероятность модели</span>

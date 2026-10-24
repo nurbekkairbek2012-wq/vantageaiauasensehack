@@ -1,43 +1,35 @@
-16:42:59 Кольцо: 406 км²
-16:42:59 [1/25] astana_north_x000y000 — из кеша, кандидатов 145
-16:42:59 [2/25] astana_north_x001y000 — из кеша, кандидатов 51
-16:42:59 [3/25] astana_north_x002y000 — из кеша, кандидатов 60
-16:42:59 [4/25] astana_north_x003y000 — из кеша, кандидатов 19
-16:42:59 [5/25] astana_north_x004y000 — из кеша, кандидатов 3
-16:43:13 STAC sentinel-2-l2a: найдено 803 сцен для astana_north_x000y001 (2018-01-01..2026-08-01)
-16:44:31 Загружен куб S2: 441 дат, 483 x 531 пикселей
-16:44:34 Месячных композитов после отбраковки: 61
+18:21:19 Кольцо: 406 км²
+18:21:19 [1/25] astana_north_x000y000 — из кеша, кандидатов 145
+18:21:19 [2/25] astana_north_x001y000 — из кеша, кандидатов 51
+18:21:19 [3/25] astana_north_x002y000 — из кеша, кандидатов 60
+18:21:19 [4/25] astana_north_x003y000 — из кеша, кандидатов 19
+18:21:19 [5/25] astana_north_x004y000 — из кеша, кандидатов 3
+18:21:19 [6/25] astana_north_x000y001 — из кеша, кандидатов 76
+18:21:19 [7/25] astana_north_x001y001 — из кеша, кандидатов 51
+18:21:40 STAC sentinel-2-l2a: найдено 803 сцен для astana_north_x002y001 (2018-01-01..2026-08-01)
+18:23:07 Загружен куб S2: 441 дат, 536 x 536 пикселей
+18:23:29 Месячных композитов после отбраковки: 61
 C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\warp.py:387: NotGeoreferencedWarning: Dataset has no geotransform, gcps, or rpcs. The identity matrix will be returned.
   dest = _reproject(
-16:55:14 CPLE_AppDefined:Request for 97678919-98595631 failed with response_code=206
-16:55:14 CPLE_AppDefined:Request for 70050243-70787259 failed with response_code=206
-16:55:14 CPLE_AppDefined:Request for 75737230-76506185 failed with response_code=206
-16:55:14 CPLE_AppDefined:Request for 113267415-114182262 failed with response_code=206
-16:55:14 CPLE_AppDefined:Request for 122466457-123377893 failed with response_code=206
-16:55:14 CPLE_AppDefined:Request for 90742809-91663007 failed with response_code=206
-16:55:14 CPLE_AppDefined:Request for 98586981-99512639 failed with response_code=206
-16:55:14 CPLE_AppDefined:Request for 90630227-91546293 failed with response_code=0
-16:55:14 CPLE_AppDefined:Request for 98176249-99093237 failed with response_code=0
-16:55:14 CPLE_AppDefined:Request for 108790624-109693981 failed with response_code=206
-16:55:14 CPLE_AppDefined:Request for 113900520-114814387 failed with response_code=0
-16:55:14 CPLE_AppDefined:Request for 87431014-88343553 failed with response_code=0
-16:55:14 CPLE_AppDefined:Request for 122968514-123896542 failed with response_code=0
-16:55:14 CPLE_AppDefined:Request for 117711697-118622817 failed with response_code=206
-16:55:14 CPLE_AppDefined:Request for 94806765-95723963 failed with response_code=0
-16:55:14 CPLE_AppDefined:Request for 114099410-115011100 failed with response_code=0
-16:55:14 CPLE_AppDefined:Request for 123188906-124116092 failed with response_code=0
-16:55:14 CPLE_AppDefined:Request for 88698862-89437240 failed with response_code=0
-16:55:14 CPLE_AppDefined:Request for 95882310-96620920 failed with response_code=0
-16:55:14 CPLE_AppDefined in HTTP error code: 0 - https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2022/06/18/S2A_MSIL2A_20220618T061641_N0400_R034_T42UXB_20220620T041159.SAFE/GRANULE/L2A_T42UXB_A036496_20220618T061641/IMG_DATA/R10m/T42UXB_20220618T061641_B08_10m.tif?st=2026-08-20T11%3A43%3A12Z&se=2026-08-21T12%3A28%3A12Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-21T11%3A33%3A47Z&ske=2026-08-28T11%3A33%3A47Z&sks=b&skv=2025-07-05&sig=dhtivtkpkmC%2BmcSbYRJroKl%2BarkbGhmMUiXdwpK5BGg%3D. Retrying again in 0.5 secs
-16:55:14 CPLE_AppDefined in HTTP error code: 0 - https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2022/06/11/S2A_MSIL2A_20220611T062641_N0400_R077_T42UXB_20220612T041103.SAFE/GRANULE/L2A_T42UXB_A036396_20220611T062959/IMG_DATA/R10m/T42UXB_20220611T062641_B08_10m.tif?st=2026-08-20T11%3A43%3A12Z&se=2026-08-21T12%3A28%3A12Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-21T11%3A33%3A47Z&ske=2026-08-28T11%3A33%3A47Z&sks=b&skv=2025-07-05&sig=dhtivtkpkmC%2BmcSbYRJroKl%2BarkbGhmMUiXdwpK5BGg%3D. Retrying again in 0.5 secs
-17:03:52 Детекция изменений: {'pixels': 256473, 'detected': 3922, 'detected_pct': 1.529, 'rejected_recovered': 215718, 'insufficient_data': 0}
-17:03:55 Связных областей после чистки: 76
-17:03:56 Кандидатов собрано: 76, суммарная площадь 19.9 га
-17:06:43 Извлечено 76 пар чипов, 9 каналов
-17:06:44 Сохранено 76 пар чипов в data\chips\astana_north_x000y001.npz
-17:06:44 Created 76 records
-17:06:44 Записано 76 кандидатов в outputs_real\tiles\astana_north_x000y001.geojson
-17:06:44 [6/25] astana_north_x000y001 — кандидатов 76 (1425 с от начала)
-17:06:57 STAC sentinel-2-l2a: найдено 803 сцен для astana_north_x001y001 (2018-01-01..2026-08-01)
-17:07:26 Загружен куб S2: 441 дат, 534 x 534 пикселей
-17:07:30 Месячных композитов после отбраковки: 61
+18:40:52 CPLE_AppDefined:Request for 86715217-87404726 failed with response_code=206
+18:40:55 CPLE_AppDefined:Request for 76452865-77217416 failed with response_code=206
+18:40:56 CPLE_AppDefined:Request for 98445025-99223742 failed with response_code=206
+18:40:57 CPLE_AppDefined:Request for 72746154-73494453 failed with response_code=206
+18:40:58 CPLE_AppDefined:Request for 69425906-70120802 failed with response_code=206
+18:41:01 CPLE_AppDefined:Request for 100226896-101020736 failed with response_code=206
+18:41:03 CPLE_AppDefined:Request for 73217732-73974062 failed with response_code=206
+18:41:09 CPLE_AppDefined:Request for 78801932-79595611 failed with response_code=206
+18:41:35 CPLE_AppDefined:Request for 109878615-110707430 failed with response_code=206
+18:41:48 CPLE_AppDefined:Request for 89884035-90639492 failed with response_code=206
+18:41:52 CPLE_AppDefined:Request for 93568733-94313667 failed with response_code=206
+18:41:55 CPLE_AppDefined:Request for 76452865-77217416 failed with response_code=206
+18:41:56 CPLE_AppDefined:Request for 79223254-80012843 failed with response_code=0
+18:41:56 CPLE_AppDefined:Request for 98445025-99223742 failed with response_code=206
+18:41:57 CPLE_AppDefined:Request for 78752180-79525868 failed with response_code=206
+18:42:01 CPLE_AppDefined:Request for 100226896-101020736 failed with response_code=206
+18:42:09 CPLE_AppDefined:Request for 72678336-73426094 failed with response_code=206
+18:42:09 CPLE_AppDefined:Request for 78801932-79595611 failed with response_code=206
+18:42:35 CPLE_AppDefined:Request for 109878615-110707430 failed with response_code=206
+18:42:48 CPLE_AppDefined:Request for 89884035-90639492 failed with response_code=206
+18:43:46 CPLE_AppDefined:Request for 77862821-78658780 failed with response_code=206
+18:43:53 CPLE_AppDefined:Request for 90795610-91535479 failed with response_code=206
