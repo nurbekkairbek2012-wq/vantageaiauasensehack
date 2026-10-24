@@ -145,6 +145,10 @@ def main() -> int:
     step("Чипы для разметки", [python, "scripts/export_chips.py"])
     step("Указатель для бота", [python, "scripts/make_bot_index.py"])
     build_cities()
+    # Пересборка сайта нужна до записи: ролик пишется по собранной
+    # странице, а данные на ней обновились только что.
+    step("Сборка сайта", ["npm", "run", "build", "--prefix", "web-next"])
+    step("Запись таймлапса", [python, "scripts/make_timelapse.py"])
 
     log.info("")
     log.info("── Сводка ─────────────────────────────────────────")

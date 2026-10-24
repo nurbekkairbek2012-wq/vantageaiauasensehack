@@ -78,7 +78,7 @@ export async function recordMap(container: HTMLElement, options: Options): Promi
 
   const stream = frame.captureStream(30);
   const mime = pickMime();
-  const recorder = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 6_000_000 } : undefined);
+  const recorder = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 4_000_000 } : undefined);
   const chunks: BlobPart[] = [];
   recorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data); };
 

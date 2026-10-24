@@ -54,6 +54,9 @@ export default function Timelapse() {
   const [time, setTime] = useState<number | null>(null);
   const [playing, setPlaying] = useState(false);
   const [recording, setRecording] = useState(false);
+  /* Готовый файл, записанный при сборке. Пока он не проверен — null;
+     проверка занимает один запрос HEAD и делается один раз. */
+  const [ready, setReady] = useState<boolean | null>(null);
 
   /* Целые годы для подписей. Время внутри дробное — иначе не бывает
      плавности, — но кнопка «2019.5833333333333» это не год, а протечка
@@ -77,6 +80,22 @@ export default function Timelapse() {
     () => points.filter((p) => p.year != null && p.year <= at).length,
     [points, at],
   );
+
+  /* Есть ли заранее записанный ролик.
+   *
+   * Запись в браузере идёт в реальном времени: восемнадцать секунд ролика
+   * пишутся восемнадцать секунд, и ускорить это нельзя — MediaRecorder
+   * ставит метки по стенным часам. Поэтому ждёт сборка, а не посетитель:
+   * scripts/make_timelapse.py кладёт готовый файл рядом, и кнопка
+   * становится обычной ссылкой.
+   *
+   * Живая запись остаётся запасным путём: файла может не быть, если
+   * прогон закончился, а ролик перезаписать забыли. */
+  useEffect(() => {
+    fetch('./timelapse.webm', { method: 'HEAD' })
+      .then((r) => setReady(r.ok))
+      .catch(() => setReady(false));
+  }, []);
 
   // ── данные ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -300,16 +319,25 @@ export default function Timelapse() {
           {playing ? 'Стоп' : 'Проиграть'}
         </button>
 
-        {canRecord() && (
+        {ready ? (
+          <a
+            href="./timelapse.webm"
+            download="vantage-ai-timelapse.webm"
+            className="rounded-sm border border-grid px-4 py-2.5 text-sm text-muted no-underline transition-colors duration-150 hover:border-violet hover:text-line"
+          >
+            Скачать видео
+          </a>
+        ) : ready === false && canRecord() ? (
           <button
             type="button"
             onClick={download}
             disabled={recording}
+            title="Готовый файл не найден — ролик запишется прямо здесь, это займёт около двадцати секунд"
             className="cursor-pointer rounded-sm border border-grid px-4 py-2.5 text-sm text-muted transition-colors duration-150 hover:border-violet hover:text-line disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {recording ? 'Записываю…' : 'Скачать видео'}
+            {recording ? 'Записываю…' : 'Записать видео'}
           </button>
-        )}
+        ) : null}
 
         <input
           type="range"
