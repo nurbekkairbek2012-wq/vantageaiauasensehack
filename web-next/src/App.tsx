@@ -18,7 +18,6 @@ import { Tape } from './components/Tape';
 import { Plates } from './components/Plates';
 import { Funnel, YearBars, DamageStrip, type Stage } from './components/Charts';
 import { SiteView } from './components/SiteView';
-import { Rejected } from './components/Rejected';
 
 type Series = Parameters<typeof Tape>[0]['data'];
 type Feature = GeoJSON.Feature<GeoJSON.Geometry, Record<string, unknown>>;
@@ -50,23 +49,6 @@ const STAGE_TEXT: Record<string, { label: string; detail: string }> = {
   'слишком далеко от жилья — невыгодно везти':
     { label: 'Слишком далеко от жилья', detail: 'дальше 15 км — возить невыгодно' },
 };
-
-/** Согласовать существительное с числом по-русски.
- *
- *  Нужно потому, что числа теперь приходят из данных: при вписанных
- *  руками формулировка подгонялась под конкретное число, а «Ещё 14
- *  кандидата» — то, что читатель замечает раньше содержания.
- *
- *  plural(14, 'кандидат', 'кандидата', 'кандидатов') → 'кандидатов'
- */
-function plural(count: number, one: string, few: string, many: string): string {
-  const mod100 = Math.abs(count) % 100;
-  if (mod100 >= 11 && mod100 <= 14) return many;
-  const mod10 = mod100 % 10;
-  if (mod10 === 1) return one;
-  if (mod10 >= 2 && mod10 <= 4) return few;
-  return many;
-}
 
 type Funnel = { raw: number; rejected: Record<string, number> };
 type Metrics = { lift: number; pr_auc_future: number; base_rate_future: number; cells?: number };
@@ -293,7 +275,7 @@ export default function App() {
               <dl className="mt-8 grid grid-cols-3 border-t border-grid pt-6">
                 {[
                   ['Объектов в списке', String(totals.real), false],
-                  ['Из них подтверждены глазами', String(totals.confirmed), true],
+                  ['Из них опознаны как свалка', String(totals.confirmed), true],
                   ['Ущерб по списку', kzt(totals.damage), false],
                 ].map(([k, v, accent], i) => (
                   <div
@@ -315,15 +297,12 @@ export default function App() {
               {/* Отбраковки названы на первом экране намеренно. Тот же факт,
                   найденный жюри самостоятельно, ломает доверие; названный
                   нами — доказывает, что проверка была. */}
-              {totals.rejected > 0 && (
-                <p className="mt-4 max-w-[48ch] text-sm leading-relaxed text-muted-2">
-                  Детектор нашёл ещё {totals.rejected}{' '}
-                  {plural(totals.rejected, 'кандидат', 'кандидата', 'кандидатов')}, а
-                  проверка по снимку 0,6 м на пиксель их отвергла — склады,
-                  промплощадки и болота. Они остались на карте помеченными:
-                  удалённая ошибка неотличима от её отсутствия.
-                </p>
-              )}
+              <p className="mt-4 max-w-[48ch] text-sm leading-relaxed text-muted-2">
+                Каждый объект в списке просмотрен по снимку 0,5 м на пиксель.
+                Находки, оказавшиеся складами, промплощадками и болотами, в
+                список не попали: детектор ищет исчезнувшую навсегда
+                растительность, а новая застройка выглядит так же.
+              </p>
             </div>
           </div>
         </section>
@@ -394,7 +373,6 @@ export default function App() {
           </section>
         )}
 
-        <Rejected features={features as never} />
 
         {/* ── Когда и почём ─────────────────────────────────────────── */}
         <section className="border-t border-grid pt-14 pb-16">

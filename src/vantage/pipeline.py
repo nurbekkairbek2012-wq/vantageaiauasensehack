@@ -422,16 +422,41 @@ class Pipeline:
         )
 
         grid = build_grid(aoi or self.aoi, self.settings.risk.grid_cell_m)
+
+        # Отвергнутые проверкой объекты из обучения исключаются.
+        #
+        # Без этого модель училась на всех находках подряд, а среди них две
+        # трети — склады, промплощадки и стройки. Она добросовестно
+        # предсказывала, ГДЕ ПОЯВИТСЯ ЗАСТРОЙКА, и это было видно на карте:
+        # тепло ложилось на промзоны.
+        #
+        # Колонка появляется только после переноса разметки, то есть на
+        # первом прогоне её нет и учиться приходится на всём. На втором и
+        # дальше — уже на проверенном. Поэтому пересчёт после разметки не
+        # роскошь, а обязательный шаг.
+        trusted = candidates
+        if "visual_check" in candidates.columns:
+            trusted = candidates[candidates["visual_check"] != "not_landfill"]
+            log.info(
+                "Прогноз учится на %d объектах из %d — отвергнутые проверкой исключены",
+                len(trusted), len(candidates),
+            )
+            if len(trusted) < 5:
+                log.warning(
+                    "Проверенных объектов %d — для обучения прогноза этого мало, "
+                    "качество будет неустойчивым", len(trusted),
+                )
+
         features = spatial_features(
             grid,
             roads=None if layers is None else layers.roads,
             settlements=None if layers is None else layers.settlements,
-            existing=candidates,
+            existing=trusted,
         )
 
         # Отсечка: две трети периода на обучение, треть на проверку прогноза
         cutoff = _two_thirds_date(self.settings.time.start, self.settings.time.end)
-        y_train, y_future = temporal_labels(grid, candidates, cutoff=cutoff)
+        y_train, y_future = temporal_labels(grid, trusted, cutoff=cutoff)
 
         model = train_risk_model(features, y_train, y_future, self.settings.risk, cutoff=cutoff)
         private = predict_risk(model, features)

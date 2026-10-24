@@ -58,13 +58,13 @@ const DISAGREEMENT = 0.2;
 const VISUAL: Record<string, { short: string; full: string; tone: string; dot: string }> = {
   landfill: {
     short: 'свалка',
-    full: 'Проверено глазами на снимке 0,6 м/пиксель: это свалка.',
+    full: 'Проверено по снимку на снимке 0,6 м/пиксель: это свалка.',
     tone: 'text-line',
     dot: '#a78bfa',
   },
   not_landfill: {
     short: 'не свалка',
-    full: 'Проверено глазами: это не свалка — постройка, промплощадка, стройка или водоём. Детектор нашёл здесь необратимое исчезновение растительности, и это правда: именно так выглядит любая застройка. Отсечь такое должен был контекстный фильтр по OpenStreetMap, но новая застройка вокруг Астаны в него не нанесена.',
+    full: 'Проверено по снимку: это не свалка — постройка, промплощадка, стройка или водоём. Детектор нашёл здесь необратимое исчезновение растительности, и это правда: именно так выглядит любая застройка. Отсечь такое должен был контекстный фильтр по OpenStreetMap, но новая застройка вокруг Астаны в него не нанесена.',
     tone: 'text-amber',
     dot: '#e3b341',
   },
@@ -152,7 +152,7 @@ function humanDate(v: unknown) {
 type SortKey = 'visual' | 'probability' | 'evidence_score' | 'damage_p50' | 'area_m2' | 'break_date' | 'risk_of_cover';
 
 const SORTS: [SortKey, string][] = [
-  ['visual', 'сначала подтверждённые глазами'],
+  ['visual', 'сначала опознанные как свалка'],
   ['risk_of_cover', 'сначала подозрение на присыпку'],
   ['probability', 'по вероятности модели'],
   ['evidence_score', 'по согласию признаков'],
@@ -283,7 +283,7 @@ export default function MapApp() {
             <dd className="tabular font-display text-lg text-line">{totals.count}</dd>
           </div>
           <div className="flex items-baseline gap-2">
-            <dt className="text-muted-2">Подтверждено глазами</dt>
+            <dt className="text-muted-2">Опознано как свалка</dt>
             <dd className="tabular font-display text-lg text-violet-lit">{totals.confirmed}</dd>
           </div>
           <div className="flex items-baseline gap-2">
@@ -318,7 +318,7 @@ export default function MapApp() {
           <div className="flex shrink-0 items-baseline justify-between gap-3 border-b border-grid px-4 py-1.5 text-[11px] uppercase tracking-[0.1em] text-muted-2">
             <span>Объект</span>
             <span title="Проверка глазами по снимку 0,6 м на пиксель">
-              Проверено глазами
+              Проверено по снимку
             </span>
           </div>
 
@@ -560,7 +560,7 @@ function ObjectCard({ f }: { f: Feature }) {
       {visualOf(p) && (
         <div className="mt-3 rounded-sm border border-grid bg-soot-2 px-3 py-2.5">
           <div className="flex items-baseline justify-between gap-3">
-            <span className="text-xs text-muted-2">Проверено глазами</span>
+            <span className="text-xs text-muted-2">Проверено по снимку</span>
             <span className={`flex items-center gap-1.5 text-sm ${visualOf(p)!.tone}`}>
               <span
                 aria-hidden="true"

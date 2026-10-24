@@ -150,6 +150,10 @@ def main() -> int:
     # Здесь оно живёт в своём кэше и переживает любой пересчёт.
     step("Доверификация по снимкам", [python, "scripts/attach_verify.py"])
     step("Оценка моделью по снимку", [python, "scripts/attach_chipmodel.py"])
+    # Фильтр публикации идёт ПОСЛЕДНИМ и после всех, кто пишет в выгрузку.
+    # Любой шаг, переписывающий candidates.geojson целиком, вернул бы на
+    # сайт отвергнутые объекты, и заметить это было бы нечем.
+    step("Убрать не-свалки из выгрузки", [python, "scripts/publish_filter.py"])
     step("Чипы для разметки", [python, "scripts/export_chips.py"])
     step("Указатель для бота", [python, "scripts/make_bot_index.py"])
     build_cities()
