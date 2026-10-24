@@ -1,0 +1,13 @@
+{
+ "kind": "siamese",
+ "supervision": "weak",
+ "folds": 5,
+ "n_pieces": 218,
+ "n_positive": 45,
+ "base_rate": 0.2064,
+ "pr_auc_oof": 0.6109,
+ "roc_auc_oof": 0.9075,
+ "lift": 2.96,
+ "positives_from": "доверификация, ≥2 независимых источника 0,75 м/пиксель",
+ "negatives_from": "OpenStreetMap: карьеры, стройки, промзоны, дорожное полотно"
+}

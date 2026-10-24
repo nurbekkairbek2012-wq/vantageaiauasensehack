@@ -1,36 +1,14 @@
 {
  "chips": [
   {
-   "id": "astana_north_x000y000:C00126",
-   "slug": "astana_north_x000y000__C00126",
-   "area_m2": 28600,
-   "break_date": "2019-09-01",
-   "ndvi_drop": 0.347,
-   "bsi_rise": 0.151
-  },
-  {
    "id": "astana_north_x000y000:C00060",
    "slug": "astana_north_x000y000__C00060",
    "area_m2": 25500,
    "break_date": "2018-09-01",
    "ndvi_drop": 0.342,
-   "bsi_rise": 0.114
-  },
-  {
-   "id": "astana_north_x000y001:C00047",
-   "slug": "astana_north_x000y001__C00047",
-   "area_m2": 23800,
-   "break_date": "2019-06-01",
-   "ndvi_drop": 0.252,
-   "bsi_rise": 0.131
-  },
-  {
-   "id": "astana_north_x000y001:C00031",
-   "slug": "astana_north_x000y001__C00031",
-   "area_m2": 23400,
-   "break_date": "2024-05-01",
-   "ndvi_drop": 0.456,
-   "bsi_rise": 0.154
+   "bsi_rise": 0.114,
+   "lat": 51.144017,
+   "lon": 71.381344
   },
   {
    "id": "astana_north_x000y000:C00017",
@@ -38,15 +16,9 @@
    "area_m2": 12500,
    "break_date": "2019-04-01",
    "ndvi_drop": 0.78,
-   "bsi_rise": 0.146
-  },
-  {
-   "id": "astana_north_x000y000:C00132",
-   "slug": "astana_north_x000y000__C00132",
-   "area_m2": 11100,
-   "break_date": "2019-04-01",
-   "ndvi_drop": 0.303,
-   "bsi_rise": 0.136
+   "bsi_rise": 0.146,
+   "lat": 51.161276,
+   "lon": 71.377085
   },
   {
    "id": "astana_north_x000y000:C00039",
@@ -54,7 +26,9 @@
    "area_m2": 10600,
    "break_date": "2022-04-01",
    "ndvi_drop": 0.57,
-   "bsi_rise": 0.225
+   "bsi_rise": 0.225,
+   "lat": 51.156633,
+   "lon": 71.370267
   },
   {
    "id": "astana_north_x000y000:C00040",
@@ -62,7 +36,9 @@
    "area_m2": 10300,
    "break_date": "2019-04-01",
    "ndvi_drop": 0.44,
-   "bsi_rise": 0.156
+   "bsi_rise": 0.156,
+   "lat": 51.15593,
+   "lon": 71.373663
   },
   {
    "id": "astana_north_x000y000:C00011",
@@ -70,15 +46,9 @@
    "area_m2": 9200,
    "break_date": "2019-05-01",
    "ndvi_drop": 0.244,
-   "bsi_rise": 0.146
-  },
-  {
-   "id": "astana_north_x000y001:C00025",
-   "slug": "astana_north_x000y001__C00025",
-   "area_m2": 9100,
-   "break_date": "2019-08-01",
-   "ndvi_drop": 0.397,
-   "bsi_rise": 0.145
+   "bsi_rise": 0.146,
+   "lat": 51.163094,
+   "lon": 71.371877
   },
   {
    "id": "astana_north_x000y000:C00014",
@@ -86,7 +56,9 @@
    "area_m2": 8300,
    "break_date": "2019-04-01",
    "ndvi_drop": 0.444,
-   "bsi_rise": 0.159
+   "bsi_rise": 0.159,
+   "lat": 51.161885,
+   "lon": 71.375436
   },
   {
    "id": "astana_north_x000y000:C00007",
@@ -94,15 +66,9 @@
    "area_m2": 8000,
    "break_date": "2018-09-01",
    "ndvi_drop": 0.325,
-   "bsi_rise": 0.125
-  },
-  {
-   "id": "astana_north_x000y001:C00043",
-   "slug": "astana_north_x000y001__C00043",
-   "area_m2": 8000,
-   "break_date": "2018-09-01",
-   "ndvi_drop": 0.325,
-   "bsi_rise": 0.125
+   "bsi_rise": 0.125,
+   "lat": 51.163367,
+   "lon": 71.404227
   },
   {
    "id": "astana_north_x000y000:C00059",
@@ -110,7 +76,9 @@
    "area_m2": 6900,
    "break_date": "2019-04-01",
    "ndvi_drop": 0.327,
-   "bsi_rise": 0.09
+   "bsi_rise": 0.09,
+   "lat": 51.144044,
+   "lon": 71.370573
   },
   {
    "id": "astana_north_x000y000:C00027",
@@ -118,15 +86,9 @@
    "area_m2": 6400,
    "break_date": "2019-08-01",
    "ndvi_drop": 0.358,
-   "bsi_rise": 0.166
-  },
-  {
-   "id": "astana_north_x000y001:C00010",
-   "slug": "astana_north_x000y001__C00010",
-   "area_m2": 6300,
-   "break_date": "2021-10-01",
-   "ndvi_drop": 0.563,
-   "bsi_rise": 0.252
+   "bsi_rise": 0.166,
+   "lat": 51.159266,
+   "lon": 71.376552
   },
   {
    "id": "astana_north_x000y000:C00119",
@@ -134,15 +96,9 @@
    "area_m2": 6200,
    "break_date": "2019-04-01",
    "ndvi_drop": 0.363,
-   "bsi_rise": 0.132
-  },
-  {
-   "id": "astana_north_x000y001:C00002",
-   "slug": "astana_north_x000y001__C00002",
-   "area_m2": 6100,
-   "break_date": "2018-09-01",
-   "ndvi_drop": 0.216,
-   "bsi_rise": 0.112
+   "bsi_rise": 0.132,
+   "lat": 51.133139,
+   "lon": 71.390005
   },
   {
    "id": "astana_north_x000y000:C00072",
@@ -150,23 +106,9 @@
    "area_m2": 5800,
    "break_date": "2018-10-01",
    "ndvi_drop": 0.337,
-   "bsi_rise": 0.116
-  },
-  {
-   "id": "astana_north_x000y000:C00143",
-   "slug": "astana_north_x000y000__C00143",
-   "area_m2": 5800,
-   "break_date": "2020-04-01",
-   "ndvi_drop": 0.31,
-   "bsi_rise": 0.127
-  },
-  {
-   "id": "astana_north_x000y000:C00131",
-   "slug": "astana_north_x000y000__C00131",
-   "area_m2": 5700,
-   "break_date": "2018-09-01",
-   "ndvi_drop": 0.458,
-   "bsi_rise": 0.152
+   "bsi_rise": 0.116,
+   "lat": 51.138425,
+   "lon": 71.380842
   },
   {
    "id": "astana_north_x000y000:C00108",
@@ -174,7 +116,9 @@
    "area_m2": 5600,
    "break_date": "2019-04-01",
    "ndvi_drop": 0.406,
-   "bsi_rise": 0.119
+   "bsi_rise": 0.119,
+   "lat": 51.134589,
+   "lon": 71.41865
   },
   {
    "id": "astana_north_x000y000:C00093",
@@ -182,15 +126,9 @@
    "area_m2": 5300,
    "break_date": "2023-05-01",
    "ndvi_drop": 0.486,
-   "bsi_rise": 0.166
-  },
-  {
-   "id": "astana_north_x000y001:C00020",
-   "slug": "astana_north_x000y001__C00020",
-   "area_m2": 5300,
-   "break_date": "2020-04-01",
-   "ndvi_drop": 0.454,
-   "bsi_rise": 0.172
+   "bsi_rise": 0.166,
+   "lat": 51.136012,
+   "lon": 71.405092
   },
   {
    "id": "astana_north_x000y000:C00056",
@@ -198,7 +136,9 @@
    "area_m2": 4600,
    "break_date": "2019-04-01",
    "ndvi_drop": 0.5,
-   "bsi_rise": 0.15
+   "bsi_rise": 0.15,
+   "lat": 51.148944,
+   "lon": 71.370557
   },
   {
    "id": "astana_north_x000y000:C00038",
@@ -206,7 +146,9 @@
    "area_m2": 4400,
    "break_date": "2018-09-01",
    "ndvi_drop": 0.16,
-   "bsi_rise": 0.11
+   "bsi_rise": 0.11,
+   "lat": 51.156464,
+   "lon": 71.392641
   },
   {
    "id": "astana_north_x000y000:C00006",
@@ -214,7 +156,9 @@
    "area_m2": 4100,
    "break_date": "2023-09-01",
    "ndvi_drop": 0.428,
-   "bsi_rise": 0.135
+   "bsi_rise": 0.135,
+   "lat": 51.164265,
+   "lon": 71.39364
   },
   {
    "id": "astana_north_x000y000:C00035",
@@ -222,7 +166,9 @@
    "area_m2": 4100,
    "break_date": "2018-09-01",
    "ndvi_drop": 0.439,
-   "bsi_rise": 0.243
+   "bsi_rise": 0.243,
+   "lat": 51.157775,
+   "lon": 71.373683
   },
   {
    "id": "astana_north_x000y000:C00097",
@@ -230,23 +176,9 @@
    "area_m2": 4100,
    "break_date": "2019-10-01",
    "ndvi_drop": 0.363,
-   "bsi_rise": 0.115
-  },
-  {
-   "id": "astana_north_x000y001:C00042",
-   "slug": "astana_north_x000y001__C00042",
-   "area_m2": 4100,
-   "break_date": "2023-09-01",
-   "ndvi_drop": 0.428,
-   "bsi_rise": 0.135
-  },
-  {
-   "id": "astana_north_x000y001:C00005",
-   "slug": "astana_north_x000y001__C00005",
-   "area_m2": 4000,
-   "break_date": "2019-04-01",
-   "ndvi_drop": 0.245,
-   "bsi_rise": 0.122
+   "bsi_rise": 0.115,
+   "lat": 51.136512,
+   "lon": 71.378455
   },
   {
    "id": "astana_north_x000y000:C00024",
@@ -254,7 +186,9 @@
    "area_m2": 3900,
    "break_date": "2023-09-01",
    "ndvi_drop": 0.342,
-   "bsi_rise": 0.115
+   "bsi_rise": 0.115,
+   "lat": 51.159239,
+   "lon": 71.397576
   },
   {
    "id": "astana_north_x000y000:C00025",
@@ -262,7 +196,9 @@
    "area_m2": 3700,
    "break_date": "2021-04-01",
    "ndvi_drop": 0.538,
-   "bsi_rise": 0.207
+   "bsi_rise": 0.207,
+   "lat": 51.159526,
+   "lon": 71.37504
   },
   {
    "id": "astana_north_x000y000:C00074",
@@ -270,7 +206,9 @@
    "area_m2": 3700,
    "break_date": "2020-10-01",
    "ndvi_drop": 0.413,
-   "bsi_rise": 0.138
+   "bsi_rise": 0.138,
+   "lat": 51.138002,
+   "lon": 71.378211
   },
   {
    "id": "astana_north_x000y000:C00019",
@@ -278,7 +216,9 @@
    "area_m2": 3400,
    "break_date": "2021-04-01",
    "ndvi_drop": 0.484,
-   "bsi_rise": 0.15
+   "bsi_rise": 0.15,
+   "lat": 51.160139,
+   "lon": 71.375167
   },
   {
    "id": "astana_north_x000y000:C00115",
@@ -286,7 +226,9 @@
    "area_m2": 3400,
    "break_date": "2021-04-01",
    "ndvi_drop": 0.385,
-   "bsi_rise": 0.09
+   "bsi_rise": 0.09,
+   "lat": 51.133988,
+   "lon": 71.398197
   },
   {
    "id": "astana_north_x000y000:C00064",
@@ -294,7 +236,9 @@
    "area_m2": 3000,
    "break_date": "2020-07-01",
    "ndvi_drop": 0.321,
-   "bsi_rise": 0.125
+   "bsi_rise": 0.125,
+   "lat": 51.139338,
+   "lon": 71.378528
   },
   {
    "id": "astana_north_x000y000:C00117",
@@ -302,15 +246,9 @@
    "area_m2": 3000,
    "break_date": "2021-04-01",
    "ndvi_drop": 0.39,
-   "bsi_rise": 0.106
-  },
-  {
-   "id": "astana_north_x000y001:C00000",
-   "slug": "astana_north_x000y001__C00000",
-   "area_m2": 2900,
-   "break_date": "2018-10-01",
-   "ndvi_drop": 0.2,
-   "bsi_rise": 0.126
+   "bsi_rise": 0.106,
+   "lat": 51.13378,
+   "lon": 71.395505
   },
   {
    "id": "astana_north_x000y000:C00044",
@@ -318,7 +256,9 @@
    "area_m2": 2800,
    "break_date": "2024-05-01",
    "ndvi_drop": 0.523,
-   "bsi_rise": 0.206
+   "bsi_rise": 0.206,
+   "lat": 51.154977,
+   "lon": 71.370253
   },
   {
    "id": "astana_north_x000y000:C00113",
@@ -326,7 +266,9 @@
    "area_m2": 2800,
    "break_date": "2021-04-01",
    "ndvi_drop": 0.409,
-   "bsi_rise": 0.095
+   "bsi_rise": 0.095,
+   "lat": 51.134541,
+   "lon": 71.396043
   },
   {
    "id": "astana_north_x000y000:C00099",
@@ -334,15 +276,9 @@
    "area_m2": 2700,
    "break_date": "2020-04-01",
    "ndvi_drop": 0.415,
-   "bsi_rise": 0.162
-  },
-  {
-   "id": "astana_north_x000y001:C00008",
-   "slug": "astana_north_x000y001__C00008",
-   "area_m2": 2700,
-   "break_date": "2019-04-01",
-   "ndvi_drop": 0.215,
-   "bsi_rise": 0.096
+   "bsi_rise": 0.162,
+   "lat": 51.135699,
+   "lon": 71.400104
   },
   {
    "id": "astana_north_x000y000:C00092",
@@ -350,7 +286,9 @@
    "area_m2": 2600,
    "break_date": "2020-09-01",
    "ndvi_drop": 0.395,
-   "bsi_rise": 0.153
+   "bsi_rise": 0.153,
+   "lat": 51.136789,
+   "lon": 71.373396
   },
   {
    "id": "astana_north_x000y000:C00032",
@@ -358,23 +296,9 @@
    "area_m2": 2500,
    "break_date": "2018-09-01",
    "ndvi_drop": 0.236,
-   "bsi_rise": 0.105
-  },
-  {
-   "id": "astana_north_x000y000:C00121",
-   "slug": "astana_north_x000y000__C00121",
-   "area_m2": 2500,
-   "break_date": "2018-08-01",
-   "ndvi_drop": 0.35,
-   "bsi_rise": 0.107
-  },
-  {
-   "id": "astana_north_x000y001:C00012",
-   "slug": "astana_north_x000y001__C00012",
-   "area_m2": 2400,
-   "break_date": "2020-10-01",
-   "ndvi_drop": 0.371,
-   "bsi_rise": 0.13
+   "bsi_rise": 0.105,
+   "lat": 51.15907,
+   "lon": 71.379045
   },
   {
    "id": "astana_north_x000y000:C00022",
@@ -382,15 +306,9 @@
    "area_m2": 2300,
    "break_date": "2019-04-01",
    "ndvi_drop": 0.409,
-   "bsi_rise": 0.247
-  },
-  {
-   "id": "astana_north_x000y000:C00150",
-   "slug": "astana_north_x000y000__C00150",
-   "area_m2": 2300,
-   "break_date": "2020-04-01",
-   "ndvi_drop": 0.376,
-   "bsi_rise": 0.14
+   "bsi_rise": 0.247,
+   "lat": 51.159799,
+   "lon": 71.37851
   },
   {
    "id": "astana_north_x000y000:C00013",
@@ -398,7 +316,9 @@
    "area_m2": 2200,
    "break_date": "2020-04-01",
    "ndvi_drop": 0.394,
-   "bsi_rise": 0.131
+   "bsi_rise": 0.131,
+   "lat": 51.161703,
+   "lon": 71.403908
   },
   {
    "id": "astana_north_x000y000:C00083",
@@ -406,23 +326,9 @@
    "area_m2": 2200,
    "break_date": "2023-05-01",
    "ndvi_drop": 0.396,
-   "bsi_rise": 0.129
-  },
-  {
-   "id": "astana_north_x000y001:C00019",
-   "slug": "astana_north_x000y001__C00019",
-   "area_m2": 2200,
-   "break_date": "2020-06-01",
-   "ndvi_drop": 0.436,
-   "bsi_rise": 0.145
-  },
-  {
-   "id": "astana_north_x000y001:C00030",
-   "slug": "astana_north_x000y001__C00030",
-   "area_m2": 2200,
-   "break_date": "2022-06-01",
-   "ndvi_drop": 0.442,
-   "bsi_rise": 0.155
+   "bsi_rise": 0.129,
+   "lat": 51.136859,
+   "lon": 71.405208
   },
   {
    "id": "astana_north_x000y000:C00036",
@@ -430,7 +336,9 @@
    "area_m2": 2100,
    "break_date": "2020-05-01",
    "ndvi_drop": 0.232,
-   "bsi_rise": 0.117
+   "bsi_rise": 0.117,
+   "lat": 51.157404,
+   "lon": 71.381033
   },
   {
    "id": "astana_north_x000y000:C00058",
@@ -438,7 +346,9 @@
    "area_m2": 2000,
    "break_date": "2020-04-01",
    "ndvi_drop": 0.387,
-   "bsi_rise": 0.115
+   "bsi_rise": 0.115,
+   "lat": 51.145413,
+   "lon": 71.393463
   },
   {
    "id": "astana_north_x000y000:C00033",
@@ -446,7 +356,9 @@
    "area_m2": 1700,
    "break_date": "2018-09-01",
    "ndvi_drop": 0.272,
-   "bsi_rise": 0.142
+   "bsi_rise": 0.142,
+   "lat": 51.157862,
+   "lon": 71.394143
   },
   {
    "id": "astana_north_x000y000:C00057",
@@ -454,15 +366,9 @@
    "area_m2": 1700,
    "break_date": "2019-04-01",
    "ndvi_drop": 0.445,
-   "bsi_rise": 0.086
-  },
-  {
-   "id": "astana_north_x000y001:C00035",
-   "slug": "astana_north_x000y001__C00035",
-   "area_m2": 1600,
-   "break_date": "2022-09-01",
-   "ndvi_drop": 0.515,
-   "bsi_rise": 0.203
+   "bsi_rise": 0.086,
+   "lat": 51.146679,
+   "lon": 71.391184
   },
   {
    "id": "astana_north_x000y000:C00009",
@@ -470,7 +376,9 @@
    "area_m2": 1500,
    "break_date": "2019-04-01",
    "ndvi_drop": 0.559,
-   "bsi_rise": 0.157
+   "bsi_rise": 0.157,
+   "lat": 51.162855,
+   "lon": 71.376485
   },
   {
    "id": "astana_north_x000y000:C00037",
@@ -478,7 +386,9 @@
    "area_m2": 1500,
    "break_date": "2024-09-01",
    "ndvi_drop": 0.279,
-   "bsi_rise": 0.093
+   "bsi_rise": 0.093,
+   "lat": 51.156333,
+   "lon": 71.385268
   },
   {
    "id": "astana_north_x000y000:C00107",
@@ -486,7 +396,9 @@
    "area_m2": 1500,
    "break_date": "2020-04-01",
    "ndvi_drop": 0.422,
-   "bsi_rise": 0.107
+   "bsi_rise": 0.107,
+   "lat": 51.134612,
+   "lon": 71.420384
   },
   {
    "id": "astana_north_x000y000:C00110",
@@ -494,15 +406,9 @@
    "area_m2": 1500,
    "break_date": "2021-04-01",
    "ndvi_drop": 0.329,
-   "bsi_rise": 0.084
-  },
-  {
-   "id": "astana_north_x000y001:C00045",
-   "slug": "astana_north_x000y001__C00045",
-   "area_m2": 1500,
-   "break_date": "2019-04-01",
-   "ndvi_drop": 0.559,
-   "bsi_rise": 0.157
+   "bsi_rise": 0.084,
+   "lat": 51.135068,
+   "lon": 71.391746
   },
   {
    "id": "astana_north_x000y000:C00052",
@@ -510,7 +416,9 @@
    "area_m2": 1400,
    "break_date": "2024-08-01",
    "ndvi_drop": 0.378,
-   "bsi_rise": 0.117
+   "bsi_rise": 0.117,
+   "lat": 51.150442,
+   "lon": 71.376422
   },
   {
    "id": "astana_north_x000y000:C00088",
@@ -518,7 +426,9 @@
    "area_m2": 1400,
    "break_date": "2018-08-01",
    "ndvi_drop": 0.37,
-   "bsi_rise": 0.085
+   "bsi_rise": 0.085,
+   "lat": 51.137011,
+   "lon": 71.384486
   },
   {
    "id": "astana_north_x000y000:C00091",
@@ -526,31 +436,9 @@
    "area_m2": 1400,
    "break_date": "2019-04-01",
    "ndvi_drop": 0.387,
-   "bsi_rise": 0.112
-  },
-  {
-   "id": "astana_north_x000y000:C00120",
-   "slug": "astana_north_x000y000__C00120",
-   "area_m2": 1400,
-   "break_date": "2021-04-01",
-   "ndvi_drop": 0.341,
-   "bsi_rise": 0.158
-  },
-  {
-   "id": "astana_north_x000y001:C00032",
-   "slug": "astana_north_x000y001__C00032",
-   "area_m2": 1400,
-   "break_date": "2018-09-01",
-   "ndvi_drop": 0.335,
-   "bsi_rise": 0.108
-  },
-  {
-   "id": "astana_north_x000y001:C00039",
-   "slug": "astana_north_x000y001__C00039",
-   "area_m2": 1400,
-   "break_date": "2018-10-01",
-   "ndvi_drop": 0.577,
-   "bsi_rise": 0.253
+   "bsi_rise": 0.112,
+   "lat": 51.136625,
+   "lon": 71.381374
   },
   {
    "id": "astana_north_x000y000:C00065",
@@ -558,7 +446,9 @@
    "area_m2": 1300,
    "break_date": "2020-04-01",
    "ndvi_drop": 0.389,
-   "bsi_rise": 0.104
+   "bsi_rise": 0.104,
+   "lat": 51.138966,
+   "lon": 71.374866
   },
   {
    "id": "astana_north_x000y000:C00070",
@@ -566,23 +456,9 @@
    "area_m2": 1300,
    "break_date": "2018-10-01",
    "ndvi_drop": 0.324,
-   "bsi_rise": 0.128
-  },
-  {
-   "id": "astana_north_x000y000:C00145",
-   "slug": "astana_north_x000y000__C00145",
-   "area_m2": 1300,
-   "break_date": "2019-04-01",
-   "ndvi_drop": 0.4,
-   "bsi_rise": 0.082
-  },
-  {
-   "id": "astana_north_x000y001:C00003",
-   "slug": "astana_north_x000y001__C00003",
-   "area_m2": 1300,
-   "break_date": "2018-09-01",
-   "ndvi_drop": 0.225,
-   "bsi_rise": 0.133
+   "bsi_rise": 0.128,
+   "lat": 51.138554,
+   "lon": 71.379343
   },
   {
    "id": "astana_north_x000y000:C00005",
@@ -590,7 +466,9 @@
    "area_m2": 1200,
    "break_date": "2019-04-01",
    "ndvi_drop": 0.602,
-   "bsi_rise": 0.126
+   "bsi_rise": 0.126,
+   "lat": 51.164896,
+   "lon": 71.371261
   },
   {
    "id": "astana_north_x000y000:C00029",
@@ -598,7 +476,9 @@
    "area_m2": 1200,
    "break_date": "2023-09-01",
    "ndvi_drop": 0.321,
-   "bsi_rise": 0.1
+   "bsi_rise": 0.1,
+   "lat": 51.158458,
+   "lon": 71.39793
   },
   {
    "id": "astana_north_x000y000:C00053",
@@ -606,7 +486,9 @@
    "area_m2": 1200,
    "break_date": "2018-09-01",
    "ndvi_drop": 0.311,
-   "bsi_rise": 0.153
+   "bsi_rise": 0.153,
+   "lat": 51.150334,
+   "lon": 71.375093
   },
   {
    "id": "astana_north_x000y000:C00076",
@@ -614,7 +496,9 @@
    "area_m2": 1200,
    "break_date": "2019-07-01",
    "ndvi_drop": 0.412,
-   "bsi_rise": 0.149
+   "bsi_rise": 0.149,
+   "lat": 51.137708,
+   "lon": 71.383522
   },
   {
    "id": "astana_north_x000y000:C00106",
@@ -622,23 +506,9 @@
    "area_m2": 1200,
    "break_date": "2021-06-01",
    "ndvi_drop": 0.457,
-   "bsi_rise": 0.102
-  },
-  {
-   "id": "astana_north_x000y000:C00122",
-   "slug": "astana_north_x000y000__C00122",
-   "area_m2": 1200,
-   "break_date": "2020-10-01",
-   "ndvi_drop": 0.417,
-   "bsi_rise": 0.186
-  },
-  {
-   "id": "astana_north_x000y001:C00041",
-   "slug": "astana_north_x000y001__C00041",
-   "area_m2": 1200,
-   "break_date": "2019-04-01",
-   "ndvi_drop": 0.606,
-   "bsi_rise": 0.126
+   "bsi_rise": 0.102,
+   "lat": 51.135128,
+   "lon": 71.395325
   },
   {
    "id": "astana_north_x000y000:C00049",
@@ -646,7 +516,9 @@
    "area_m2": 1100,
    "break_date": "2023-05-01",
    "ndvi_drop": 0.409,
-   "bsi_rise": 0.185
+   "bsi_rise": 0.185,
+   "lat": 51.152351,
+   "lon": 71.399721
   },
   {
    "id": "astana_north_x000y000:C00066",
@@ -654,7 +526,9 @@
    "area_m2": 1100,
    "break_date": "2021-04-01",
    "ndvi_drop": 0.44,
-   "bsi_rise": 0.111
+   "bsi_rise": 0.111,
+   "lat": 51.13859,
+   "lon": 71.391166
   },
   {
    "id": "astana_north_x000y000:C00086",
@@ -662,23 +536,9 @@
    "area_m2": 1100,
    "break_date": "2020-04-01",
    "ndvi_drop": 0.347,
-   "bsi_rise": 0.134
-  },
-  {
-   "id": "astana_north_x000y000:C00124",
-   "slug": "astana_north_x000y000__C00124",
-   "area_m2": 1100,
-   "break_date": "2018-09-01",
-   "ndvi_drop": 0.295,
-   "bsi_rise": 0.149
-  },
-  {
-   "id": "astana_north_x000y000:C00133",
-   "slug": "astana_north_x000y000__C00133",
-   "area_m2": 1100,
-   "break_date": "2020-09-01",
-   "ndvi_drop": 0.315,
-   "bsi_rise": 0.108
+   "bsi_rise": 0.134,
+   "lat": 51.137059,
+   "lon": 71.386634
   },
   {
    "id": "astana_north_x000y000:C00020",
@@ -686,7 +546,9 @@
    "area_m2": 1000,
    "break_date": "2018-09-01",
    "ndvi_drop": 0.273,
-   "bsi_rise": 0.126
+   "bsi_rise": 0.126,
+   "lat": 51.159462,
+   "lon": 71.395175
   },
   {
    "id": "astana_north_x000y000:C00031",
@@ -694,7 +556,9 @@
    "area_m2": 1000,
    "break_date": "2023-10-01",
    "ndvi_drop": 0.261,
-   "bsi_rise": 0.084
+   "bsi_rise": 0.084,
+   "lat": 51.158392,
+   "lon": 71.398748
   },
   {
    "id": "astana_north_x000y000:C00050",
@@ -702,7 +566,9 @@
    "area_m2": 1000,
    "break_date": "2024-07-01",
    "ndvi_drop": 0.48,
-   "bsi_rise": 0.15
+   "bsi_rise": 0.15,
+   "lat": 51.152256,
+   "lon": 71.404364
   },
   {
    "id": "astana_north_x000y000:C00054",
@@ -710,7 +576,9 @@
    "area_m2": 1000,
    "break_date": "2019-09-01",
    "ndvi_drop": 0.259,
-   "bsi_rise": 0.15
+   "bsi_rise": 0.15,
+   "lat": 51.149729,
+   "lon": 71.371738
   },
   {
    "id": "astana_north_x000y000:C00063",
@@ -718,7 +586,9 @@
    "area_m2": 1000,
    "break_date": "2018-10-01",
    "ndvi_drop": 0.401,
-   "bsi_rise": 0.161
+   "bsi_rise": 0.161,
+   "lat": 51.139432,
+   "lon": 71.41106
   },
   {
    "id": "astana_north_x000y000:C00090",
@@ -726,7 +596,9 @@
    "area_m2": 1000,
    "break_date": "2021-04-01",
    "ndvi_drop": 0.369,
-   "bsi_rise": 0.076
+   "bsi_rise": 0.076,
+   "lat": 51.136364,
+   "lon": 71.39446
   },
   {
    "id": "astana_north_x000y000:C00111",
@@ -734,7 +606,9 @@
    "area_m2": 1000,
    "break_date": "2023-05-01",
    "ndvi_drop": 0.396,
-   "bsi_rise": 0.178
+   "bsi_rise": 0.178,
+   "lat": 51.134721,
+   "lon": 71.399898
   },
   {
    "id": "astana_north_x000y000:C00114",
@@ -742,15 +616,9 @@
    "area_m2": 1000,
    "break_date": "2021-04-01",
    "ndvi_drop": 0.371,
-   "bsi_rise": 0.09
-  },
-  {
-   "id": "astana_north_x000y001:C00006",
-   "slug": "astana_north_x000y001__C00006",
-   "area_m2": 1000,
-   "break_date": "2020-09-01",
-   "ndvi_drop": 0.23,
-   "bsi_rise": 0.102
+   "bsi_rise": 0.09,
+   "lat": 51.134043,
+   "lon": 71.393411
   },
   {
    "id": "astana_north_x000y000:C00001",
@@ -758,7 +626,9 @@
    "area_m2": 900,
    "break_date": "2022-09-01",
    "ndvi_drop": 0.513,
-   "bsi_rise": 0.155
+   "bsi_rise": 0.155,
+   "lat": 51.165944,
+   "lon": 71.370601
   },
   {
    "id": "astana_north_x000y000:C00103",
@@ -766,7 +636,9 @@
    "area_m2": 900,
    "break_date": "2023-05-01",
    "ndvi_drop": 0.434,
-   "bsi_rise": 0.168
+   "bsi_rise": 0.168,
+   "lat": 51.13522,
+   "lon": 71.39969
   },
   {
    "id": "astana_north_x000y000:C00000",
@@ -774,7 +646,9 @@
    "area_m2": 800,
    "break_date": "2022-06-01",
    "ndvi_drop": 0.476,
-   "bsi_rise": 0.164
+   "bsi_rise": 0.164,
+   "lat": 51.16592,
+   "lon": 71.37389
   },
   {
    "id": "astana_north_x000y000:C00010",
@@ -782,7 +656,9 @@
    "area_m2": 800,
    "break_date": "2018-09-01",
    "ndvi_drop": 0.19,
-   "bsi_rise": 0.14
+   "bsi_rise": 0.14,
+   "lat": 51.162701,
+   "lon": 71.379591
   },
   {
    "id": "astana_north_x000y000:C00034",
@@ -790,7 +666,9 @@
    "area_m2": 800,
    "break_date": "2018-09-01",
    "ndvi_drop": 0.244,
-   "bsi_rise": 0.173
+   "bsi_rise": 0.173,
+   "lat": 51.157706,
+   "lon": 71.377544
   },
   {
    "id": "astana_north_x000y000:C00043",
@@ -798,7 +676,9 @@
    "area_m2": 800,
    "break_date": "2018-09-01",
    "ndvi_drop": 0.242,
-   "bsi_rise": 0.125
+   "bsi_rise": 0.125,
+   "lat": 51.154629,
+   "lon": 71.378461
   },
   {
    "id": "astana_north_x000y000:C00047",
@@ -806,7 +686,9 @@
    "area_m2": 800,
    "break_date": "2024-06-01",
    "ndvi_drop": 0.219,
-   "bsi_rise": 0.112
+   "bsi_rise": 0.112,
+   "lat": 51.152916,
+   "lon": 71.38309
   },
   {
    "id": "astana_north_x000y000:C00080",
@@ -814,7 +696,9 @@
    "area_m2": 800,
    "break_date": "2019-04-01",
    "ndvi_drop": 0.37,
-   "bsi_rise": 0.136
+   "bsi_rise": 0.136,
+   "lat": 51.137476,
+   "lon": 71.381651
   },
   {
    "id": "astana_north_x000y000:C00084",
@@ -822,7 +706,9 @@
    "area_m2": 800,
    "break_date": "2024-05-01",
    "ndvi_drop": 0.463,
-   "bsi_rise": 0.108
+   "bsi_rise": 0.108,
+   "lat": 51.137006,
+   "lon": 71.391491
   },
   {
    "id": "astana_north_x000y000:C00095",
@@ -830,7 +716,9 @@
    "area_m2": 800,
    "break_date": "2020-10-01",
    "ndvi_drop": 0.405,
-   "bsi_rise": 0.223
+   "bsi_rise": 0.223,
+   "lat": 51.136298,
+   "lon": 71.377659
   },
   {
    "id": "astana_north_x000y000:C00102",
@@ -838,7 +726,9 @@
    "area_m2": 800,
    "break_date": "2019-04-01",
    "ndvi_drop": 0.365,
-   "bsi_rise": 0.18
+   "bsi_rise": 0.18,
+   "lat": 51.135812,
+   "lon": 71.381637
   },
   {
    "id": "astana_north_x000y000:C00109",
@@ -846,7 +736,9 @@
    "area_m2": 800,
    "break_date": "2020-10-01",
    "ndvi_drop": 0.365,
-   "bsi_rise": 0.173
+   "bsi_rise": 0.173,
+   "lat": 51.135323,
+   "lon": 71.372534
   },
   {
    "id": "astana_north_x000y000:C00112",
@@ -854,119 +746,9 @@
    "area_m2": 800,
    "break_date": "2019-09-01",
    "ndvi_drop": 0.279,
-   "bsi_rise": 0.098
-  },
-  {
-   "id": "astana_north_x000y000:C00123",
-   "slug": "astana_north_x000y000__C00123",
-   "area_m2": 800,
-   "break_date": "2018-10-01",
-   "ndvi_drop": 0.296,
-   "bsi_rise": 0.088
-  },
-  {
-   "id": "astana_north_x000y000:C00128",
-   "slug": "astana_north_x000y000__C00128",
-   "area_m2": 800,
-   "break_date": "2019-04-01",
-   "ndvi_drop": 0.331,
-   "bsi_rise": 0.154
-  },
-  {
-   "id": "astana_north_x000y000:C00141",
-   "slug": "astana_north_x000y000__C00141",
-   "area_m2": 800,
-   "break_date": "2020-04-01",
-   "ndvi_drop": 0.334,
-   "bsi_rise": 0.09
-  },
-  {
-   "id": "astana_north_x000y000:C00144",
-   "slug": "astana_north_x000y000__C00144",
-   "area_m2": 800,
-   "break_date": "2019-10-01",
-   "ndvi_drop": 0.299,
-   "bsi_rise": 0.114
-  },
-  {
-   "id": "astana_north_x000y001:C00007",
-   "slug": "astana_north_x000y001__C00007",
-   "area_m2": 800,
-   "break_date": "2020-04-01",
-   "ndvi_drop": 0.337,
-   "bsi_rise": 0.143
-  },
-  {
-   "id": "astana_north_x000y001:C00009",
-   "slug": "astana_north_x000y001__C00009",
-   "area_m2": 800,
-   "break_date": "2024-10-01",
-   "ndvi_drop": 0.207,
-   "bsi_rise": 0.08
-  },
-  {
-   "id": "astana_north_x000y001:C00014",
-   "slug": "astana_north_x000y001__C00014",
-   "area_m2": 800,
-   "break_date": "2024-09-01",
-   "ndvi_drop": 0.393,
-   "bsi_rise": 0.142
-  },
-  {
-   "id": "astana_north_x000y001:C00015",
-   "slug": "astana_north_x000y001__C00015",
-   "area_m2": 800,
-   "break_date": "2020-04-01",
-   "ndvi_drop": 0.386,
-   "bsi_rise": 0.116
-  },
-  {
-   "id": "astana_north_x000y001:C00021",
-   "slug": "astana_north_x000y001__C00021",
-   "area_m2": 800,
-   "break_date": "2019-07-01",
-   "ndvi_drop": 0.335,
-   "bsi_rise": 0.097
-  },
-  {
-   "id": "astana_north_x000y001:C00029",
-   "slug": "astana_north_x000y001__C00029",
-   "area_m2": 800,
-   "break_date": "2019-04-01",
-   "ndvi_drop": 0.278,
-   "bsi_rise": 0.081
-  },
-  {
-   "id": "astana_north_x000y001:C00033",
-   "slug": "astana_north_x000y001__C00033",
-   "area_m2": 800,
-   "break_date": "2024-08-01",
-   "ndvi_drop": 0.442,
-   "bsi_rise": 0.134
-  },
-  {
-   "id": "astana_north_x000y001:C00034",
-   "slug": "astana_north_x000y001__C00034",
-   "area_m2": 800,
-   "break_date": "2022-06-01",
-   "ndvi_drop": 0.476,
-   "bsi_rise": 0.164
-  },
-  {
-   "id": "astana_north_x000y001:C00040",
-   "slug": "astana_north_x000y001__C00040",
-   "area_m2": 800,
-   "break_date": "2019-04-01",
-   "ndvi_drop": 0.676,
-   "bsi_rise": 0.103
-  },
-  {
-   "id": "astana_north_x000y001:C00046",
-   "slug": "astana_north_x000y001__C00046",
-   "area_m2": 800,
-   "break_date": "2018-09-01",
-   "ndvi_drop": 0.19,
-   "bsi_rise": 0.14
+   "bsi_rise": 0.098,
+   "lat": 51.134866,
+   "lon": 71.377302
   },
   {
    "id": "astana_north_x000y000:C00051",
@@ -974,7 +756,9 @@
    "area_m2": 700,
    "break_date": "2022-08-01",
    "ndvi_drop": 0.482,
-   "bsi_rise": 0.147
+   "bsi_rise": 0.147,
+   "lat": 51.152377,
+   "lon": 71.369762
   },
   {
    "id": "astana_north_x000y000:C00002",
@@ -982,7 +766,9 @@
    "area_m2": 500,
    "break_date": "2024-06-01",
    "ndvi_drop": 0.362,
-   "bsi_rise": 0.084
+   "bsi_rise": 0.084,
+   "lat": 51.165078,
+   "lon": 71.393087
   },
   {
    "id": "astana_north_x000y000:C00003",
@@ -990,7 +776,9 @@
    "area_m2": 500,
    "break_date": "2024-10-01",
    "ndvi_drop": 0.274,
-   "bsi_rise": 0.08
+   "bsi_rise": 0.08,
+   "lat": 51.164963,
+   "lon": 71.389934
   },
   {
    "id": "astana_north_x000y000:C00008",
@@ -998,7 +786,9 @@
    "area_m2": 500,
    "break_date": "2018-09-01",
    "ndvi_drop": 0.219,
-   "bsi_rise": 0.121
+   "bsi_rise": 0.121,
+   "lat": 51.162793,
+   "lon": 71.381668
   },
   {
    "id": "astana_north_x000y000:C00015",
@@ -1006,7 +796,9 @@
    "area_m2": 500,
    "break_date": "2019-04-01",
    "ndvi_drop": 0.227,
-   "bsi_rise": 0.179
+   "bsi_rise": 0.179,
+   "lat": 51.160872,
+   "lon": 71.378852
   },
   {
    "id": "astana_north_x000y000:C00016",
@@ -1014,7 +806,9 @@
    "area_m2": 500,
    "break_date": "2019-04-01",
    "ndvi_drop": 0.266,
-   "bsi_rise": 0.227
+   "bsi_rise": 0.227,
+   "lat": 51.160422,
+   "lon": 71.378828
   },
   {
    "id": "astana_north_x000y000:C00018",
@@ -1022,7 +816,9 @@
    "area_m2": 500,
    "break_date": "2020-08-01",
    "ndvi_drop": 0.171,
-   "bsi_rise": 0.094
+   "bsi_rise": 0.094,
+   "lat": 51.159711,
+   "lon": 71.396098
   },
   {
    "id": "astana_north_x000y000:C00021",
@@ -1030,7 +826,9 @@
    "area_m2": 500,
    "break_date": "2023-10-01",
    "ndvi_drop": 0.36,
-   "bsi_rise": 0.109
+   "bsi_rise": 0.109,
+   "lat": 51.159426,
+   "lon": 71.396798
   },
   {
    "id": "astana_north_x000y000:C00023",
@@ -1038,7 +836,9 @@
    "area_m2": 500,
    "break_date": "2020-08-01",
    "ndvi_drop": 0.294,
-   "bsi_rise": 0.103
+   "bsi_rise": 0.103,
+   "lat": 51.159081,
+   "lon": 71.396065
   },
   {
    "id": "astana_north_x000y000:C00026",
@@ -1046,7 +846,9 @@
    "area_m2": 500,
    "break_date": "2024-05-01",
    "ndvi_drop": 0.401,
-   "bsi_rise": 0.124
+   "bsi_rise": 0.124,
+   "lat": 51.158664,
+   "lon": 71.398905
   },
   {
    "id": "astana_north_x000y000:C00028",
@@ -1054,7 +856,9 @@
    "area_m2": 500,
    "break_date": "2020-07-01",
    "ndvi_drop": 0.279,
-   "bsi_rise": 0.092
+   "bsi_rise": 0.092,
+   "lat": 51.158598,
+   "lon": 71.393324
   },
   {
    "id": "astana_north_x000y000:C00030",
@@ -1062,7 +866,9 @@
    "area_m2": 500,
    "break_date": "2019-04-01",
    "ndvi_drop": 0.612,
-   "bsi_rise": 0.193
+   "bsi_rise": 0.193,
+   "lat": 51.158821,
+   "lon": 71.378031
   },
   {
    "id": "astana_north_x000y000:C00041",
@@ -1070,7 +876,9 @@
    "area_m2": 500,
    "break_date": "2024-09-01",
    "ndvi_drop": 0.292,
-   "bsi_rise": 0.076
+   "bsi_rise": 0.076,
+   "lat": 51.15491,
+   "lon": 71.384551
   },
   {
    "id": "astana_north_x000y000:C00042",
@@ -1078,7 +886,9 @@
    "area_m2": 500,
    "break_date": "2018-09-01",
    "ndvi_drop": 0.208,
-   "bsi_rise": 0.131
+   "bsi_rise": 0.131,
+   "lat": 51.154916,
+   "lon": 71.379833
   },
   {
    "id": "astana_north_x000y000:C00045",
@@ -1086,7 +896,9 @@
    "area_m2": 500,
    "break_date": "2024-07-01",
    "ndvi_drop": 0.226,
-   "bsi_rise": 0.102
+   "bsi_rise": 0.102,
+   "lat": 51.154296,
+   "lon": 71.383804
   },
   {
    "id": "astana_north_x000y000:C00046",
@@ -1094,7 +906,9 @@
    "area_m2": 500,
    "break_date": "2018-09-01",
    "ndvi_drop": 0.297,
-   "bsi_rise": 0.098
+   "bsi_rise": 0.098,
+   "lat": 51.153922,
+   "lon": 71.380067
   },
   {
    "id": "astana_north_x000y000:C00048",
@@ -1102,7 +916,9 @@
    "area_m2": 500,
    "break_date": "2024-04-01",
    "ndvi_drop": 0.489,
-   "bsi_rise": 0.097
+   "bsi_rise": 0.097,
+   "lat": 51.152556,
+   "lon": 71.389721
   },
   {
    "id": "astana_north_x000y000:C00055",
@@ -1110,7 +926,9 @@
    "area_m2": 500,
    "break_date": "2024-05-01",
    "ndvi_drop": 0.462,
-   "bsi_rise": 0.118
+   "bsi_rise": 0.118,
+   "lat": 51.148943,
+   "lon": 71.381669
   },
   {
    "id": "astana_north_x000y000:C00061",
@@ -1118,7 +936,9 @@
    "area_m2": 500,
    "break_date": "2019-09-01",
    "ndvi_drop": 0.238,
-   "bsi_rise": 0.132
+   "bsi_rise": 0.132,
+   "lat": 51.143198,
+   "lon": 71.381088
   },
   {
    "id": "astana_north_x000y000:C00062",
@@ -1126,7 +946,9 @@
    "area_m2": 500,
    "break_date": "2019-04-01",
    "ndvi_drop": 0.2,
-   "bsi_rise": 0.132
+   "bsi_rise": 0.132,
+   "lat": 51.142246,
+   "lon": 71.427363
   },
   {
    "id": "astana_north_x000y000:C00067",
@@ -1134,7 +956,9 @@
    "area_m2": 500,
    "break_date": "2024-09-01",
    "ndvi_drop": 0.332,
-   "bsi_rise": 0.122
+   "bsi_rise": 0.122,
+   "lat": 51.138521,
+   "lon": 71.394285
   },
   {
    "id": "astana_north_x000y000:C00068",
@@ -1142,7 +966,9 @@
    "area_m2": 500,
    "break_date": "2018-09-01",
    "ndvi_drop": 0.442,
-   "bsi_rise": 0.137
+   "bsi_rise": 0.137,
+   "lat": 51.138593,
+   "lon": 71.381995
   },
   {
    "id": "astana_north_x000y000:C00069",
@@ -1150,7 +976,9 @@
    "area_m2": 500,
    "break_date": "2018-10-01",
    "ndvi_drop": 0.303,
-   "bsi_rise": 0.093
+   "bsi_rise": 0.093,
+   "lat": 51.137423,
+   "lon": 71.434402
   },
   {
    "id": "astana_north_x000y000:C00071",
@@ -1158,7 +986,9 @@
    "area_m2": 500,
    "break_date": "2020-04-01",
    "ndvi_drop": 0.442,
-   "bsi_rise": 0.075
+   "bsi_rise": 0.075,
+   "lat": 51.138475,
+   "lon": 71.374554
   },
   {
    "id": "astana_north_x000y000:C00073",
@@ -1166,7 +996,9 @@
    "area_m2": 500,
    "break_date": "2018-09-01",
    "ndvi_drop": 0.345,
-   "bsi_rise": 0.119
+   "bsi_rise": 0.119,
+   "lat": 51.138052,
+   "lon": 71.38211
   },
   {
    "id": "astana_north_x000y000:C00077",
@@ -1174,7 +1006,9 @@
    "area_m2": 500,
    "break_date": "2019-10-01",
    "ndvi_drop": 0.387,
-   "bsi_rise": 0.221
+   "bsi_rise": 0.221,
+   "lat": 51.137512,
+   "lon": 71.386514
   },
   {
    "id": "astana_north_x000y000:C00078",
@@ -1182,7 +1016,9 @@
    "area_m2": 500,
    "break_date": "2020-08-01",
    "ndvi_drop": 0.381,
-   "bsi_rise": 0.131
+   "bsi_rise": 0.131,
+   "lat": 51.137675,
+   "lon": 71.374084
   },
   {
    "id": "astana_north_x000y000:C00079",
@@ -1190,7 +1026,9 @@
    "area_m2": 500,
    "break_date": "2018-09-01",
    "ndvi_drop": 0.298,
-   "bsi_rise": 0.125
+   "bsi_rise": 0.125,
+   "lat": 51.13746,
+   "lon": 71.384652
   },
   {
    "id": "astana_north_x000y000:C00081",
@@ -1198,7 +1036,9 @@
    "area_m2": 500,
    "break_date": "2021-04-01",
    "ndvi_drop": 0.357,
-   "bsi_rise": 0.109
+   "bsi_rise": 0.109,
+   "lat": 51.137208,
+   "lon": 71.388214
   },
   {
    "id": "astana_north_x000y000:C00085",
@@ -1206,7 +1046,9 @@
    "area_m2": 500,
    "break_date": "2023-04-01",
    "ndvi_drop": 0.509,
-   "bsi_rise": 0.13
+   "bsi_rise": 0.13,
+   "lat": 51.136696,
+   "lon": 71.404341
   },
   {
    "id": "astana_north_x000y000:C00087",
@@ -1214,7 +1056,9 @@
    "area_m2": 500,
    "break_date": "2024-05-01",
    "ndvi_drop": 0.479,
-   "bsi_rise": 0.082
+   "bsi_rise": 0.082,
+   "lat": 51.136847,
+   "lon": 71.392627
   },
   {
    "id": "astana_north_x000y000:C00089",
@@ -1222,7 +1066,9 @@
    "area_m2": 500,
    "break_date": "2019-04-01",
    "ndvi_drop": 0.371,
-   "bsi_rise": 0.08
+   "bsi_rise": 0.08,
+   "lat": 51.136785,
+   "lon": 71.382474
   },
   {
    "id": "astana_north_x000y000:C00094",
@@ -1230,7 +1076,9 @@
    "area_m2": 500,
    "break_date": "2019-04-01",
    "ndvi_drop": 0.464,
-   "bsi_rise": 0.113
+   "bsi_rise": 0.113,
+   "lat": 51.135509,
+   "lon": 71.41829
   },
   {
    "id": "astana_north_x000y000:C00096",
@@ -1238,7 +1086,9 @@
    "area_m2": 500,
    "break_date": "2018-10-01",
    "ndvi_drop": 0.374,
-   "bsi_rise": 0.128
+   "bsi_rise": 0.128,
+   "lat": 51.136159,
+   "lon": 71.382298
   },
   {
    "id": "astana_north_x000y000:C00098",
@@ -1246,7 +1096,9 @@
    "area_m2": 500,
    "break_date": "2019-04-01",
    "ndvi_drop": 0.437,
-   "bsi_rise": 0.089
+   "bsi_rise": 0.089,
+   "lat": 51.13531,
+   "lon": 71.41928
   },
   {
    "id": "astana_north_x000y000:C00100",
@@ -1254,7 +1106,9 @@
    "area_m2": 500,
    "break_date": "2020-10-01",
    "ndvi_drop": 0.365,
-   "bsi_rise": 0.121
+   "bsi_rise": 0.121,
+   "lat": 51.135556,
+   "lon": 71.398564
   },
   {
    "id": "astana_north_x000y000:C00101",
@@ -1262,7 +1116,9 @@
    "area_m2": 500,
    "break_date": "2019-04-01",
    "ndvi_drop": 0.361,
-   "bsi_rise": 0.121
+   "bsi_rise": 0.121,
+   "lat": 51.135829,
+   "lon": 71.380852
   },
   {
    "id": "astana_north_x000y000:C00104",
@@ -1270,7 +1126,9 @@
    "area_m2": 500,
    "break_date": "2019-10-01",
    "ndvi_drop": 0.313,
-   "bsi_rise": 0.068
+   "bsi_rise": 0.068,
+   "lat": 51.135626,
+   "lon": 71.377554
   },
   {
    "id": "astana_north_x000y000:C00116",
@@ -1278,7 +1136,9 @@
    "area_m2": 500,
    "break_date": "2021-06-01",
    "ndvi_drop": 0.452,
-   "bsi_rise": 0.136
+   "bsi_rise": 0.136,
+   "lat": 51.133267,
+   "lon": 71.418029
   },
   {
    "id": "astana_north_x000y000:C00118",
@@ -1286,255 +1146,9 @@
    "area_m2": 500,
    "break_date": "2019-04-01",
    "ndvi_drop": 0.345,
-   "bsi_rise": 0.097
-  },
-  {
-   "id": "astana_north_x000y000:C00125",
-   "slug": "astana_north_x000y000__C00125",
-   "area_m2": 500,
-   "break_date": "2019-04-01",
-   "ndvi_drop": 0.351,
-   "bsi_rise": 0.125
-  },
-  {
-   "id": "astana_north_x000y000:C00127",
-   "slug": "astana_north_x000y000__C00127",
-   "area_m2": 500,
-   "break_date": "2024-06-01",
-   "ndvi_drop": 0.262,
-   "bsi_rise": 0.181
-  },
-  {
-   "id": "astana_north_x000y000:C00129",
-   "slug": "astana_north_x000y000__C00129",
-   "area_m2": 500,
-   "break_date": "2020-10-01",
-   "ndvi_drop": 0.273,
-   "bsi_rise": 0.075
-  },
-  {
-   "id": "astana_north_x000y000:C00130",
-   "slug": "astana_north_x000y000__C00130",
-   "area_m2": 500,
-   "break_date": "2020-10-01",
-   "ndvi_drop": 0.279,
-   "bsi_rise": 0.111
-  },
-  {
-   "id": "astana_north_x000y000:C00134",
-   "slug": "astana_north_x000y000__C00134",
-   "area_m2": 500,
-   "break_date": "2019-09-01",
-   "ndvi_drop": 0.331,
-   "bsi_rise": 0.112
-  },
-  {
-   "id": "astana_north_x000y000:C00135",
-   "slug": "astana_north_x000y000__C00135",
-   "area_m2": 500,
-   "break_date": "2020-06-01",
-   "ndvi_drop": 0.353,
-   "bsi_rise": 0.105
-  },
-  {
-   "id": "astana_north_x000y000:C00136",
-   "slug": "astana_north_x000y000__C00136",
-   "area_m2": 500,
-   "break_date": "2024-09-01",
-   "ndvi_drop": 0.274,
-   "bsi_rise": 0.129
-  },
-  {
-   "id": "astana_north_x000y000:C00137",
-   "slug": "astana_north_x000y000__C00137",
-   "area_m2": 500,
-   "break_date": "2019-09-01",
-   "ndvi_drop": 0.206,
-   "bsi_rise": 0.131
-  },
-  {
-   "id": "astana_north_x000y000:C00138",
-   "slug": "astana_north_x000y000__C00138",
-   "area_m2": 500,
-   "break_date": "2019-09-01",
-   "ndvi_drop": 0.326,
-   "bsi_rise": 0.113
-  },
-  {
-   "id": "astana_north_x000y000:C00140",
-   "slug": "astana_north_x000y000__C00140",
-   "area_m2": 500,
-   "break_date": "2020-09-01",
-   "ndvi_drop": 0.332,
-   "bsi_rise": 0.083
-  },
-  {
-   "id": "astana_north_x000y000:C00142",
-   "slug": "astana_north_x000y000__C00142",
-   "area_m2": 500,
-   "break_date": "2024-09-01",
-   "ndvi_drop": 0.237,
-   "bsi_rise": 0.134
-  },
-  {
-   "id": "astana_north_x000y000:C00146",
-   "slug": "astana_north_x000y000__C00146",
-   "area_m2": 500,
-   "break_date": "2021-04-01",
-   "ndvi_drop": 0.261,
-   "bsi_rise": 0.13
-  },
-  {
-   "id": "astana_north_x000y000:C00147",
-   "slug": "astana_north_x000y000__C00147",
-   "area_m2": 500,
-   "break_date": "2021-04-01",
-   "ndvi_drop": 0.319,
-   "bsi_rise": 0.111
-  },
-  {
-   "id": "astana_north_x000y000:C00148",
-   "slug": "astana_north_x000y000__C00148",
-   "area_m2": 500,
-   "break_date": "2021-04-01",
-   "ndvi_drop": 0.237,
-   "bsi_rise": 0.077
-  },
-  {
-   "id": "astana_north_x000y000:C00149",
-   "slug": "astana_north_x000y000__C00149",
-   "area_m2": 500,
-   "break_date": "2019-04-01",
-   "ndvi_drop": 0.4,
-   "bsi_rise": 0.268
-  },
-  {
-   "id": "astana_north_x000y001:C00001",
-   "slug": "astana_north_x000y001__C00001",
-   "area_m2": 500,
-   "break_date": "2019-04-01",
-   "ndvi_drop": 0.229,
-   "bsi_rise": 0.074
-  },
-  {
-   "id": "astana_north_x000y001:C00004",
-   "slug": "astana_north_x000y001__C00004",
-   "area_m2": 500,
-   "break_date": "2018-10-01",
-   "ndvi_drop": 0.273,
-   "bsi_rise": 0.098
-  },
-  {
-   "id": "astana_north_x000y001:C00011",
-   "slug": "astana_north_x000y001__C00011",
-   "area_m2": 500,
-   "break_date": "2024-09-01",
-   "ndvi_drop": 0.23,
-   "bsi_rise": 0.13
-  },
-  {
-   "id": "astana_north_x000y001:C00013",
-   "slug": "astana_north_x000y001__C00013",
-   "area_m2": 500,
-   "break_date": "2019-06-01",
-   "ndvi_drop": 0.365,
-   "bsi_rise": 0.173
-  },
-  {
-   "id": "astana_north_x000y001:C00016",
-   "slug": "astana_north_x000y001__C00016",
-   "area_m2": 500,
-   "break_date": "2022-10-01",
-   "ndvi_drop": 0.461,
-   "bsi_rise": 0.094
-  },
-  {
-   "id": "astana_north_x000y001:C00017",
-   "slug": "astana_north_x000y001__C00017",
-   "area_m2": 500,
-   "break_date": "2024-05-01",
-   "ndvi_drop": 0.406,
-   "bsi_rise": 0.167
-  },
-  {
-   "id": "astana_north_x000y001:C00018",
-   "slug": "astana_north_x000y001__C00018",
-   "area_m2": 500,
-   "break_date": "2024-05-01",
-   "ndvi_drop": 0.381,
-   "bsi_rise": 0.163
-  },
-  {
-   "id": "astana_north_x000y001:C00022",
-   "slug": "astana_north_x000y001__C00022",
-   "area_m2": 500,
-   "break_date": "2023-04-01",
-   "ndvi_drop": 0.554,
-   "bsi_rise": 0.267
-  },
-  {
-   "id": "astana_north_x000y001:C00023",
-   "slug": "astana_north_x000y001__C00023",
-   "area_m2": 500,
-   "break_date": "2020-10-01",
-   "ndvi_drop": 0.44,
-   "bsi_rise": 0.198
-  },
-  {
-   "id": "astana_north_x000y001:C00024",
-   "slug": "astana_north_x000y001__C00024",
-   "area_m2": 500,
-   "break_date": "2019-04-01",
-   "ndvi_drop": 0.43,
-   "bsi_rise": 0.206
-  },
-  {
-   "id": "astana_north_x000y001:C00026",
-   "slug": "astana_north_x000y001__C00026",
-   "area_m2": 500,
-   "break_date": "2019-10-01",
-   "ndvi_drop": 0.485,
-   "bsi_rise": 0.222
-  },
-  {
-   "id": "astana_north_x000y001:C00027",
-   "slug": "astana_north_x000y001__C00027",
-   "area_m2": 500,
-   "break_date": "2019-04-01",
-   "ndvi_drop": 0.273,
-   "bsi_rise": 0.089
-  },
-  {
-   "id": "astana_north_x000y001:C00036",
-   "slug": "astana_north_x000y001__C00036",
-   "area_m2": 500,
-   "break_date": "2024-06-01",
-   "ndvi_drop": 0.362,
-   "bsi_rise": 0.084
-  },
-  {
-   "id": "astana_north_x000y001:C00037",
-   "slug": "astana_north_x000y001__C00037",
-   "area_m2": 500,
-   "break_date": "2024-10-01",
-   "ndvi_drop": 0.274,
-   "bsi_rise": 0.08
-  },
-  {
-   "id": "astana_north_x000y001:C00044",
-   "slug": "astana_north_x000y001__C00044",
-   "area_m2": 500,
-   "break_date": "2018-09-01",
-   "ndvi_drop": 0.219,
-   "bsi_rise": 0.121
-  },
-  {
-   "id": "astana_north_x000y001:C00048",
-   "slug": "astana_north_x000y001__C00048",
-   "area_m2": 500,
-   "break_date": "2019-06-01",
-   "ndvi_drop": 0.3,
-   "bsi_rise": 0.175
+   "bsi_rise": 0.097,
+   "lat": 51.133229,
+   "lon": 71.380432
   },
   {
    "id": "astana_north_x000y000:C00012",
@@ -1542,7 +1156,9 @@
    "area_m2": 400,
    "break_date": "2019-06-01",
    "ndvi_drop": 0.309,
-   "bsi_rise": 0.179
+   "bsi_rise": 0.179,
+   "lat": 51.16244,
+   "lon": 71.370243
   },
   {
    "id": "astana_north_x000y000:C00075",
@@ -1550,23 +1166,9 @@
    "area_m2": 400,
    "break_date": "2020-04-01",
    "ndvi_drop": 0.362,
-   "bsi_rise": 0.12
-  },
-  {
-   "id": "astana_north_x000y000:C00139",
-   "slug": "astana_north_x000y000__C00139",
-   "area_m2": 400,
-   "break_date": "2020-06-01",
-   "ndvi_drop": 0.33,
-   "bsi_rise": 0.143
-  },
-  {
-   "id": "astana_north_x000y001:C00038",
-   "slug": "astana_north_x000y001__C00038",
-   "area_m2": 400,
-   "break_date": "2019-04-01",
-   "ndvi_drop": 0.661,
-   "bsi_rise": 0.127
+   "bsi_rise": 0.12,
+   "lat": 51.137912,
+   "lon": 71.368986
   },
   {
    "id": "astana_north_x000y000:C00004",
@@ -1574,7 +1176,9 @@
    "area_m2": 100,
    "break_date": "2019-04-01",
    "ndvi_drop": 0.704,
-   "bsi_rise": 0.08
+   "bsi_rise": 0.08,
+   "lat": 51.164912,
+   "lon": 71.370334
   },
   {
    "id": "astana_north_x000y000:C00082",
@@ -1582,7 +1186,9 @@
    "area_m2": 100,
    "break_date": "NaT",
    "ndvi_drop": 0.124,
-   "bsi_rise": -0.021
+   "bsi_rise": -0.021,
+   "lat": 51.136781,
+   "lon": 71.404632
   },
   {
    "id": "astana_north_x000y000:C00105",
@@ -1590,16 +1196,12 @@
    "area_m2": 100,
    "break_date": "NaT",
    "ndvi_drop": 0.204,
-   "bsi_rise": 0.047
-  },
-  {
-   "id": "astana_north_x000y001:C00028",
-   "slug": "astana_north_x000y001__C00028",
-   "area_m2": 100,
-   "break_date": "2019-04-01",
-   "ndvi_drop": 0.282,
-   "bsi_rise": 0.109
+   "bsi_rise": 0.047,
+   "lat": 51.134991,
+   "lon": 71.399821
   }
  ],
- "upscale": 1
+ "upscale": 4,
+ "crop_px": 36,
+ "span_m": 360
 }

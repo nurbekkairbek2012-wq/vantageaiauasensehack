@@ -1,13 +1,25 @@
-/* Ручная разметка: пара «до / после» и три кнопки.
+/* Ручная разметка: пара «до / после», живой снимок и три кнопки.
  *
  * Это не витрина, а инструмент, и он закрывает самый дорогой пункт списка
  * недоделанного. Сеть не обучается, потому что положительных примеров из
  * OpenStreetMap не набирается в принципе: внутри существующего полигона ТБО
  * детектор изменений ничего не находит — там и в 2018 году была голая
- * поверхность. Остаётся посмотреть глазами, и до сих пор для этого не было
- * ничего, кроме QGIS и списка координат.
+ * поверхность. Остаётся посмотреть глазами.
  *
- * Решения, которые здесь важны:
+ * ── Почему здесь три картинки, а не две ─────────────────────────────
+ *
+ * Пара чипов отвечает на вопрос «что изменилось» и делает это единственным
+ * доступным способом — по Sentinel-2, где пиксель равен десяти метрам.
+ * Объект в 40 метров занимает на таком снимке четыре пикселя, и вопрос
+ * «свалка это или карьер» по ним не решается никак. Первая версия страницы
+ * показывала только их, и честный ответ на любой чип был «не понятно».
+ *
+ * Третья картинка — то же место на живом снимке Esri, 0,75 метра на
+ * пиксель. Она отвечает на другой вопрос: «что там на самом деле». Даты у
+ * неё своей нет, она показывает сегодня, и поэтому не заменяет пару, а
+ * дополняет её: пара датирует изменение, снимок называет предмет.
+ *
+ * ── Остальные решения ───────────────────────────────────────────────
  *
  * Три кнопки, а не две. «Не понятно» — полноценный ответ: заставлять
  * человека выбирать между «свалка» и «не свалка» на мутном чипе значит
@@ -20,8 +32,11 @@
  * должна пропадать от закрытой вкладки.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { Nav } from './components/Nav';
+import { createBasemapLayer } from './components/basemaps';
 
 type Chip = {
   id: string;
@@ -30,7 +45,11 @@ type Chip = {
   break_date?: string;
   ndvi_drop?: number;
   bsi_rise?: number;
+  lat?: number;
+  lon?: number;
 };
+
+type Index = { chips: Chip[]; span_m?: number };
 
 type Verdict = 'landfill' | 'not' | 'unclear';
 
@@ -53,9 +72,14 @@ function humanDate(v?: string) {
 
 export default function Label() {
   const [chips, setChips] = useState<Chip[]>([]);
+  const [span, setSpan] = useState(280);
   const [labels, setLabels] = useState<Record<string, Verdict>>({});
   const [at, setAt] = useState(0);
   const [loaded, setLoaded] = useState(false);
+
+  const host = useRef<HTMLDivElement>(null);
+  const map = useRef<L.Map | null>(null);
+  const pin = useRef<L.CircleMarker | null>(null);
 
   useEffect(() => {
     try {
@@ -65,7 +89,10 @@ export default function Label() {
 
     fetch('./data/chips.json')
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => setChips(d?.chips ?? []))
+      .then((d: Index | null) => {
+        setChips(d?.chips ?? []);
+        if (d?.span_m) setSpan(d.span_m);
+      })
       .catch(() => setChips([]))
       .finally(() => setLoaded(true));
   }, []);
@@ -87,6 +114,52 @@ export default function Label() {
     Object.values(labels).forEach((v) => (out[v] += 1));
     return out;
   }, [labels]);
+
+  // ── Живой снимок ────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!host.current || map.current) return;
+    const m = L.map(host.current, {
+      zoomControl: false,
+      attributionControl: true,
+      // Ни перетаскивания, ни колеса: это опорная картинка, а не карта.
+      // Уехавший вид пришлось бы возвращать руками на каждом объекте.
+      dragging: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      boxZoom: false,
+      keyboard: false,
+      minZoom: 14,
+      maxZoom: 19,
+    }).setView([51.21, 71.5], 17);
+    createBasemapLayer('sat', 19).addTo(m);
+    map.current = m;
+
+    /* Leaflet запоминает размер контейнера в момент создания. Здесь карта
+       живёт в ячейке сетки, которая получает высоту только после того, как
+       браузер разложит соседние картинки, — на момент создания она нулевая,
+       и карта остаётся чёрным прямоугольником навсегда. Первый снимок
+       страницы показал ровно это. Наблюдатель за размером надёжнее
+       таймаута: он срабатывает и при повороте телефона. */
+    const watch = new ResizeObserver(() => m.invalidateSize());
+    watch.observe(host.current);
+    return () => { watch.disconnect(); m.remove(); map.current = null; };
+    /* Зависимости не пустые, и это не перестраховка. Контейнер карты
+       рендерится условно — пока данные не пришли, на его месте null. Эффект
+       с пустым списком отрабатывал один раз, до появления контейнера, молча
+       выходил по host.current === null и второго шанса не получал: снимок
+       страницы показывал чёрный прямоугольник вместо снимка. */
+  }, [loaded, chips.length]);
+
+  useEffect(() => {
+    const m = map.current;
+    if (!m || current?.lat == null || current?.lon == null) return;
+    const point: [number, number] = [current.lat, current.lon];
+    m.setView(point, 17, { animate: false });
+    if (pin.current) m.removeLayer(pin.current);
+    pin.current = L.circleMarker(point, {
+      radius: 13, color: '#ede9fe', weight: 2, fill: false, opacity: 0.9,
+    }).addTo(m);
+  }, [current]);
 
   const decide = useCallback(
     (verdict: Verdict) => {
@@ -145,7 +218,7 @@ export default function Label() {
         </div>
       </Nav>
 
-      <main className="mx-auto w-full max-w-[1100px] flex-1 px-6 py-8">
+      <main className="mx-auto w-full max-w-[1280px] flex-1 px-6 py-7">
         {!loaded ? null : !chips.length ? (
           <div className="max-w-[60ch]">
             <h1 className="text-2xl text-line">Чипов нет</h1>
@@ -153,42 +226,67 @@ export default function Label() {
               Пары «до / после» выгружаются из результатов прогона:
             </p>
             <pre className="mt-4 overflow-x-auto rounded-sm border border-grid bg-soot-2 px-3 py-2.5 text-xs text-muted">
-python scripts/export_chips.py 200
+python scripts/export_chips.py
             </pre>
           </div>
         ) : (
           <>
             <div className="flex flex-wrap items-baseline justify-between gap-4">
-              <h1 className="text-xl text-line">
-                Свалка на снимке «после»?
-              </h1>
+              <h1 className="text-xl text-line">Свалка на снимке «после»?</h1>
               <p className="tabular text-sm text-muted-2">
                 {at + 1} / {chips.length} · {current?.id}
               </p>
             </div>
 
-            <div className="mt-5 grid gap-5 md:grid-cols-2">
+            <div className="mt-4 grid gap-4 lg:grid-cols-3">
               {(['before', 'after'] as const).map((side) => (
                 <figure key={side} className="m-0">
-                  <figcaption className="mb-2 flex items-baseline justify-between text-sm">
+                  <figcaption className="mb-1.5 flex items-baseline justify-between text-sm">
                     <span className={side === 'after' ? 'text-line' : 'text-muted-2'}>
                       {side === 'before' ? 'До разрыва' : 'После разрыва'}
                     </span>
-                    {side === 'after' && (
-                      <span className="text-muted-2">{humanDate(current?.break_date)}</span>
-                    )}
+                    <span className="text-muted-2">
+                      {side === 'after' ? humanDate(current?.break_date) : 'Sentinel-2'}
+                    </span>
                   </figcaption>
                   <img
                     src={`./chips/${current?.slug}-${side}.png`}
                     alt={side === 'before' ? 'Снимок до разрыва' : 'Снимок после разрыва'}
-                    /* Увеличение делает CSS: чип 64 px, и растягивать его
-                       сглаживанием значит выдумывать детали, которых в
-                       данных нет. pixelated показывает ровно пиксели. */
-                    className="aspect-square w-full rounded-sm border border-grid bg-soot-2 [image-rendering:pixelated]"
+                    /* Сглаживание, а не ступеньки. Ступенчатое увеличение
+                       честнее — показывает ровно измеренные пиксели, — но
+                       человек не умеет читать шахматную доску, и первая
+                       версия страницы получала «не понятно» на любой чип.
+                       Интерполяция не добавляет сведений; она делает
+                       имеющиеся различимыми. Разрешение названо подписью. */
+                    className="aspect-square w-full rounded-sm border border-grid bg-soot-2 object-cover"
                   />
                 </figure>
               ))}
+
+              <figure className="m-0">
+                <figcaption className="mb-1.5 flex items-baseline justify-between text-sm">
+                  <span className="text-line">Сегодня, высокое разрешение</span>
+                  <span className="text-muted-2">0,75 м/пиксель</span>
+                </figcaption>
+                <div className="relative aspect-square w-full overflow-hidden rounded-sm border border-grid bg-soot-2">
+                  <div ref={host} className="absolute inset-0" />
+                  {current?.lat == null && (
+                    <p className="absolute inset-0 grid place-items-center px-4 text-center text-xs text-muted-2">
+                      Координат у этого куска нет — он выгружен до того, как
+                      их начали писать в индекс.
+                    </p>
+                  )}
+                </div>
+              </figure>
             </div>
+
+            <p className="mt-2.5 max-w-[80ch] text-xs leading-snug text-muted-2">
+              Пара слева — Sentinel-2, десять метров на пиксель, кадр{' '}
+              <span className="tabular">{span}</span> м в стороне. Она датирует
+              изменение, но не позволяет назвать предмет. Снимок справа
+              показывает сегодняшнее состояние и своей даты не имеет: если
+              объект вывезли, там будет чисто.
+            </p>
 
             <dl className="mt-4 flex flex-wrap gap-x-8 gap-y-2 text-sm text-muted-2">
               <div className="flex gap-2">
@@ -213,7 +311,7 @@ python scripts/export_chips.py 200
               )}
             </dl>
 
-            <div className="mt-7 flex flex-wrap gap-3">
+            <div className="mt-6 flex flex-wrap gap-3">
               {CHOICES.map(([verdict, label, key]) => (
                 <button
                   key={verdict}
@@ -245,7 +343,7 @@ python scripts/export_chips.py 200
               </div>
             </div>
 
-            <div className="mt-8 h-[3px] w-full bg-grid">
+            <div className="mt-7 h-[3px] w-full bg-grid">
               <div
                 className="h-full bg-violet-lit transition-[width] duration-300"
                 style={{ width: `${chips.length ? (done / chips.length) * 100 : 0}%` }}
@@ -255,7 +353,7 @@ python scripts/export_chips.py 200
               свалка {counts.landfill} · не свалка {counts.not} · не понятно {counts.unclear}
             </p>
 
-            <p className="mt-8 max-w-[70ch] text-sm leading-relaxed text-muted-2">
+            <p className="mt-6 max-w-[70ch] text-sm leading-relaxed text-muted-2">
               Разметка хранится в браузере и не уходит никуда. Когда наберётся
               хотя бы по пять примеров каждого класса, скачайте файл и
               скормите его обучению:{' '}

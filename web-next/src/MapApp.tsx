@@ -323,6 +323,8 @@ export default function MapApp() {
 function ObjectCard({ f }: { f: Feature }) {
   const p = f.properties;
   const score = Number(p.evidence_score) || 0;
+  const model = Number(p.probability);
+  const hasModel = Number.isFinite(model);
 
   return (
     <article className="px-5 py-5">
@@ -333,13 +335,27 @@ function ObjectCard({ f }: { f: Feature }) {
         </span>
       </div>
 
-      {/* Уверенности модели нет, и на её месте не должно быть числа,
-          похожего на вероятность. Названо тем, чем является. */}
-      <p className="mt-2 text-xs leading-snug text-muted-2">
-        {p.probability == null
-          ? 'Оценка по согласию физических признаков, не моделью: сеть не обучена — положительных примеров из открытых данных не набирается.'
-          : 'Вероятность обученной модели.'}
-      </p>
+      {/* Две разные величины, и путать их нельзя. Согласие признаков —
+          сколько физических измерений сошлись, оно есть у каждого объекта.
+          Вероятность — ответ сети, и он есть не у всех: сеть училась на
+          слабой разметке, и объекты вне этой разметки она не видела.
+
+          Вневыборочная: каждый объект оценён моделью, которая его на
+          обучении не встречала. Первая версия показывала медиану 0,999 —
+          модель просто помнила свои же обучающие примеры. */}
+      <div className="mt-3 rounded-sm border border-grid bg-soot-2 px-3 py-2.5">
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="text-xs text-muted-2">Вероятность модели</span>
+          <span className="tabular text-sm text-line">
+            {hasModel ? `${Math.round(model * 100)}%` : '—'}
+          </span>
+        </div>
+        <p className="mt-1.5 text-xs leading-snug text-muted-2">
+          {hasModel
+            ? 'Вневыборочная: оценку дала модель, которая этот объект на обучении не видела. Разметка слабая — положительные примеры взяты из доверификации, отрицательные из карьеров и строек OSM. Сеть отличает подтверждённое изменение от законного, а не находит свалки с нуля.'
+            : 'Этот объект не попал ни в положительную, ни в отрицательную часть слабой разметки, и модель по нему не высказывалась. Прочерк честнее подставленного числа.'}
+        </p>
+      </div>
 
       <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-3 border-y border-grid py-4 text-sm">
         {[
