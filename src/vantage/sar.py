@@ -253,6 +253,9 @@ def build_sar_stack(aoi, settings, items, *, chunks: dict | None = None):
         chunks=chunks or {"time": 1, "x": 1024, "y": 1024},
         groupby="solar_day",
         resampling="bilinear",
+        # Битый элемент каталога не должен ронять ветку целиком:
+        # см. raster.load_s2_stack — там это стоило сорока минут прогона.
+        fail_on_error=False,
     )
     # Дальше по коду поляризации зовутся канонически, поэтому имена
     # провайдера остаются только внутри загрузчика.

@@ -15,8 +15,8 @@ import logging
 import time
 from collections.abc import Iterable
 from dataclasses import dataclass
-from datetime import date
-from typing import Any
+from datetime import date, datetime, timedelta, timezone
+from typing import Any, ClassVar
 
 import pystac_client
 
@@ -152,6 +152,88 @@ class StacCatalog:
         )
         return [_to_scene_ref(item) for item in items]
 
+    #: Элементы, у которых метаданные есть, а ассеты отдают 404. Проверка
+    #: делается один раз за процесс: сцены повторяются от плитки к плитке,
+    #: и перепроверять их двадцать пять раз незачем.
+    _broken_items: ClassVar[set[str]] = set()
+
+    #: Насколько свежие сцены проверять. Ассеты не доезжают до хранилища
+    #: только у недавно принятых элементов; у снимка годичной давности
+    #: такого не бывает, и опрашивать восемьсот сцен ради двадцати
+    #: подозрительных — впустую потраченные минуты.
+    FRESH_DAYS: ClassVar[int] = 60
+
+    def _drop_broken(self, items: list, settings: Settings) -> list:
+        """Убрать элементы, чьи ассеты недоступны.
+
+        ── Зачем ───────────────────────────────────────────────────────
+
+        В каталоге встречаются свежепринятые элементы с полными
+        метаданными и отсутствующими файлами. ``fail_on_error=False`` в
+        odc-stac от них не спасает: он перехватывает ошибки rasterio, а
+        здесь до rasterio дело не доходит. GDAL, не найдя файл, зовёт
+        системный форматтер сообщений, тот отдаёт строку в кодировке
+        Windows, и Python роняет UnicodeDecodeError при попытке прочитать
+        её как UTF-8. Это не ошибка ввода-вывода ни для одного
+        перехватчика, и она проходит насквозь до самого верха.
+
+        Стоило это целого прогона: одна сцена от 12 июля 2026 года роняла
+        КАЖДУЮ из двадцати пяти плиток, обе попытки подряд — повтор
+        запрашивал ту же сцену.
+
+        Проверка идёт запросом Range на первый байт: он дешевле HEAD у
+        хранилищ, где HEAD не подписан, и точнее — отвечает ровно тот
+        путь, который потом откроет GDAL.
+        """
+        import rasterio
+
+        fresh_after = datetime.now(timezone.utc) - timedelta(days=self.FRESH_DAYS)
+        suspect = [
+            item
+            for item in items
+            if item.id not in self._broken_items
+            and item.datetime is not None
+            and item.datetime >= fresh_after
+        ]
+        if not suspect:
+            return items
+
+        wanted = [*settings.sentinel2.bands]
+        # Проверка идёт СРЕДСТВАМИ GDAL, а не requests.
+        #
+        # Первая версия опрашивала ссылки через requests и не находила ничего
+        # битого — а загрузчик на тех же файлах падал. Оказалось, requests их
+        # скачивает, а GDAL получает «HTTP error code: 0», то есть соединение
+        # не состоялось вовсе. Что бы ни было причиной — TLS, DNS или
+        # недоступный узел хранилища, — единственный способ узнать, прочитает
+        # ли файл загрузчик, это попробовать прочитать его так же.
+        #
+        # Здесь же перехватывается UnicodeDecodeError: в нашем коде он
+        # ловится обычным except, в отличие от глубины стека odc-stac.
+        with rasterio.Env(GDAL_HTTP_MAX_RETRY=0, GDAL_HTTP_TIMEOUT=15):
+            for item in suspect:
+                for name in wanted:
+                    asset = item.assets.get(name)
+                    if asset is None:
+                        self._broken_items.add(item.id)
+                        break
+                    try:
+                        with rasterio.open(asset.href) as src:
+                            _ = src.width
+                    except Exception:  # важен факт отказа, а не его вид
+                        self._broken_items.add(item.id)
+                        break
+
+        if self._broken_items:
+            kept = [item for item in items if item.id not in self._broken_items]
+            if len(kept) != len(items):
+                log.warning(
+                    "Пропущено сцен с недоступными файлами: %d из %d",
+                    len(items) - len(kept), len(items),
+                )
+            return kept
+        return items
+
     def sentinel2_items(self, aoi: AOI, settings: Settings) -> list:
         """``pystac.Item`` Sentinel-2 с теми же фильтрами, что и :meth:`search_sentinel2`.
 
@@ -167,7 +249,8 @@ class StacCatalog:
             query={"eo:cloud_cover": {"lt": settings.sentinel2.max_scene_cloud_pct}},
         )
         allowed = set(settings.time.valid_months)
-        return [item for item in items if _item_month(item) in allowed]
+        items = [item for item in items if _item_month(item) in allowed]
+        return self._drop_broken(items, settings)
 
     def search_sentinel2(self, aoi: AOI, settings: Settings) -> list[SceneRef]:
         """Sentinel-2 L2A с фильтром по облачности сцены.

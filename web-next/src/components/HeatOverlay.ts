@@ -39,7 +39,21 @@ const MIN_PX = 8;
 const MAX_PX = 320;
 
 /** Запас холста за краями экрана, чтобы при перетаскивании не было пустоты. */
-const PAD = 0.18;
+const PAD = 0.12;
+
+/* Холст рисуется вдвое мельче экрана и растягивается стилями.
+ *
+ * Перерисовка стоит дорого не из-за пятен, а из-за второго прохода: вся
+ * накопленная альфа переводится в цвет попиксельно, через getImageData и
+ * putImageData. На экране 1440×900 с запасом это выходило 1,4 миллиона
+ * пикселей на каждый кадр зума — отсюда подтормаживание.
+ *
+ * Половинное разрешение сокращает работу вчетверо. Потери нет: поверхность
+ * и так размытая, её содержание — радиусы в сотни метров, а не отдельные
+ * пиксели. Единственное, что стало бы заметно, — ступеньки на резкой
+ * границе, а резких границ здесь нет по построению.
+ */
+const RESOLUTION = 0.5;
 
 /** За сколько лет пятно набирает полную силу. Ноль дал бы то же мигание. */
 const FADE_YEARS = 0.85;
@@ -222,10 +236,13 @@ export class HeatOverlay extends L.Layer {
     const size = map.getSize();
     const width = Math.round(size.x * (1 + PAD * 2));
     const height = Math.round(size.y * (1 + PAD * 2));
+    // Пиксели холста мельче экранных; стили растягивают его обратно.
+    const inner = Math.round(width * RESOLUTION);
+    const innerHeight = Math.round(height * RESOLUTION);
 
-    if (canvas.width !== width || canvas.height !== height) {
-      canvas.width = width;
-      canvas.height = height;
+    if (canvas.width !== inner || canvas.height !== innerHeight) {
+      canvas.width = inner;
+      canvas.height = innerHeight;
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
     }
@@ -274,7 +291,7 @@ export class HeatOverlay extends L.Layer {
     const zoom = map.getZoom();
     const mpp = metersPerPixel(zoom, map.getCenter().lat);
     const radius = Math.round(
-      Math.max(MIN_PX, Math.min(MAX_PX, RADIUS_M[this.kind] / mpp)),
+      Math.max(MIN_PX, Math.min(MAX_PX, (RADIUS_M[this.kind] / mpp) * RESOLUTION)),
     );
     const sprite = this.spriteFor(radius);
 
@@ -298,8 +315,10 @@ export class HeatOverlay extends L.Layer {
       // текущего вида, и при панорамировании пятна разъезжались с холстом,
       // который двигается вместе со слоем.
       const pixel = map.latLngToLayerPoint([point.lat, point.lon]).subtract(origin);
+      const x = pixel.x * RESOLUTION;
+      const y = pixel.y * RESOLUTION;
       ctx.globalAlpha = Math.min(1, 0.12 + 0.55 * strength);
-      ctx.drawImage(sprite, pixel.x - radius, pixel.y - radius);
+      ctx.drawImage(sprite, x - radius, y - radius);
       painted++;
     }
 

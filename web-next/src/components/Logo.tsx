@@ -125,17 +125,27 @@ export function Logo({ size = 30, className = '' }: Props) {
       {/* Знак крупнее кегля слова: в связке он несёт форму, а слово —
           чтение. При равной высоте знак выглядит приставкой к тексту. */}
       <Mark size={size * 1.35} />
-      <span
-        /* Без uppercase и почти без разрядки. Капслок с межбуквенным
-           интервалом читается как аббревиатура — у слова, набранного
-           капителью, нет силуэта, и в глаза оно не бросается именно
-           поэтому. В самом знаке заказчика надпись капслоком, но там она
-           часть рисунка; в интерфейсе рядом с текстом слово ведёт себя
-           как слово. */
-        className="font-display font-semibold leading-none text-line"
-        style={{ fontSize: size * 0.82, letterSpacing: '0.01em' }}
-      >
-        Vantage
+      {/* «AI» — суффикс, а не часть слова, и набран он иначе: другим
+          цветом и меньшим кеглем. Набранный в одну строку одинаково,
+          «Vantage AI» читается как двусложное имя, и ударение уезжает на
+          суффикс — тогда как имя продукта остаётся первым словом.
+
+          Без uppercase у основного слова: капслок с разрядкой читается как
+          аббревиатура, у такого слова нет силуэта. В самом знаке надпись
+          капслоком, но там она часть рисунка. */}
+      <span className="inline-flex items-baseline gap-[0.32em]">
+        <span
+          className="font-display font-semibold leading-none text-line"
+          style={{ fontSize: size * 0.82, letterSpacing: '0.01em' }}
+        >
+          Vantage
+        </span>
+        <span
+          className="font-display font-semibold uppercase leading-none text-violet-lit"
+          style={{ fontSize: size * 0.5, letterSpacing: '0.08em' }}
+        >
+          AI
+        </span>
       </span>
     </span>
   );

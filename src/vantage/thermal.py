@@ -198,6 +198,9 @@ def build_thermal_stack(aoi, settings, items, *, chunks: dict | None = None):
         chunks=chunks or {"time": 1, "x": 512, "y": 512},
         groupby="solar_day",
         resampling="bilinear",
+        # Битый элемент каталога не должен ронять ветку целиком:
+        # см. raster.load_s2_stack — там это стоило сорока минут прогона.
+        fail_on_error=False,
     )
     log.info("Загружен тепловой куб Landsat: %d дат", ds.sizes.get("time", 0))
 

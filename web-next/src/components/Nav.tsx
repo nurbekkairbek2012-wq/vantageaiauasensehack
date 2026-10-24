@@ -34,7 +34,7 @@ export function Nav({ current, children }: { current: Surface; children?: React.
     // страницу на 34 пикселя при ширине 390 — на всех страницах сразу.
     <header className="flex w-full shrink-0 flex-wrap items-center justify-between gap-x-8 gap-y-3 border-b border-grid px-4 py-3 sm:px-5">
       <div className="flex min-w-0 flex-wrap items-center gap-x-6 gap-y-2">
-        <a href="./index.html" className="no-underline" aria-label="Vantage, на главную">
+        <a href="./index.html" className="no-underline" aria-label="Vantage AI, на главную">
           <Logo size={26} />
         </a>
         <nav className="flex min-w-0 flex-wrap items-center gap-x-1 gap-y-1">
