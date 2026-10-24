@@ -95,7 +95,18 @@ def numbers() -> dict:
 
     sums = econ["totals"]["sum_of_medians"]
 
+    # Тот самый объект, который открывают первым на демонстрации: верхний
+    # в очереди по деньгам. Его площадь и его дата — именно его, а не
+    # «самого крупного» и «самого старого», как стояло раньше: два разных
+    # объекта в одной строке слайда читаются как одна выдумка.
+    top = max(econ["objects"], key=lambda o: o["damage_p50"])
+    top_when = pd.Timestamp(top["break_date"]) if top.get("break_date") else None
+
     return {
+        "top_area": top["area_m2"],
+        "top_date": (f"{MONTHS[top_when.month - 1]} {top_when.year}"
+                     if top_when is not None else "—"),
+        "top_damage": top["damage_p50"] / 1e6,
         "mass_sum": sums["mass_t"],
         "removal": sums["removal_kzt"] / 1e6,
         "recyclable": sums["recyclable_kzt"] / 1e6,
@@ -581,40 +592,62 @@ def slides(n: dict) -> str:
       {foot(9, 'экономика')}</section>""")
 
     # 10 ── Продукт и стек
+    #
+    # Слайд был перечнем экранов, и читался он ровно так: «мы сделали
+    # всё». Перечень отвечает на вопрос «что у вас есть», а жюри задаёт
+    # другой — «что происходит с моей задачей». Здесь тот же
+    # единственный сценарий, что идёт на живой демонстрации, шагами;
+    # второстепенное сжато в одну строку.
+    #
+    # Снимка на слайде нет намеренно. Стоял снимок прогноза — экрана,
+    # которого в этом сценарии нет вообще: текст вёл по карте, картинка
+    # показывала другое. Несовпадение картинки с подписью на защите
+    # замечают раньше, чем читают подпись.
     s.append(f"""<section class="slide">
       <div class="kicker">Продукт и стек</div>
-      <h2>Один сценарий целиком,<br>а не шесть кнопок по разу</h2>
+      <h2>Один объект от находки<br>до подписанного акта</h2>
       <div class="body">
-      <div class="row" style="margin-top:10px">
-        <div class="col" style="flex:1.1">{shot('forecast.png')}</div>
+      <div class="row" style="margin-top:14px">
+        <div class="col" style="flex:1.3">
+          <table>
+            <tr><th>Шаг</th><th style="text-align:right">Что видит инспектор</th></tr>
+            <tr><td class="k">1. Открыл карту</td>
+                <td class="r">очередь по деньгам, не список точек</td></tr>
+            <tr><td class="k">2. Взял верхний объект</td>
+                <td class="r lit">{ru(n['top_area'])} м², {ru(n['top_damage'], 1)} млн ₸</td></tr>
+            <tr><td class="k">3. Посмотрел до и после</td>
+                <td class="r">снимок 0,4–0,8 м на пиксель</td></tr>
+            <tr><td class="k">4. Проверил доказательства</td>
+                <td class="r">пять признаков с весами</td></tr>
+            <tr><td class="k">5. Увидел деньги</td>
+                <td class="r">вывоз, возврат сырьём, интервал</td></tr>
+            <tr><td class="k">6. Распечатал акт</td>
+                <td class="r em">черновик до подписи человека</td></tr>
+            <tr><td class="k">7. Через месяц — контроль</td>
+                <td class="r">убрали или засыпали, по зимнему теплу</td></tr>
+          </table>
+        </div>
         <div class="col">
-          <ul>
-            <li><b>Карта</b> — куда ехать сегодня: очередь, отсортированная
-              по деньгам</li>
-            <li><b>Объект</b> — история: снимок до и после, дата возникновения,
-              пять признаков с весами</li>
-            <li><b>Экономика</b> — масса, вывоз, возвратное сырьё, интервал,
-              происхождение каждого допущения</li>
-            <li><b>Акт</b> — черновик PDF, который человек подтверждает
-              и подписывает</li>
-            <li><b>Контроль</b> — убрали или засыпали грунтом, по зимнему теплу</li>
-            <li><b>Риск и жители</b> — карта риска на год и Telegram-бот для
-              того, чего спутник не видит</li>
-          </ul>
+          <p><b style="color:var(--line)">Рядом, но не в этом сценарии:</b>
+            карта риска на год вперёд, Telegram-бот для жителей, инструмент
+            разметки. Показываем их, только если спросят: один доведённый
+            до конца путь убедительнее шести начатых.</p>
+          <p style="margin-top:16px"><b style="color:var(--line)">Сайт
+            открывается с флешки</b> и работает без интернета — шрифты,
+            данные и подложка лежат локально. Проверено автоматически, и
+            это же запасной план на случай, если в зале не будет сети.</p>
+          <div style="margin-top:18px">
+            <span class="pill">Python · xarray · dask · rasterio</span>
+            <span class="pill">PyTorch</span>
+            <span class="pill">LightGBM</span>
+            <span class="pill">FastAPI</span>
+            <span class="pill">React · Leaflet · Tailwind</span>
+            <span class="pill">ReportLab</span>
+            <span class="pill">Sentinel-2 · Sentinel-1 · Landsat</span>
+            <span class="pill">OpenStreetMap</span>
+          </div>
         </div>
       </div>
-      <div style="margin-top:14px">
-        <span class="pill">Python · xarray · dask · rasterio</span>
-        <span class="pill">PyTorch</span>
-        <span class="pill">LightGBM</span>
-        <span class="pill">FastAPI</span>
-        <span class="pill">React · Leaflet · Tailwind</span>
-        <span class="pill">ReportLab</span>
-        <span class="pill">Sentinel-2 · Sentinel-1 · Landsat · OSM</span>
-      </div>
-      <p class="note" style="margin-top:10px">Сайт открывается с флешки и
-        работает <b style="color:var(--line)">без интернета</b> — проверено
-        автоматически.</p>
             </div>
       {foot(10, 'продукт и стек')}</section>""")
 
@@ -685,17 +718,12 @@ def slides(n: dict) -> str:
                 <td class="r em">{ru(n['recyclable'], 1)} млн ₸</td></tr>
             <tr><td class="k">Ручной работы снято</td><td class="r">71%</td></tr>
           </table>
-          <p style="margin-top:16px"><b style="color:var(--line)">Подписка на область
+          <p style="margin-top:14px"><b style="color:var(--line)">Подписка на область
             под наблюдением</b> — по квадратным километрам: ежемесячный пересчёт,
             очередь по деньгам, контроль устранения. Пояс вокруг областного центра —
-            400 км², около четырёх часов машинного времени в месяц. Один найденный
-            объект здесь в среднем стоит {ru(n['net'] / n['dumps'], 1)} млн ₸ потерь;
-            штраф по ст. 344 добавляет до 4,3 млн ₸ с дела.</p>
-          <p class="note" style="margin-top:12px">Пилот на восемь недель расписан
-            по неделям: что нужно от заказчика (пять вещей, ни одной про
-            разработку), чем меряется успех и где он вправе провалиться —
-            docs/PILOT.md. Оценки бизнес-модели расчётные, продажами не
-            подтверждены.</p>
+            400 км², около четырёх часов машинного времени в месяц; один найденный
+            объект здесь в среднем стоит {ru(n['net'] / n['dumps'], 1)} млн ₸ потерь.</p>
+
         </div>
         <div class="col">
           <div class="num mid">Команда</div>
@@ -711,11 +739,15 @@ def slides(n: dict) -> str:
           <p style="margin-top:22px"><b style="color:var(--line)">Репозиторий:</b>
             github.com/k41270075-stack/hakathon</p>
           <p style="margin-top:8px"><b style="color:var(--line)">Живой продукт:</b>
-            hakathon-ll-1c21.vercel.app</p>
+            hakathon-lyart.vercel.app</p>
           <p class="note" style="margin-top:22px">682 автоматические проверки,
             семь страниц в трёх браузерах, карта работает без интернета.
             Все числа этой деки читаются из выгрузки прогона — ни одно не
             вписано руками.</p>
+          <p class="note" style="margin-top:12px">Пилот на восемь недель расписан
+            по неделям в docs/PILOT.md: что нужно от заказчика, чем меряется
+            успех и где пилот вправе провалиться. Оценки бизнес-модели
+            расчётные, продажами не подтверждены — говорим это сами.</p>
         </div>
       </div>
             </div>

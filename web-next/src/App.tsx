@@ -267,7 +267,7 @@ export default function App() {
             страницу вбок. На телефоне это выглядело как 382 лишних
             пикселя горизонтальной прокрутки — палец елозит, вёрстка
             «плавает», и первое впечатление испорчено ещё до текста. */}
-        <section className="relative overflow-hidden pt-12 pb-16">
+        <section id="hero" className="relative overflow-hidden pt-12 pb-16">
           {/* Мягкое свечение за первым экраном. Единственное украшение на
               странице, и стоит оно здесь по делу: тёмная страница без
               градиента читается как консоль, а первый экран должен читаться
@@ -433,7 +433,7 @@ export default function App() {
             Числа те же, что на экране «Экономика»: одна выгрузка, один
             денежный слой, одно зерно. */}
         {money && (
-          <section className="border-t border-grid pt-14 pb-16">
+          <section id="money" className="border-t border-grid pt-14 pb-16">
             <div className="grid gap-10 lg:grid-cols-[1.05fr_1fr]">
               <div>
                 <h2 className="max-w-[22ch] text-[clamp(1.7rem,3.6vw,2.6rem)] text-line">
@@ -500,8 +500,61 @@ export default function App() {
           </section>
         )}
 
+        {/* ── Кому это ──────────────────────────────────────────────
+            Раздел короткий и стоит третьим намеренно. Прежде страница
+            вообще не называла пользователя: продукт описывался тем, что
+            он умеет, и читатель сам должен был догадаться, кому это
+            нужно. Догадываться он не станет — он закроет вкладку.
+
+            Пользователь назван один. «Служба, жители, малый бизнес и
+            школы» через запятую звучит шире, а читается как «мы не
+            решили»: у продукта, полезного всем, нет никого, кто за него
+            отвечает. */}
+        <section id="audience" className="border-t border-grid pt-14 pb-16">
+          <div className="grid gap-10 lg:grid-cols-[1fr_1.1fr]">
+            <div>
+              <h2 className="max-w-[20ch] text-[clamp(1.7rem,3.6vw,2.6rem)] text-line">
+                Кто этим пользуется
+              </h2>
+              <p className="mt-4 max-w-[52ch] text-muted">
+                Главный пользователь один —{' '}
+                <strong className="font-normal text-line">отдел экологии акимата</strong>.
+                Он платит, он выезжает, он отвечает за результат. Остальные
+                контуры существуют, но они вторые, и продукт устроен вокруг
+                первого.
+              </p>
+            </div>
+            <dl className="grid gap-x-8 gap-y-5 sm:grid-cols-2">
+              {[
+                ['Отдел экологии акимата', 'главный',
+                 'очередь по деньгам, черновик акта, контроль устранения',
+                 'text-violet-lit'],
+                ['ЖКХ и подрядчик по вывозу', 'второй контур',
+                 'те же объекты, но в порядке маршрута, а не по алфавиту',
+                 'text-muted-2'],
+                ['Житель с телефоном', 'второй контур',
+                 'закрывает то, чего спутник не видит: объекты меньше 30 м² и свежее полутора лет',
+                 'text-muted-2'],
+                ['Малый бизнес и школы', 'третий контур',
+                 'открытый слой зон риска: где не стоит арендовать участок',
+                 'text-muted-2'],
+              ].map(([who, rank, what, tone]) => (
+                <div key={String(who)} className="border-t border-grid pt-3">
+                  <dt className="flex flex-wrap items-baseline gap-x-2">
+                    <span className="text-base text-line">{who}</span>
+                    <span className={`text-[10px] uppercase tracking-[0.1em] ${tone}`}>
+                      {rank}
+                    </span>
+                  </dt>
+                  <dd className="mt-1.5 max-w-[36ch] text-sm leading-snug text-muted-2">{what}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </section>
+
         {/* ── Вот он ────────────────────────────────────────────────── */}
-        <section className="border-t border-grid pt-14 pb-16">
+        <section id="site" className="border-t border-grid pt-14 pb-16">
           <div className="grid items-center gap-10 lg:grid-cols-[1fr_1fr]">
             <div>
               <h2 className="max-w-[18ch] text-[clamp(1.7rem,3.6vw,2.6rem)] text-line">
@@ -544,7 +597,7 @@ export default function App() {
         </section>
 
         {/* ── Пять признаков ────────────────────────────────────────── */}
-        <section className="border-t border-grid pt-14 pb-16">
+        <section id="signals" className="border-t border-grid pt-14 pb-16">
           <h2 className="max-w-[24ch] text-[clamp(1.7rem,3.6vw,2.6rem)] text-line">
             Пять признаков находят изменение. Опознаёт человек
           </h2>
@@ -569,7 +622,7 @@ export default function App() {
 
         {/* ── Воронка ───────────────────────────────────────────────── */}
         {funnel && totals.count > 0 && (
-          <section className="border-t border-grid pt-14 pb-16">
+          <section id="funnel" className="border-t border-grid pt-14 pb-16">
             <h2 className="max-w-[26ch] text-[clamp(1.7rem,3.6vw,2.6rem)] text-line">
               До списка дошёл один кандидат из {Math.round(funnel.raw / totals.count)}
             </h2>
@@ -583,7 +636,7 @@ export default function App() {
 
 
         {/* ── Когда и почём ─────────────────────────────────────────── */}
-        <section className="border-t border-grid pt-14 pb-16">
+        <section id="when" className="border-t border-grid pt-14 pb-16">
           <div className="grid gap-12 lg:grid-cols-2">
             <div>
               <h2 className="max-w-[20ch] text-[clamp(1.5rem,3vw,2.1rem)] text-line">
@@ -612,7 +665,7 @@ export default function App() {
         </section>
 
         {/* ── Прогноз ───────────────────────────────────────────────── */}
-        <section className="border-t border-grid pt-14 pb-16">
+        <section id="forecast" className="border-t border-grid pt-14 pb-16">
           <div className="grid items-baseline gap-8 lg:grid-cols-[1.3fr_1fr]">
             <div>
               <h2 className="max-w-[24ch] text-[clamp(1.7rem,3.6vw,2.6rem)] text-line">
@@ -667,7 +720,7 @@ export default function App() {
             спецификаций: кольцо 406 км² за четыре часа на этой самой
             машине. Умножать читатель умеет сам, и умноженное им число
             убедительнее названного нами. */}
-        <section className="border-t border-grid pt-14 pb-16">
+        <section id="scale" className="border-t border-grid pt-14 pb-16">
           <h2 className="max-w-[24ch] text-[clamp(1.7rem,3.6vw,2.6rem)] text-line">
             Двести двадцать квадратных километров в час на обычном ноутбуке
           </h2>
@@ -713,7 +766,7 @@ export default function App() {
         </section>
 
         {/* ── Границы ───────────────────────────────────────────────── */}
-        <section className="border-t border-grid pt-14 pb-20">
+        <section id="limits" className="border-t border-grid pt-14 pb-20">
           <h2 className="max-w-[20ch] text-[clamp(1.7rem,3.6vw,2.6rem)] text-line">
             Чего система не может
           </h2>

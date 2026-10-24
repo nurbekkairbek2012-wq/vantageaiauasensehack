@@ -26,7 +26,7 @@ sys.path.insert(0, str(REPO / "src"))
 from vantage.act import register_cyrillic_font
 
 REPO_URL = "https://github.com/k41270075-stack/hakathon"
-SITE_URL = "https://hakathon-amber-three.vercel.app/"
+SITE_URL = "https://hakathon-lyart.vercel.app/"
 
 PAPER = (0.969, 0.957, 0.937)
 INK = (0.086, 0.075, 0.059)

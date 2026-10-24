@@ -172,7 +172,9 @@ def main() -> int:
             page.wait_for_timeout(3500)
 
             text = page.inner_text("body")
-            rows = len(page.locator("aside li").all())
+            # Строки реестра помечены data-role: «aside li» считал заодно
+            # подсказку «с чего начать» и давал 19 вместо 15.
+            rows = len(page.locator('[data-role="object-row"]').all())
             if "Найдено" not in text or rows == 0:
                 problems.append("карта без интернета: список объектов не отрисовался")
             for error in offline_errors[:3]:

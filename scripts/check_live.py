@@ -44,7 +44,10 @@ if hasattr(sys.stdout, "reconfigure"):
 ROOT = Path(__file__).resolve().parents[1]
 LOCAL = ROOT / "web-next/public/data/candidates.geojson"
 
-DEFAULT_URL = "https://hakathon-ll-1c21.vercel.app"
+#: Рабочий адрес. Проверен 24 августа: отдаёт сайт постороннему, все
+#: семь страниц и данные. Прежний — hakathon-ll-1c21 — отдавал
+#: страницу входа в Vercel, и именно на нём эта проверка и появилась.
+DEFAULT_URL = "https://hakathon-lyart.vercel.app"
 
 #: Страницы, которые обязаны открываться: все, на которые ведёт навигация.
 PAGES = ("index.html", "map.html", "economy.html", "timelapse.html",
