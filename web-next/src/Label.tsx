@@ -204,8 +204,15 @@ export default function Label() {
     <div className="flex min-h-screen flex-col">
       <Nav current="label">
         <div className="flex items-center gap-5 text-sm">
+          {/* Счётчик — про эту вкладку браузера, а не про проект.
+              Разметка здесь копится в localStorage и выгружается кнопкой
+              рядом; настоящая разметка проекта живёт в
+              labels_manual.geojson и привязана к геометрии.
+              Без пояснения посетитель видит «размечено 0» и делает вывод,
+              что никто ничего не размечал — при 179 объектах, просмотренных
+              глазами. */}
           <span className="tabular text-muted-2">
-            размечено <span className="text-line">{done}</span> из {chips.length}
+            в этой вкладке размечено <span className="text-line">{done}</span> из {chips.length}
           </span>
           <button
             type="button"

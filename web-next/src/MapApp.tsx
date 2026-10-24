@@ -215,6 +215,36 @@ export default function MapApp() {
       .catch(() => setCities([]));
   }, []);
 
+  /* Пункт сортировки, который ничего не делает, — та же ложь, что число,
+     не совпадающее с данными, только тише.
+     «По вероятности модели» стояло в списке при пустом поле probability:
+     его пишет только генератор демонстрационных данных, и на настоящем
+     прогоне оно не заполняется ни у одного объекта. Человек выбирал пункт,
+     список не менялся, и объяснить это было нечем.
+     Поэтому список строится из данных: остаются те способы, по которым
+     есть чем сортировать хотя бы у одного объекта. */
+  const sorts = useMemo(() => {
+    const features = candidates?.features ?? [];
+    if (!features.length) return SORTS;
+    /* Ключ сортировки и имя поля совпадают не всегда: «подозрение на
+       присыпку» читает removal_status. Первая версия проверки искала поле
+       по имени ключа и убрала бы рабочий пункт — то есть чинила бы одну
+       ложь, создавая другую. */
+    const field: Partial<Record<SortKey, string>> = { risk_of_cover: 'removal_status' };
+    const has = (key: SortKey) =>
+      key === 'visual' ||
+      features.some((f) => {
+        const v = (f.properties ?? {})[field[key] ?? key];
+        return v !== null && v !== undefined && v !== '';
+      });
+    return SORTS.filter(([k]) => has(k));
+  }, [candidates]);
+
+  /* Если выбранный способ пропал вместе с данными — вернуться к первому. */
+  useEffect(() => {
+    if (sorts.length && !sorts.some(([k]) => k === sort)) setSort(sorts[0][0]);
+  }, [sorts, sort]);
+
   const rows = useMemo(() => {
     const list = [...(candidates?.features ?? [])] as Feature[];
     list.sort((a, b) => {
@@ -313,7 +343,7 @@ export default function MapApp() {
                  край на 7 пикселей, и страницу можно было утащить вбок. */
               className="min-w-0 flex-1 rounded-sm border border-grid bg-soot-2 px-2 py-1.5 text-sm text-line"
             >
-              {SORTS.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+              {sorts.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
             </select>
           </div>
 

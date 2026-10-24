@@ -62,8 +62,15 @@ export function HowLong({ features }: { features: Feature[] }) {
      После пересчёта они разошлись: заголовок обещал шесть, число под ним
      показывало 4,4. Читатель видит оба одновременно, и это разрушает
      доверие ко всей странице быстрее, чем любая неточность по отдельности. */
-  const typical = Math.round(median(ages));
-  const said = typical === 1 ? 'Год' : typical < 5 ? `${typical} года` : `${typical} лет`;
+  /* Ровно то же число, что в плитке, вплоть до десятых: округлённое «4
+     года» рядом с «4,4» читается как две разные величины, и читатель
+     видит их одновременно. Склонение — по целой части. */
+  const exact = median(ages);
+  const shown = exact.toFixed(1).replace('.', ',');
+  const whole = Math.floor(exact) % 10;
+  const word = Math.floor(exact) % 100 >= 11 && Math.floor(exact) % 100 <= 14 ? 'лет'
+    : whole === 1 ? 'год' : whole >= 2 && whole <= 4 ? 'года' : 'лет';
+  const said = `${shown} ${word}`;
 
   return (
     <section className="mt-14 border-t border-grid pt-12">
@@ -92,7 +99,7 @@ export function HowLong({ features }: { features: Feature[] }) {
       <p className="mt-4 max-w-[62ch] leading-relaxed text-muted">
         Спутник заметил эти объекты через годы после появления — раньше было
         физически нечего увидеть. Человек, проходящий мимо, замечает в первую
-        неделю. Одна точка из телефона сокращает {said.toLowerCase()} до семи дней.
+        неделю. Одна точка из телефона сокращает {said} до семи дней.
       </p>
     </section>
   );
