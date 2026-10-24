@@ -49,6 +49,8 @@ PREFIX = {
     "astana_east": "AVE",
     "astana_southeast": "ASE",
     "astana_west": "AZP",
+    "astana_industrial_west": "APZ",
+    "astana_south": "AUG",
 }
 
 #: Слои, которые склеиваются построчно.
@@ -73,7 +75,8 @@ def main() -> int:
     import pandas as pd
 
     picked = sources(sys.argv[1:] or ["astana:outputs_real", "astana_east",
-                                     "astana_southeast", "astana_west"])
+                                     "astana_southeast", "astana_west",
+                                     "astana_industrial_west", "astana_south"])
     if not picked:
         log.error("нечего объединять")
         return 1
@@ -92,7 +95,15 @@ def main() -> int:
                 continue
             data["city"] = city
             if "candidate_id" in data.columns:
-                tag = PREFIX.get(city, city[:3].upper())
+                if city not in PREFIX:
+                    # Запасной вариант city[:3] дал бы «AST» и северному
+                    # кольцу, и югу, и юго-востоку. Номера столкнулись бы
+                    # молча: карточка показывала бы один объект, а печать
+                    # акта брала бы другой.
+                    raise SystemExit(
+                        f"для области {city} не заведена приставка в PREFIX — "
+                        "добавьте её, иначе номера объектов столкнутся")
+                tag = PREFIX[city]
                 data["candidate_id"] = tag + "-" + data["candidate_id"].astype(str)
             parts.append(data)
             if layer == "candidates.geojson":

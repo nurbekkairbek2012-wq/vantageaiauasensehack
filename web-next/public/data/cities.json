@@ -8,7 +8,9 @@
    71.5
   ],
   "zoom": 11,
-  "count": 16
+  "count": 16,
+  "reviewed": 49,
+  "state": "found"
  },
  {
   "id": "astana_east",
@@ -19,7 +21,9 @@
    71.8
   ],
   "zoom": 11,
-  "count": 0
+  "count": 0,
+  "reviewed": 33,
+  "state": "empty"
  },
  {
   "id": "astana_southeast",
@@ -30,7 +34,9 @@
    71.74
   ],
   "zoom": 11,
-  "count": 1
+  "count": 0,
+  "reviewed": 63,
+  "state": "empty"
  },
  {
   "id": "astana_west",
@@ -41,6 +47,21 @@
    71.22
   ],
   "zoom": 11,
-  "count": 0
+  "count": 0,
+  "reviewed": 0,
+  "state": "pending"
+ },
+ {
+  "id": "astana_industrial_west",
+  "name": "Астана · западная промзона",
+  "short": "Промзона",
+  "center": [
+   51.14,
+   71.3
+  ],
+  "zoom": 11,
+  "count": 0,
+  "reviewed": 0,
+  "state": "pending"
  }
 ]

@@ -100,9 +100,33 @@ def publish_to_site() -> bool:
     return ok
 
 
+#: Где лежит прогон области. У первого кольца папка исторически другая.
+def _outputs_of(city_id: str) -> Path:
+    special = Path("outputs_real")
+    if city_id == "astana" and special.exists():
+        return special
+    return Path(f"outputs_{city_id}")
+
+
 def build_cities() -> bool:
-    """Список городов для переключателя на карте."""
-    log.info("── Список городов")
+    """Список областей для переключателя на карте.
+
+    Ноль объектов значит две разные вещи, и путать их нельзя. Восточный
+    пояс считался четыре часа и просматривался час: 33 находки, ни одной
+    настоящей свалки. Западный пояс не запускался вовсе. На кнопке и то и
+    другое выглядело как «0», а подсказка обоим говорила «прогон ещё не
+    проходил» — про восток это была просто неправда.
+
+    Поэтому область получает состояние:
+
+        found    — есть опубликованные объекты
+        empty    — прогон прошёл, настоящих свалок не нашлось
+        pending  — прогон не запускался
+
+    Второе — не провал, а результат, и на защите он работает в плюс:
+    система умеет говорить «здесь чисто», а не только «здесь свалка».
+    """
+    log.info("── Список областей")
     try:
         import geopandas as gpd
         import yaml
@@ -110,15 +134,54 @@ def build_cities() -> bool:
 
         cities = yaml.safe_load(Path("config/cities.yaml").read_text(encoding="utf-8"))["cities"]
         found = gpd.read_file(WEB_DATA / "candidates.geojson")
+
+        # Области перекрываются по краям: северное кольцо и юго-восточный
+        # пояс делят полосу шириной 6 км. Объект из этой полосы засчитывался
+        # обеим, и на кнопке «Юго-восток» стояла единица — при том что
+        # настоящих находок там ноль из 63 просмотренных. Кнопка обещала
+        # объект, которого в этой области нет.
+        #
+        # Поэтому объект достаётся первой области, чьи границы его
+        # накрывают: порядок в cities.yaml идёт от того, где считали
+        # раньше, и это же порядок, в котором объект получил свой номер.
+        taken: set = set()
         out = []
         for city in cities:
-            inside = found[found.geometry.intersects(box(*city["bbox"]))] if not found.empty else found
+            if found.empty:
+                inside = found
+            else:
+                hit = found[found.geometry.intersects(box(*city["bbox"]))]
+                inside = hit[~hit["candidate_id"].isin(taken)]
+                taken.update(inside["candidate_id"])
+
+            # Сколько находок дошло до просмотра. Берётся из папки прогона,
+            # а не из выгрузки: в выгрузке отвергнутых уже нет.
+            source = _outputs_of(city["id"]) / "candidates.geojson"
+            reviewed = 0
+            if source.exists():
+                try:
+                    reviewed = len(gpd.read_file(source))
+                except Exception:
+                    reviewed = 0
+
+            if len(inside):
+                state = "found"
+            elif reviewed:
+                state = "empty"
+            else:
+                state = "pending"
+
             out.append({
                 "id": city["id"], "name": city["name"],
+                # Короткая подпись обязательна: без неё кнопка получает
+                # «Астана · юго-восток», и ряд на телефоне рвётся на три
+                # строки. Однажды она уже терялась здесь при пересборке.
+                "short": city.get("short", city["name"]),
                 "center": city["center"], "zoom": city["zoom"],
-                "count": len(inside),
+                "count": len(inside), "reviewed": reviewed, "state": state,
             })
-            log.info("   %s: %d", city["name"], len(inside))
+            log.info("   %-28s объектов %2d, просмотрено %3d — %s",
+                     city["name"], len(inside), reviewed, state)
         (WEB_DATA / "cities.json").write_text(
             json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
         results.append(("Список городов", True, ", ".join(f"{c['name']} {c['count']}" for c in out)))
