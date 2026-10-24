@@ -1,0 +1,62 @@
+{
+ "aw": {
+  "roc_auc": 0.824,
+  "low": 0.74,
+  "high": 0.904,
+  "north": 0.653,
+  "north_low": 0.483,
+  "north_high": 0.805,
+  "negatives_below_worst_dump": 86,
+  "negatives": 126
+ },
+ "kz": {
+  "roc_auc": 0.523,
+  "low": 0.309,
+  "high": 0.734,
+  "north": 0.529,
+  "north_low": 0.317,
+  "north_high": 0.744,
+  "negatives_below_worst_dump": 15,
+  "negatives": 126
+ },
+ "aw+kz": {
+  "roc_auc": 0.731,
+  "low": 0.598,
+  "high": 0.859,
+  "north": 0.698,
+  "north_low": 0.503,
+  "north_high": 0.874,
+  "negatives_below_worst_dump": 53,
+  "negatives": 126
+ },
+ "old_resnet18": {
+  "roc_auc": 0.63,
+  "low": 0.433,
+  "high": 0.83,
+  "north": 0.63,
+  "north_low": 0.43,
+  "north_high": 0.82,
+  "negatives_below_worst_dump": 10,
+  "negatives": 44
+ },
+ "aw_same_objects": {
+  "roc_auc": 0.653,
+  "low": 0.484,
+  "high": 0.81,
+  "north": 0.653,
+  "north_low": 0.483,
+  "north_high": 0.805,
+  "negatives_below_worst_dump": 18,
+  "negatives": 44
+ },
+ "aw+kz_same_objects": {
+  "roc_auc": 0.698,
+  "low": 0.508,
+  "high": 0.871,
+  "north": 0.698,
+  "north_low": 0.503,
+  "north_high": 0.874,
+  "negatives_below_worst_dump": 13,
+  "negatives": 44
+ }
+}

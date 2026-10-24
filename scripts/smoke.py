@@ -183,7 +183,11 @@ def main() -> int:
                 # text-transform, поэтому сверка идёт в нижнем регистре.
                 WALK = (
                     ("шаг 1 — очередь по деньгам", "с чего начать"),
-                    ("шаг 2 — карточка объекта", "проверено человеком"),
+                    # Подпись источника проверки: «проверено по снимку» или,
+                    # когда есть выезд с фотографией, «проверено выездом».
+                    # Раньше здесь стояло «проверено человеком» — подпись
+                    # отозванных записей о выездах без фотографий.
+                    ("шаг 2 — карточка объекта", ("проверено по снимку", "проверено выездом")),
                     ("шаг 3 — доказательства", "признаки"),
                     ("шаг 4 — деньги", "вывоз и захоронение"),
                     ("шаг 5 — рекомендация", "рекомендуем"),
@@ -195,7 +199,9 @@ def main() -> int:
                         page.keyboard.press(" ")
                         page.wait_for_timeout(1200)
                     body = page.inner_text("body").lower()
-                    steps.append((name, f"шаг {i + 1} из 6" in body and phrase in body))
+                    phrases = phrase if isinstance(phrase, tuple) else (phrase,)
+                    steps.append((name, f"шаг {i + 1} из 6" in body
+                                  and any(x in body for x in phrases)))
 
             broken = [name for name, ok in steps if not ok]
             mark = "OK  " if not broken else "!!  "

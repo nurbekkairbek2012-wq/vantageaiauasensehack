@@ -1,0 +1,7 @@
+{
+ "verdict": "not_dump",
+ "confidence": 0.95,
+ "category": "building_or_warehouse",
+ "reasoning": "На изображении видно, что на месте выделенного участка построены складские помещения с красными крышами.",
+ "n_images": 2
+}

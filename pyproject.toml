@@ -55,7 +55,9 @@ service = [
     "reportlab>=4.1",
     "python-multipart>=0.0.9",
     "passlib[bcrypt]>=1.7",
-    "python-jose[cryptography]>=3.3",
+    # python-jose убран: в коде не используется (доступ — bearer-токены из
+    # окружения, vantage.api.security), а тянул ecdsa с известной
+    # уязвимостью без исправленной версии (PYSEC-2026-1325).
 ]
 dev = [
     "pytest>=8.0",

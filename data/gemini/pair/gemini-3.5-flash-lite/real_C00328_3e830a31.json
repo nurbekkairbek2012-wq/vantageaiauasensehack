@@ -1,0 +1,7 @@
+{
+ "verdict": "not_dump",
+ "confidence": 0.99,
+ "category": "building_or_warehouse",
+ "reasoning": "На спутниковых снимках видно, что на месте отмеченного участка был построен большой промышленный склад.",
+ "n_images": 2
+}

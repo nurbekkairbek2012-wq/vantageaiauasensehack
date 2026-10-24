@@ -1,0 +1,7 @@
+{
+ "verdict": "not_dump",
+ "confidence": 0.9,
+ "category": "quarry_or_earthworks",
+ "reasoning": "Сравнение снимков показывает масштабные земляные работы и разработку песчаного карьера, а не свалку отходов.",
+ "n_images": 2
+}

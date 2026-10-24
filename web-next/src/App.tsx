@@ -83,6 +83,8 @@ type Money = {
     co2e_emitted_t: number;
     co2e_t: number;
   };
+  /* Объекты «не разобрать»: в totals не входят, называются отдельно. */
+  pending?: { objects: number; sum_of_medians: { mass_t: number; removal_kzt: number } } | null;
   priority: { n: number; id: string; share: number }[];
 };
 type Metrics = { lift: number; pr_auc_future: number; base_rate_future: number; cells?: number;
@@ -150,8 +152,12 @@ const LIMITS: [string, string][] = [
 const num = (v: number, d = 0) =>
   Number.isFinite(v) ? v.toLocaleString('ru-RU', { maximumFractionDigits: d }) : '—';
 
+/* Один знак после запятой всегда: «19 млн ₸» рядом с «19,3 млн ₸» на
+   соседнем экране читается как другое число, хотя это 19,0. */
 const kzt = (v: number) =>
-  Math.abs(v) >= 1e6 ? `${num(v / 1e6, 1)} млн ₸` : `${num(v / 1e3)} тыс ₸`;
+  Math.abs(v) >= 1e6
+    ? `${(v / 1e6).toLocaleString('ru-RU', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} млн ₸`
+    : `${num(v / 1e3)} тыс ₸`;
 
 /* Два списка месяцев, а не один. «1 апреля» и «в апреле» — разные падежи,
    и заголовок, собранный из родительного, читается как опечатка: первая
@@ -232,15 +238,23 @@ export default function App() {
        названы отдельно и не спрятаны: команда, показывающая свои
        отбраковки, очевидно проверяла. */
     const real = features.filter((f) => f.properties?.visual_check !== 'not_landfill');
+    const sure = features.filter((f) => f.properties?.visual_check === 'landfill');
     return {
       count: features.length,
       real: real.length,
       rejected: features.length - real.length,
-      confirmed: features.filter((f) => f.properties?.visual_check === 'landfill').length,
-      /* Сколько подтверждено человеком на месте. Это про источник
+      confirmed: sure.length,
+      /* «Не разобрать» по снимку: объект остаётся в очереди, но решает
+         выезд. В сумму ущерба такие не входят — см. ниже. */
+      pending: real.length - sure.length,
+      /* Сколько подтверждено выездом с фотографией. Это про источник
          проверки, а не про класс объекта, и потому считается отдельно. */
       ground: features.filter((f) => f.properties?.check_source === 'ground').length,
-      damage: real.reduce((s, f) => s + (Number(f.properties?.damage_p50) || 0), 0),
+      /* Ущерб — по опознанным как свалка. Объекты «не разобрать» стоят в
+         списке, но их сумма — предположение до выезда, и складывать её с
+         проверенной значит завышать главное число страницы. */
+      damage: (sure.length ? sure : real)
+        .reduce((s, f) => s + (Number(f.properties?.damage_p50) || 0), 0),
       area: real.reduce((s, f) => s + (Number(f.properties?.area_m2) || 0), 0),
     };
   }, [features]);
@@ -306,7 +320,7 @@ export default function App() {
               >
                 <div className="mb-3 flex items-center justify-between">
                   <span className="font-display text-[11px] uppercase tracking-[0.16em] text-violet-lit">
-                    Наблюдение одного пикселя
+                    Наблюдение одного объекта
                   </span>
                   <span className="tabular text-[11px] text-muted-2">2018 — 2026</span>
                 </div>
@@ -333,7 +347,7 @@ export default function App() {
                 {[
                   ['Объектов в списке', String(totals.real), false],
                   ['Опознаны как свалка', String(totals.confirmed), true],
-                  ['Ущерб по списку', kzt(totals.damage), false],
+                  ['Ущерб по опознанным', kzt(totals.damage), false],
                 ].map(([k, v, accent], i) => (
                   <div
                     key={String(k)}
@@ -402,13 +416,17 @@ export default function App() {
                 {/* Подтверждение названо на первом экране: это самое
                     сильное, что есть у списка. Число считается из данных —
                     вписанное разошлось бы при первой же новой проверке. */}
+                {totals.pending > 0 && (
+                  <>
+                    {' '}{totals.confirmed} опознаны как свалка, ещё {totals.pending}{' '}
+                    по снимку не разобрать — они ждут выезда и в сумму ущерба
+                    не входят.
+                  </>
+                )}
                 {totals.ground > 0 && (
                   <>
-                    {' '}Из них{' '}
-                    <span className="text-emerald">
-                      {totals.ground} подтверждены
-                    </span>
-                    .
+                    {' '}Выездом с фотографией подтверждено:{' '}
+                    <span className="text-emerald">{totals.ground}</span>.
                   </>
                 )}{' '}
                 Склады, промплощадки и болота в список не попали.
@@ -434,8 +452,8 @@ export default function App() {
                   Свалка — это ресурс, за который платят трижды
                 </h2>
                 <p className="mt-4 max-w-[56ch] text-muted">
-                  Первый раз — вывозом: {num(money.totals.sum_of_medians.mass_t)} тонн под
-                  Астаной стоят бюджету{' '}
+                  Первый раз — вывозом: {num(money.totals.sum_of_medians.mass_t)} тонн на
+                  опознанных свалках под Астаной стоят бюджету{' '}
                   <strong className="font-normal text-line">
                     {kzt(money.totals.sum_of_medians.removal_kzt)}
                   </strong>
@@ -452,6 +470,15 @@ export default function App() {
                   из {num(money.totals.co2e_t)} уже ушли в атмосферу. Метан не
                   возвращают уборкой — только ранним обнаружением.
                 </p>
+                {money.pending && money.pending.objects > 0 && (
+                  <p className="mt-4 max-w-[56ch] text-sm leading-relaxed text-muted-2">
+                    Все суммы — по свалкам, опознанным по снимку. Ещё{' '}
+                    {money.pending.objects} объектов по снимку не разобрать: если
+                    выезд их подтвердит, добавится{' '}
+                    {num(money.pending.sum_of_medians.mass_t)} т и{' '}
+                    {kzt(money.pending.sum_of_medians.removal_kzt)} на вывоз.
+                  </p>
+                )}
                 <a
                   href="./economy.html"
                   className="mt-6 inline-block text-sm text-violet-lit underline decoration-grid transition-colors duration-200 hover:decoration-violet-lit"
@@ -822,6 +849,40 @@ export default function App() {
               </div>
             ))}
           </div>
+        </section>
+        {/* ── Для акимата и партнёров ─────────────────────────────────
+            Документы, которые уносят со встречи: предложение о пилоте на
+            трёх языках, паспорта объектов и очередь в форматах заказчика.
+            Всё собирается скриптами из той же выгрузки, что и сайт. */}
+        <section id="partners" className="border-t border-grid pt-14 pb-16">
+          <h2 className="max-w-[24ch] text-[clamp(1.6rem,3.4vw,2.4rem)] text-line">
+            Для акимата и партнёров
+          </h2>
+          <p className="mt-4 max-w-[60ch] text-muted">
+            Пилот на восемь недель: что мы делаем, что нужно от заказчика и
+            чем меряется успех. Паспорт объекта — одна страница на выезд.
+          </p>
+          <ul className="mt-7 grid gap-px overflow-hidden rounded-md border border-grid bg-grid sm:grid-cols-3">
+            {[
+              ['./docs/proposal_ru.pdf', 'Предложение о пилоте', 'PDF, русский'],
+              ['./docs/proposal_kz.pdf', 'Пилоттық жоба туралы ұсыныс', 'PDF, қазақша'],
+              ['./docs/proposal_en.pdf', 'Pilot proposal', 'PDF, English'],
+              ['./data/export/passports.pdf', 'Паспорта объектов', 'PDF, лист на объект'],
+              ['./data/export/vantage_objects.gpx', 'Очередь для навигатора', 'GPX'],
+              ['./data/export/vantage_objects.csv', 'Реестр для Excel', 'CSV'],
+            ].map(([href, title, note]) => (
+              <li key={href} className="bg-soot-2">
+                <a
+                  href={href}
+                  download
+                  className="block px-5 py-4 no-underline transition-colors duration-200 hover:bg-soot-3"
+                >
+                  <span className="block text-base text-line">{title}</span>
+                  <span className="mt-1 block text-xs text-muted-2">{note}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
         </section>
       </main>
 

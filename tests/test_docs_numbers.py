@@ -75,15 +75,15 @@ def facts() -> dict[str, list]:
     return {
         "масса отходов, т": [
             ru(sums["mass_t"]).replace(" ", " "),
-            ["README.md", "docs/QA.md", "docs/PITCH.md"],
+            ["README.md", "docs/QA.md", "docs/PITCH.md", "docs/PROPOSAL.md", "docs/PROPOSAL_KZ.md"],
         ],
         "стоимость вывоза, млн ₸": [
             ru(sums["removal_kzt"] / 1e6, 1),
-            ["README.md", "docs/QA.md", "docs/PITCH.md"],
+            ["README.md", "docs/QA.md", "docs/PITCH.md", "docs/PROPOSAL.md", "docs/PROPOSAL_KZ.md"],
         ],
         "возврат вторсырьём, млн ₸": [
             ru(sums["recyclable_kzt"] / 1e6, 1),
-            ["README.md", "docs/QA.md", "docs/PITCH.md"],
+            ["README.md", "docs/QA.md", "docs/PITCH.md", "docs/PROPOSAL.md", "docs/PROPOSAL_KZ.md"],
         ],
         "чистые потери, млн ₸": [
             ru(sums["damage_kzt"] / 1e6, 1),
@@ -91,14 +91,14 @@ def facts() -> dict[str, list]:
         ],
         "доля возврата, %": [
             str(round(100 * sums["recyclable_kzt"] / sums["removal_kzt"])),
-            ["README.md", "docs/QA.md", "docs/PITCH.md"],
+            ["README.md", "docs/QA.md", "docs/PITCH.md", "docs/PROPOSAL.md", "docs/PROPOSAL_KZ.md"],
         ],
-        "сырых находок": [str(queue["raw"]), ["README.md", "docs/QA.md", "docs/PITCH.md"]],
+        "сырых находок": [str(queue["raw"]), ["README.md", "docs/QA.md", "docs/PITCH.md", "docs/PROPOSAL.md", "docs/PROPOSAL_KZ.md"]],
         "просмотрено человеком": [
             str(queue["reviewed"]),
-            ["README.md", "docs/QA.md", "docs/PITCH.md"],
+            ["README.md", "docs/QA.md", "docs/PITCH.md", "docs/PROPOSAL.md", "docs/PROPOSAL_KZ.md"],
         ],
-        "опубликовано": [str(queue["published"]), ["README.md", "docs/QA.md", "docs/PITCH.md"]],
+        "опубликовано": [str(queue["published"]), ["README.md", "docs/QA.md", "docs/PITCH.md", "docs/PROPOSAL.md", "docs/PROPOSAL_KZ.md"]],
         # Решение — то, ради чего продукт существует, и его числа
         # сторожатся так же, как остальные.
         "обычный вывоз, млн ₸": [
@@ -111,7 +111,7 @@ def facts() -> dict[str, list]:
         ],
         "экономия выбора, млн ₸": [
             ru(sums["saving_kzt"] / 1e6, 1),
-            ["README.md", "docs/QA.md", "docs/PITCH.md"],
+            ["README.md", "docs/QA.md", "docs/PITCH.md", "docs/PROPOSAL.md", "docs/PROPOSAL_KZ.md"],
         ],
         "выездов на половину суммы": [str(cut(0.5)), ["README.md", "docs/QA.md"]],
         "выездов на 80% суммы": [str(cut(0.8)), ["docs/QA.md"]],

@@ -1,12 +1,14 @@
 {
- "generated": "2026-08-25",
+ "generated": "2026-09-26",
  "iterations": 20000,
  "queue": {
   "raw": 385,
   "auto_rejected": 326,
   "reviewed": 59,
   "published": 15,
-  "ground": 15
+  "confirmed": 7,
+  "pending": 8,
+  "ground": 0
  },
  "objects": [
   {
@@ -32,7 +34,7 @@
    "co2e_preventable_t": 163.9,
    "co2e_next_year_t": 14.9,
    "penalty_kzt": 432500,
-   "check_source": "ground",
+   "check_source": "human",
    "visual_check": "landfill",
    "removal_status": "active"
   },
@@ -59,8 +61,8 @@
    "co2e_preventable_t": 76.2,
    "co2e_next_year_t": 8.3,
    "penalty_kzt": 432500,
-   "check_source": "ground",
-   "visual_check": "landfill",
+   "check_source": "human",
+   "visual_check": "unclear",
    "removal_status": "possibly_removed"
   },
   {
@@ -86,8 +88,8 @@
    "co2e_preventable_t": 84.5,
    "co2e_next_year_t": 8.2,
    "penalty_kzt": 432500,
-   "check_source": "ground",
-   "visual_check": "landfill",
+   "check_source": "human",
+   "visual_check": "unclear",
    "removal_status": "active"
   },
   {
@@ -113,7 +115,7 @@
    "co2e_preventable_t": 76.2,
    "co2e_next_year_t": 6.9,
    "penalty_kzt": 432500,
-   "check_source": "ground",
+   "check_source": "human",
    "visual_check": "landfill",
    "removal_status": "active"
   },
@@ -140,8 +142,8 @@
    "co2e_preventable_t": 43.8,
    "co2e_next_year_t": 4.6,
    "penalty_kzt": 432500,
-   "check_source": "ground",
-   "visual_check": "landfill",
+   "check_source": "human",
+   "visual_check": "unclear",
    "removal_status": "active"
   },
   {
@@ -167,8 +169,8 @@
    "co2e_preventable_t": 37.1,
    "co2e_next_year_t": 3.9,
    "penalty_kzt": 432500,
-   "check_source": "ground",
-   "visual_check": "landfill",
+   "check_source": "human",
+   "visual_check": "unclear",
    "removal_status": "active"
   },
   {
@@ -194,8 +196,8 @@
    "co2e_preventable_t": 40.2,
    "co2e_next_year_t": 3.6,
    "penalty_kzt": 432500,
-   "check_source": "ground",
-   "visual_check": "landfill",
+   "check_source": "human",
+   "visual_check": "unclear",
    "removal_status": "active"
   },
   {
@@ -221,7 +223,7 @@
    "co2e_preventable_t": 23.3,
    "co2e_next_year_t": 2.6,
    "penalty_kzt": 432500,
-   "check_source": "ground",
+   "check_source": "human",
    "visual_check": "landfill",
    "removal_status": "active"
   },
@@ -248,8 +250,8 @@
    "co2e_preventable_t": 36.5,
    "co2e_next_year_t": 3.4,
    "penalty_kzt": 432500,
-   "check_source": "ground",
-   "visual_check": "landfill",
+   "check_source": "human",
+   "visual_check": "unclear",
    "removal_status": "active"
   },
   {
@@ -275,7 +277,7 @@
    "co2e_preventable_t": 25.1,
    "co2e_next_year_t": 2.3,
    "penalty_kzt": 432500,
-   "check_source": "ground",
+   "check_source": "human",
    "visual_check": "landfill",
    "removal_status": "active"
   },
@@ -302,7 +304,7 @@
    "co2e_preventable_t": 24.6,
    "co2e_next_year_t": 2.2,
    "penalty_kzt": 432500,
-   "check_source": "ground",
+   "check_source": "human",
    "visual_check": "landfill",
    "removal_status": "active"
   },
@@ -329,8 +331,8 @@
    "co2e_preventable_t": 24.9,
    "co2e_next_year_t": 2.3,
    "penalty_kzt": 432500,
-   "check_source": "ground",
-   "visual_check": "landfill",
+   "check_source": "human",
+   "visual_check": "unclear",
    "removal_status": "active"
   },
   {
@@ -356,7 +358,7 @@
    "co2e_preventable_t": 15.1,
    "co2e_next_year_t": 1.7,
    "penalty_kzt": 432500,
-   "check_source": "ground",
+   "check_source": "human",
    "visual_check": "landfill",
    "removal_status": "active"
   },
@@ -383,7 +385,7 @@
    "co2e_preventable_t": 24.9,
    "co2e_next_year_t": 2.3,
    "penalty_kzt": 432500,
-   "check_source": "ground",
+   "check_source": "human",
    "visual_check": "landfill",
    "removal_status": "active"
   },
@@ -410,8 +412,8 @@
    "co2e_preventable_t": 19.1,
    "co2e_next_year_t": 1.9,
    "penalty_kzt": 432500,
-   "check_source": "ground",
-   "visual_check": "landfill",
+   "check_source": "human",
+   "visual_check": "unclear",
    "removal_status": "active"
   }
  ],
@@ -492,75 +494,146 @@
    "share": 1.0
   }
  ],
+ "basis": "confirmed",
  "totals": {
-  "objects": 15,
-  "area_m2": 17231,
+  "objects": 7,
+  "area_m2": 7630,
   "mass_t": {
-   "p10": 5117,
-   "p50": 5794,
-   "p90": 6557
+   "p10": 2094,
+   "p50": 2542,
+   "p90": 3109
   },
   "removal_kzt": {
-   "p10": 57685983,
-   "p50": 89699185,
-   "p90": 126071958
+   "p10": 24869205,
+   "p50": 39325700,
+   "p90": 57128379
   },
   "recyclable_kzt": {
-   "p10": 35950890,
-   "p50": 45387528,
-   "p90": 56465650
+   "p10": 14978651,
+   "p50": 19931864,
+   "p90": 26154953
   },
   "climate_kzt": {
-   "p10": 564004,
-   "p50": 977623,
-   "p90": 1695953
+   "p10": 241953,
+   "p50": 430046,
+   "p90": 763582
   },
   "damage_kzt": {
-   "p10": 12599402,
-   "p50": 45485151,
-   "p90": 80696465
+   "p10": 5438466,
+   "p50": 19877535,
+   "p90": 36083803
   },
   "plain_kzt": {
-   "p10": 57685983,
-   "p50": 89699185,
-   "p90": 126071958
+   "p10": 24869205,
+   "p50": 39325700,
+   "p90": 57128379
   },
   "sorted_kzt": {
-   "p10": 29592053,
-   "p50": 72402540,
-   "p90": 119724164
+   "p10": 12857902,
+   "p50": 31718800,
+   "p90": 53802454
   },
   "saving_kzt": {
-   "p10": 791265,
-   "p50": 17664764,
-   "p90": 32726014
+   "p10": 253327,
+   "p50": 7686603,
+   "p90": 14779516
   },
-  "breakeven_share": 0.504,
+  "breakeven_share": 0.505,
   "naive_damage_kzt": {
-   "p10": 11031504,
-   "p50": 43001193,
-   "p90": 85956855
+   "p10": 4884725,
+   "p50": 19040833,
+   "p90": 38061504
   },
   "sum_of_medians": {
-   "mass_t": 5644.7,
-   "removal_kzt": 85714955,
-   "recyclable_kzt": 43506444,
-   "climate_kzt": 932526,
-   "damage_kzt": 43001193,
-   "co2e_t": 1047.1,
-   "co2e_emitted_t": 330.6,
-   "co2e_preventable_t": 715.4,
-   "co2e_next_year_t": 69.1,
-   "plain_kzt": 85714955,
-   "sorted_kzt": 68604418,
-   "saving_kzt": 17110537
+   "mass_t": 2499.5,
+   "removal_kzt": 37954391,
+   "recyclable_kzt": 19264557,
+   "climate_kzt": 412921,
+   "damage_kzt": 19040833,
+   "co2e_t": 463.7,
+   "co2e_emitted_t": 110.1,
+   "co2e_preventable_t": 353.1,
+   "co2e_next_year_t": 32.9,
+   "plain_kzt": 37954391,
+   "sorted_kzt": 30377884,
+   "saving_kzt": 7576507
   },
-  "co2e_t": 1098.1,
-  "co2e_emitted_t": 348.5,
-  "co2e_preventable_t": 746.4,
-  "penalty_kzt": 6487500,
-  "waiting_year_co2e_t": 72.9,
-  "waiting_year_kzt": 36461
+  "co2e_t": 479.3,
+  "co2e_emitted_t": 115.0,
+  "co2e_preventable_t": 363.6,
+  "penalty_kzt": 3027500,
+  "waiting_year_co2e_t": 34.1,
+  "waiting_year_kzt": 17025
+ },
+ "pending": {
+  "objects": 8,
+  "area_m2": 9601,
+  "mass_t": {
+   "p10": 2739,
+   "p50": 3221,
+   "p90": 3774
+  },
+  "removal_kzt": {
+   "p10": 31805234,
+   "p50": 49685581,
+   "p90": 70883637
+  },
+  "recyclable_kzt": {
+   "p10": 19476188,
+   "p50": 25215291,
+   "p90": 32124608
+  },
+  "climate_kzt": {
+   "p10": 308752,
+   "p50": 542699,
+   "p90": 950346
+  },
+  "damage_kzt": {
+   "p10": 6999256,
+   "p50": 25230062,
+   "p90": 45227297
+  },
+  "plain_kzt": {
+   "p10": 31805234,
+   "p50": 49685581,
+   "p90": 70883637
+  },
+  "sorted_kzt": {
+   "p10": 16369878,
+   "p50": 40108270,
+   "p90": 67242256
+  },
+  "saving_kzt": {
+   "p10": 387196,
+   "p50": 9764553,
+   "p90": 18423368
+  },
+  "breakeven_share": 0.505,
+  "naive_damage_kzt": {
+   "p10": 6146779,
+   "p50": 23960360,
+   "p90": 47895351
+  },
+  "sum_of_medians": {
+   "mass_t": 3145.2,
+   "removal_kzt": 47760564,
+   "recyclable_kzt": 24241887,
+   "climate_kzt": 519605,
+   "damage_kzt": 23960360,
+   "co2e_t": 583.4,
+   "co2e_emitted_t": 220.5,
+   "co2e_preventable_t": 362.3,
+   "co2e_next_year_t": 36.2,
+   "plain_kzt": 47760564,
+   "sorted_kzt": 38226534,
+   "saving_kzt": 9534030
+  },
+  "co2e_t": 607.7,
+  "co2e_emitted_t": 230.9,
+  "co2e_preventable_t": 375.7,
+  "penalty_kzt": 3460000,
+  "waiting_year_co2e_t": 37.9,
+  "waiting_year_kzt": 18965
  },
  "sensitivity": {
   "removal_cost": 0.82,

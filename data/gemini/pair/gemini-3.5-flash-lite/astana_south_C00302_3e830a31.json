@@ -1,0 +1,7 @@
+{
+ "verdict": "not_dump",
+ "confidence": 0.95,
+ "category": "construction_site",
+ "reasoning": "На изображении видна постройка спортивного объекта с трибунами, а не свалка отходов.",
+ "n_images": 2
+}

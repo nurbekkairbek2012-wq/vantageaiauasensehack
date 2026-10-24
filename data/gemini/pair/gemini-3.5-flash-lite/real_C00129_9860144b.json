@@ -1,0 +1,7 @@
+{
+ "verdict": "not_dump",
+ "confidence": 0.95,
+ "category": "construction_site",
+ "reasoning": "На изображении видно, что на месте выделенного участка ведется активное строительство многоэтажных зданий.",
+ "n_images": 2
+}

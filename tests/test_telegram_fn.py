@@ -47,16 +47,24 @@ class TestStats:
         confirmed = sum(1 for i in items if i.get("visual_check") == "landfill")
         assert f"<b>{confirmed}</b>" in text
 
-    def test_damage_matches_the_sum_over_real_objects(self, bot, items):
-        """Отвергнутые проверкой в сумму не входят — как и на сайте.
+    def test_damage_matches_the_sum_over_confirmed_objects(self, bot, items):
+        """В сумму входят только опознанные как свалка — как и на сайте.
 
-        Считать по всем объектам было бы проще и неверно: карта в шапке
-        печатает сумму по тем, что остались свалками, и два разных ответа
-        на «сколько всего» хуже, чем один.
+        Отвергнутые не входят вовсе, а «не разобрать» называются отдельной
+        строкой: их ущерб появится только после выезда, и складывать его с
+        проверенным значит завышать итог.
         """
+        sure = [i for i in items if i.get("visual_check") == "landfill"]
         real = [i for i in items if i.get("visual_check") != "not_landfill"]
-        damage = sum(float(i.get("damage_p50") or 0) for i in real)
+        damage = sum(float(i.get("damage_p50") or 0) for i in (sure or real))
         assert bot.kzt(damage) in bot.stats_text()
+
+    def test_pending_objects_are_named_separately(self, bot, items):
+        sure = [i for i in items if i.get("visual_check") == "landfill"]
+        unsure = [i for i in items if i.get("visual_check") == "unclear"]
+        if not (sure and unsure):
+            pytest.skip("в выгрузке нет обеих групп")
+        assert f"Ждут выезда: <b>{len(unsure)}</b>" in bot.stats_text()
 
     def test_area_matches_the_sum_over_real_objects(self, bot, items):
         real = [i for i in items if i.get("visual_check") != "not_landfill"]
@@ -81,7 +89,7 @@ class TestStats:
                 break
             running += float(item.get("damage_p50") or 0)
             trips += 1
-        assert f"Половину суммы закрывают <b>{trips}</b>" in bot.stats_text()
+        assert f"Половину суммы очереди закрывают <b>{trips}</b>" in bot.stats_text()
 
     def test_trips_are_declined(self, bot):
         """«1 выезда» на защите читают вслух, и это слышно."""

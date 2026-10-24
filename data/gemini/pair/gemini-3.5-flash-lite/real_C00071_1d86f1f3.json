@@ -1,0 +1,7 @@
+{
+ "verdict": "not_dump",
+ "confidence": 0.95,
+ "category": "building_or_warehouse",
+ "reasoning": "На изображении за 2026 год видно, что на месте выделенного контура построены новые складские здания и сооружения.",
+ "n_images": 2
+}

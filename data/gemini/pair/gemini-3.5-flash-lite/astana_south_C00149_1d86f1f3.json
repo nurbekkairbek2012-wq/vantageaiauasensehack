@@ -1,0 +1,7 @@
+{
+ "verdict": "not_dump",
+ "confidence": 0.85,
+ "category": "construction_site",
+ "reasoning": "На выделенном участке видно проведение строительных и земляных работ вблизи дороги, а не свалку отходов.",
+ "n_images": 2
+}

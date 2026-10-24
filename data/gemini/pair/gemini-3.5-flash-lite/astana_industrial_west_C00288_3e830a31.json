@@ -1,0 +1,7 @@
+{
+ "verdict": "not_dump",
+ "confidence": 0.95,
+ "category": "building_or_warehouse",
+ "reasoning": "На месте выделенного участка построены новые здания, что подтверждается сравнением снимков до и после.",
+ "n_images": 2
+}

@@ -1,0 +1,7 @@
+{
+ "verdict": "not_dump",
+ "confidence": 0.99,
+ "category": "building_or_warehouse",
+ "reasoning": "На месте участка построены капитальные здания с красно-белыми крышами, что не является свалкой.",
+ "n_images": 2
+}

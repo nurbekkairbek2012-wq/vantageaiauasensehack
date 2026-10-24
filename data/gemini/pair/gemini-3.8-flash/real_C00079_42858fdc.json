@@ -1,0 +1,7 @@
+{
+ "verdict": "not_dump",
+ "confidence": 0.95,
+ "category": "building_or_warehouse",
+ "reasoning": "На месте ранее заросшего участка возведено капитальное здание с обустроенным двором и асфальтированным покрытием.",
+ "n_images": 2
+}

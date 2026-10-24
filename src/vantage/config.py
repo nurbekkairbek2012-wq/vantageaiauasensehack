@@ -170,6 +170,19 @@ class RemovalCfg(BaseModel):
     bsi_still_high_threshold: float
 
 
+class FieldCheckCfg(BaseModel):
+    """Что засчитывается как подтверждение выездом.
+
+    Запись «был на месте» без доказательства — утверждение, а не проверка.
+    Выезд принимается, только если к нему приложена фотография, снятая
+    рядом с объектом: координаты из EXIF не дальше ``max_photo_distance_m``
+    от контура. Значения по умолчанию действуют, если раздела в YAML нет.
+    """
+
+    max_photo_distance_m: float = 150.0
+    min_located_photos: int = 1
+
+
 class RiskCfg(BaseModel):
     grid_cell_m: float
     horizon_months: int
@@ -220,6 +233,7 @@ class Settings(BaseModel):
     model: ModelCfg
     verify: VerifyCfg
     removal: RemovalCfg
+    field_check: FieldCheckCfg = FieldCheckCfg()
     risk: RiskCfg
     api: ApiCfg
     paths: PathsCfg

@@ -49,14 +49,22 @@ class TestStoryDescribesThePublishedList:
         )
 
     def test_money_line_counts_the_same_objects(self, site):
-        """Сумма ущерба обязана относиться к тому же списку."""
+        """Сумма ущерба относится к опознанным свалкам того же списка.
+
+        Объекты «не разобрать» называются отдельно: их ущерб до выезда —
+        предположение, и в сумму сцены он не входит.
+        """
         story, published = site
         scene = next((s for s in story["scenes"] if s["id"] == "money"), None)
         if scene is None:
             pytest.skip("сцены про деньги нет")
-        assert str(len(published)) in scene["line"], (
-            f"сценарий говорит {scene['line']!r}, на карте {len(published)} объектов"
+        sure = int((published["visual_check"] == "landfill").sum())
+        counted = sure or len(published)
+        assert scene["line"].startswith(f"{counted} "), (
+            f"сценарий говорит {scene['line']!r}, опознанных на карте {sure}"
         )
+        if sure and sure < len(published):
+            assert str(len(published)) in scene["line"]
 
     def test_every_focus_points_at_a_published_object(self, site):
         """Сцена не должна наводиться на объект, снятый с публикации.

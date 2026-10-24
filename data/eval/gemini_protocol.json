@@ -1,0 +1,41 @@
+{
+ "fixed_at": "2026-09-27T00:50",
+ "note": "Правило строгого отказа зафиксировано после просмотра первых 25 объектов (dev) и ДО ответов по остальным 133 (test). Числа экзамена называются по test.",
+ "dev_ids": [
+  "real:C00018",
+  "real:C00031",
+  "real:C00034",
+  "real:C00052",
+  "real:C00059",
+  "real:C00061",
+  "real:C00068",
+  "real:C00071",
+  "real:C00077",
+  "real:C00079",
+  "real:C00082",
+  "real:C00098",
+  "real:C00102",
+  "real:C00113",
+  "real:C00115",
+  "real:C00122",
+  "real:C00124",
+  "real:C00125",
+  "real:C00127",
+  "real:C00129",
+  "real:C00151",
+  "real:C00159",
+  "real:C00167",
+  "real:C00175",
+  "real:C00177"
+ ],
+ "strict_reject": {
+  "verdict": "not_dump",
+  "min_confidence": 0.9,
+  "categories": [
+   "building_or_warehouse",
+   "construction_site",
+   "road_or_parking",
+   "water_or_wetland"
+  ]
+ }
+}

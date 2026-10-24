@@ -1,0 +1,7 @@
+{
+ "verdict": "not_dump",
+ "confidence": 0.95,
+ "category": "building_or_warehouse",
+ "reasoning": "На изображении видно, что на месте выделенного контура построен новый комплекс зданий и сооружений.",
+ "n_images": 2
+}

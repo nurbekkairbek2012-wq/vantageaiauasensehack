@@ -1,0 +1,7 @@
+{
+ "verdict": "not_dump",
+ "confidence": 0.99,
+ "category": "building_or_warehouse",
+ "reasoning": "На месте ранее незастроенного участка возведены новые складские и производственные здания с красными крышами.",
+ "n_images": 2
+}

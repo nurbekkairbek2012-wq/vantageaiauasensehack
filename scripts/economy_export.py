@@ -114,7 +114,7 @@ def main() -> int:
     import pandas as pd
 
     from vantage.config import load_economics
-    from vantage.money import RECYCLABLE_FRACTIONS, assess, portfolio, sensitivity
+    from vantage.money import RECYCLABLE_FRACTIONS, assess, sensitivity
 
     site = gpd.read_file(DATA / "candidates.geojson")
     funnel = json.loads((DATA / "funnel.json").read_text(encoding="utf-8"))
@@ -172,12 +172,27 @@ def main() -> int:
             "removal_status": str(row.get("removal_status") or ""),
         })
 
-    items = [(float(o["area_m2"]), float(o["age_years"])) for o in objects]
-    whole = portfolio(items, economics)
-    later_whole = portfolio([(a, y + 1.0) for a, y in items], economics)
+    # Деньги считаются по свалкам, подтверждённым человеком по снимку, а
+    # объекты с вердиктом «не разобрать» идут отдельным блоком.
+    #
+    # Раньше сумма бралась по всему опубликованному списку, и восемь
+    # объектов, которые по снимку опознать нельзя, стояли в итоге наравне
+    # с подтверждёнными. Для разговора с заказчиком это завышение: сумма,
+    # на которую просят деньги, должна держаться на проверенном, а то, что
+    # ещё надо проверить, называется рядом и прямо — «если подтвердятся».
+    #
+    # Очередь выезда (priority ниже) при этом строится по всему списку:
+    # ехать нужно и туда, где свалка видна, и туда, где её надо увидеть.
+    confirmed = [o for o in objects if o["visual_check"] == "landfill"]
+    pending = [o for o in objects if o["visual_check"] != "landfill"]
+    # Новая область без единого подтверждения всё равно получает расчёт —
+    # по всему списку и с явной пометкой, что он предварительный.
+    basis = "confirmed" if confirmed else "listed"
+    counted = confirmed or objects
 
     carbon = economics.triangular("carbon_price_kzt_per_t_co2e")
-    waiting_t = max(0.0, later_whole["co2e_emitted_t"].p50 - whole["co2e_emitted_t"].p50)
+    totals = _totals(counted, economics, carbon)
+    pending_totals = _totals(pending, economics, carbon) if (pending and confirmed) else None
 
     # Приоритет: накопленная доля суммы по объектам от дорогого к дешёвому.
     # Это и есть рекомендация — не «вот пятнадцать точек», а «вот три, и
@@ -204,69 +219,21 @@ def main() -> int:
             "auto_rejected": sum(v for k, v in rejected.items() if k != "ПРОШЁЛ ОТСЕВ"),
             "reviewed": reviewed,
             "published": len(objects),
+            # Опознаны человеком по снимку высокого разрешения.
+            "confirmed": len(confirmed),
+            # По снимку не разобрать — решает выезд.
+            "pending": len(pending),
+            # Подтверждены выездом: запись в ground_truth.json с фотографией.
             "ground": sum(1 for o in objects if o["check_source"] == "ground"),
         },
         "objects": objects,
         "priority": priority,
-        "totals": {
-            "objects": len(objects),
-            "area_m2": sum(o["area_m2"] for o in objects),
-            # Интервал по списку целиком: складываются итерации, а не
-            # процентили. Рядом лежит наивная сумма — чтобы разница между
-            # правильным и привычным способом была видна, а не заявлена.
-            "mass_t": {k: round(v, 1) for k, v in _pct(whole["mass_t"]).items()},
-            "removal_kzt": _pct(whole["removal_cost_kzt"]),
-            "recyclable_kzt": _pct(whole["recyclable_value_kzt"]),
-            "climate_kzt": _pct(whole["climate_cost_kzt"]),
-            "damage_kzt": _pct(whole["net_damage_kzt"]),
-            # Решения по списку целиком. Интервал экономии считается по
-            # портфелю: надбавка за разбор у подрядчика одна на все
-            # объекты, и разыгрывать её по каждому заново значило бы
-            # обещать усреднение, которого не будет.
-            "plain_kzt": _pct(whole["plain_removal_kzt"]),
-            "sorted_kzt": _pct(whole["sorted_removal_kzt"]),
-            "saving_kzt": _pct(whole["sorting_saving_kzt"]),
-            "breakeven_share": round(whole["breakeven_surcharge_share"].p50, 3),
-            "naive_damage_kzt": {
-                "p10": sum(o["damage_p10"] for o in objects),
-                "p50": sum(o["damage_p50"] for o in objects),
-                "p90": sum(o["damage_p90"] for o in objects),
-            },
-            # Сумма медиан по объектам — то, что получится, если сложить
-            # столбец таблицы на экране. Она обязана быть на странице
-            # именно потому, что её сложат: медиана суммы (45,7 млн)
-            # больше суммы медиан (43,0 млн) на несимметричности
-            # распределения, и человек с калькулятором найдёт эту разницу
-            # раньше, чем дослушает объяснение. Поэтому крупным на
-            # странице стоит складываемое число, а портфельный расчёт
-            # даёт интервал и назван отдельно.
-            "sum_of_medians": {
-                "mass_t": round(sum(o["mass_t"] for o in objects), 1),
-                "removal_kzt": sum(o["removal_kzt"] for o in objects),
-                "recyclable_kzt": sum(o["recyclable_kzt"] for o in objects),
-                "climate_kzt": sum(o["climate_kzt"] for o in objects),
-                "damage_kzt": sum(o["damage_p50"] for o in objects),
-                # Метан тоже складывается по объектам, а не берётся из
-                # портфельного розыгрыша: в candidates.geojson лежат
-                # медианы по объектам, и дека с картой обязаны показывать
-                # одно и то же число.
-                "co2e_t": round(sum(o["co2e_t"] for o in objects), 1),
-                "co2e_emitted_t": round(sum(o["co2e_emitted_t"] for o in objects), 1),
-                "co2e_preventable_t": round(sum(o["co2e_preventable_t"] for o in objects), 1),
-                "co2e_next_year_t": round(sum(o["co2e_next_year_t"] for o in objects), 1),
-                "plain_kzt": sum(o["plain_kzt"] for o in objects),
-                "sorted_kzt": sum(o["sorted_kzt"] for o in objects),
-                "saving_kzt": sum(o["plain_kzt"] - o["sorted_kzt"] for o in objects),
-            },
-            "co2e_t": round(whole["co2e_t"].p50, 1),
-            "co2e_emitted_t": round(whole["co2e_emitted_t"].p50, 1),
-            "co2e_preventable_t": round(whole["co2e_preventable_t"].p50, 1),
-            "penalty_kzt": sum(o["penalty_kzt"] for o in objects),
-            # Цена ожидания: что уйдёт в атмосферу за следующие двенадцать
-            # месяцев, если список останется нетронутым.
-            "waiting_year_co2e_t": round(waiting_t, 1),
-            "waiting_year_kzt": round(waiting_t * carbon.typical),
-        },
+        # Главные суммы — по подтверждённым; basis говорит, по чему именно.
+        "basis": basis,
+        "totals": totals,
+        # То же по объектам «не разобрать»: сколько добавится, если выезд
+        # их подтвердит. None, когда таких нет.
+        "pending": pending_totals,
         "sensitivity": {k: round(v, 3) for k, v in
                         sorted(drivers.items(), key=lambda kv: -abs(kv[1]))},
         "sensitivity_area_m2": round(median_area),
@@ -278,6 +245,7 @@ def main() -> int:
 
     t = payload["totals"]
     print(f"── Экономика выгружена: {OUT.relative_to(ROOT)}")
+    print(f"   суммы по {'подтверждённым' if basis == 'confirmed' else 'всему списку (подтверждённых нет)'}")
     print(f"   объектов {t['objects']}, масса {t['mass_t']['p50']:,.0f} т".replace(",", " "))
     print(f"   вывоз {t['removal_kzt']['p50'] / 1e6:.1f} млн ₸, "
           f"вторсырьё {t['recyclable_kzt']['p50'] / 1e6:.1f} млн ₸, "
@@ -295,7 +263,82 @@ def main() -> int:
           f"экономия {som['saving_kzt'] / 1e6:.1f} млн ₸")
     print(f"   разбор окупается, пока он дешевле "
           f"{t['breakeven_share']:.0%} стоимости вывоза")
+    if pending_totals:
+        ps = pending_totals["sum_of_medians"]
+        print(f"   ждут выезда: {pending_totals['objects']} объектов, "
+              f"{ps['mass_t']:,.0f} т, вывоз {ps['removal_kzt'] / 1e6:.1f} млн ₸ — "
+              f"в итог не входят".replace(",", " "))
     return 0
+
+
+def _totals(objects: list[dict], economics, carbon) -> dict:
+    """Итоги по набору объектов: портфельный интервал и сумма медиан."""
+    from vantage.money import portfolio
+
+    items = [(float(o["area_m2"]), float(o["age_years"])) for o in objects]
+    whole = portfolio(items, economics)
+    later_whole = portfolio([(a, y + 1.0) for a, y in items], economics)
+    waiting_t = max(0.0, later_whole["co2e_emitted_t"].p50 - whole["co2e_emitted_t"].p50)
+
+    return {
+        "objects": len(objects),
+        "area_m2": sum(o["area_m2"] for o in objects),
+        # Интервал по списку целиком: складываются итерации, а не
+        # процентили. Рядом лежит наивная сумма — чтобы разница между
+        # правильным и привычным способом была видна, а не заявлена.
+        "mass_t": {k: round(v, 1) for k, v in _pct(whole["mass_t"]).items()},
+        "removal_kzt": _pct(whole["removal_cost_kzt"]),
+        "recyclable_kzt": _pct(whole["recyclable_value_kzt"]),
+        "climate_kzt": _pct(whole["climate_cost_kzt"]),
+        "damage_kzt": _pct(whole["net_damage_kzt"]),
+        # Решения по списку целиком. Интервал экономии считается по
+        # портфелю: надбавка за разбор у подрядчика одна на все
+        # объекты, и разыгрывать её по каждому заново значило бы
+        # обещать усреднение, которого не будет.
+        "plain_kzt": _pct(whole["plain_removal_kzt"]),
+        "sorted_kzt": _pct(whole["sorted_removal_kzt"]),
+        "saving_kzt": _pct(whole["sorting_saving_kzt"]),
+        "breakeven_share": round(whole["breakeven_surcharge_share"].p50, 3),
+        "naive_damage_kzt": {
+            "p10": sum(o["damage_p10"] for o in objects),
+            "p50": sum(o["damage_p50"] for o in objects),
+            "p90": sum(o["damage_p90"] for o in objects),
+        },
+        # Сумма медиан по объектам — то, что получится, если сложить
+        # столбец таблицы на экране. Она обязана быть на странице
+        # именно потому, что её сложат: медиана суммы (45,7 млн)
+        # больше суммы медиан (43,0 млн) на несимметричности
+        # распределения, и человек с калькулятором найдёт эту разницу
+        # раньше, чем дослушает объяснение. Поэтому крупным на
+        # странице стоит складываемое число, а портфельный расчёт
+        # даёт интервал и назван отдельно.
+        "sum_of_medians": {
+            "mass_t": round(sum(o["mass_t"] for o in objects), 1),
+            "removal_kzt": sum(o["removal_kzt"] for o in objects),
+            "recyclable_kzt": sum(o["recyclable_kzt"] for o in objects),
+            "climate_kzt": sum(o["climate_kzt"] for o in objects),
+            "damage_kzt": sum(o["damage_p50"] for o in objects),
+            # Метан тоже складывается по объектам, а не берётся из
+            # портфельного розыгрыша: в candidates.geojson лежат
+            # медианы по объектам, и дека с картой обязаны показывать
+            # одно и то же число.
+            "co2e_t": round(sum(o["co2e_t"] for o in objects), 1),
+            "co2e_emitted_t": round(sum(o["co2e_emitted_t"] for o in objects), 1),
+            "co2e_preventable_t": round(sum(o["co2e_preventable_t"] for o in objects), 1),
+            "co2e_next_year_t": round(sum(o["co2e_next_year_t"] for o in objects), 1),
+            "plain_kzt": sum(o["plain_kzt"] for o in objects),
+            "sorted_kzt": sum(o["sorted_kzt"] for o in objects),
+            "saving_kzt": sum(o["plain_kzt"] - o["sorted_kzt"] for o in objects),
+        },
+        "co2e_t": round(whole["co2e_t"].p50, 1),
+        "co2e_emitted_t": round(whole["co2e_emitted_t"].p50, 1),
+        "co2e_preventable_t": round(whole["co2e_preventable_t"].p50, 1),
+        "penalty_kzt": sum(o["penalty_kzt"] for o in objects),
+        # Цена ожидания: что уйдёт в атмосферу за следующие двенадцать
+        # месяцев, если список останется нетронутым.
+        "waiting_year_co2e_t": round(waiting_t, 1),
+        "waiting_year_kzt": round(waiting_t * carbon.typical),
+    }
 
 
 def _pct(p) -> dict[str, float]:

@@ -111,7 +111,7 @@ const URGENCY: Record<string, { label: string; dot: string; full: string }> = {
   hi: {
     label: 'срочно',
     dot: 'var(--color-urgent-hi)',
-    full: 'Первая половина всей суммы ущерба по области лежит на этих объектах. Выезд начинается отсюда.',
+    full: 'Первая половина суммы всей очереди лежит на этих объектах. Выезд начинается отсюда.',
   },
   mid: {
     label: 'средне',
@@ -156,18 +156,22 @@ const VISUAL: Record<string, { short: string; full: string; tone: string; dot: s
   },
 };
 
-/* Подтверждение с земли показывается отдельно от разметки по снимку.
+/* Подтверждение выездом показывается отдельно от разметки по снимку.
  *
  * Порядок силы источников: человек на месте > человек по снимку > машина.
  * Снимок 0,4–0,8 м показывает пятно нужной текстуры; человек рядом видит,
  * что это и возят ли туда до сих пор. Смешивать их в одной подписи нельзя:
  * на защите спросят именно «кто смотрел», и ответ должен быть на экране, а
- * не в памяти выступающего. */
+ * не в памяти выступающего.
+ *
+ * Метка появляется только у объектов с записью в ground_truth.json, к
+ * которой приложена фотография с координатами рядом с объектом: запись
+ * без фотографии scripts/attach_ground.py не принимает. */
 const GROUND = {
-  short: 'подтверждено',
-  full: 'Подтверждено человеком, а не моделью. Там, где съёмка показывает '
-    + 'только нарушенный грунт, человек видит, что именно лежит и возят ли '
-    + 'туда до сих пор.',
+  short: 'выезд',
+  full: 'Подтверждено выездом: на месте был человек, есть фотография с '
+    + 'координатами рядом с объектом. Там, где съёмка показывает только '
+    + 'нарушенный грунт, человек видит, что именно лежит и возят ли туда до сих пор.',
   tone: 'text-emerald',
   dot: 'var(--color-emerald)',
 };
@@ -282,9 +286,9 @@ type SortKey = 'visual' | 'probability' | 'evidence_score' | 'damage_p50' | 'are
 /* Порядок пунктов — это ещё и ответ на вопрос «что здесь главное».
    Первым стоит порядок по деньгам, и он же выбран по умолчанию: инспектор
    открывает карту, чтобы решить, куда ехать сегодня, а решает он это по
-   сумме потерь, а не по алфавиту и не по дате обращения. Раньше первым
-   шло «сначала свалки» — сортировка по классу объекта, которая при
-   пятнадцати подтверждённых свалках из пятнадцати не сортирует ничего. */
+   сумме потерь, а не по алфавиту и не по дате обращения. «Сначала
+   свалки» стоит вторым: оно поднимает опознанные по снимку над теми, что
+   ждут выезда. */
 const SORTS: [SortKey, string][] = [
   ['damage_p50', 'по ущербу'],
   ['visual', 'сначала свалки'],
@@ -584,13 +588,20 @@ export default function MapApp() {
   const totals = useMemo(() => {
     const list = candidates?.features ?? [];
     const real = list.filter((f) => f.properties?.visual_check !== 'not_landfill');
+    const sure = list.filter((f) => f.properties?.visual_check === 'landfill');
     return {
       count: list.length,
-      confirmed: list.filter((f) => f.properties?.visual_check === 'landfill').length,
-      /* Сколько объектов подтверждено человеком на месте. Считается
+      confirmed: sure.length,
+      /* По снимку не разобрать — ждут выезда. */
+      pending: real.length - sure.length,
+      /* Сколько объектов подтверждено выездом с фотографией. Считается
          отдельно от вердикта: выезд — это про источник, а не про класс. */
       ground: list.filter((f) => f.properties?.check_source === 'ground').length,
-      damage: real.reduce((s, f) => s + (Number(f.properties?.damage_p50) || 0), 0),
+      /* Ущерб в шапке — по опознанным как свалка, как на экране
+         «Экономика». Объекты «не разобрать» в сумму не входят: их ущерб
+         станет известен после выезда. */
+      damage: (sure.length ? sure : real)
+        .reduce((s, f) => s + (Number(f.properties?.damage_p50) || 0), 0),
       area: real.reduce((s, f) => s + (Number(f.properties?.area_m2) || 0), 0),
     };
   }, [candidates]);
@@ -615,7 +626,10 @@ export default function MapApp() {
             <dt className="text-muted-2">Площадь</dt>
             <dd className="tabular font-display text-lg text-line">{num(totals.area / 10000, 1)} га</dd>
           </div>
-          <div className="flex items-baseline gap-2">
+          <div
+            className="flex items-baseline gap-2"
+            title="Сумма по опознанным как свалка. Объекты «не разобрать» ждут выезда и в неё не входят."
+          >
             <dt className="text-muted-2">Ущерб</dt>
             <dd className="tabular font-display text-lg text-violet-lit">{kzt(totals.damage)}</dd>
           </div>
@@ -654,8 +668,8 @@ export default function MapApp() {
                 вслух: подтверждение — факт, а чем именно оно получено,
                 написано в карточке объекта, где это можно прочесть
                 целиком, а не угадать по заголовку столбца. */}
-            <span title="Как подтверждён объект — написано в его карточке">
-              Подтверждено
+            <span title="Вердикт человека по снимку 0,4–0,8 м; подробнее — в карточке объекта">
+              По снимку
             </span>
           </div>
 
@@ -893,7 +907,7 @@ export default function MapApp() {
                       {start.length}{' '}
                       {plural(start.length, 'выезд', 'выезда', 'выездов')}
                     </strong>{' '}
-                    закрывают половину всей суммы ущерба по области.
+                    закрывают половину суммы всей очереди — вместе с объектами, ждущими выезда.
                   </p>
                   <ol className="mt-4 space-y-2">
                     {start.map((f, i) => {
@@ -919,9 +933,11 @@ export default function MapApp() {
                               <span className="tabular">
                                 {num(p.area_m2)} м² · {humanDate(p.break_date)}
                               </span>
-                              {p.check_source === 'ground' && (
-                                <span className="text-emerald">подтверждён</span>
-                              )}
+                              {p.check_source === 'ground' ? (
+                                <span className="text-emerald">выезд</span>
+                              ) : p.visual_check !== 'landfill' ? (
+                                <span className="text-amber">нужен выезд</span>
+                              ) : null}
                             </span>
                           </button>
                         </li>
@@ -934,6 +950,30 @@ export default function MapApp() {
                   >
                     Весь расчёт и порядок объезда →
                   </a>
+                  {/* Очередь уносится в привычный инструмент заказчика:
+                      навигатор инспектора, ГИС отдела, Excel. Перерисованные
+                      руками координаты — первая же опечатка и машина не там. */}
+                  <p className="mt-3 text-xs leading-relaxed text-muted-2">
+                    Скачать очередь:{' '}
+                    {[
+                      ['vantage_objects.gpx', 'GPX для навигатора'],
+                      ['vantage_objects.kml', 'KML'],
+                      ['vantage_objects.csv', 'Excel'],
+                      ['vantage_objects.geojson', 'GeoJSON'],
+                      ['passports.pdf', 'паспорта объектов (PDF)'],
+                    ].map(([file, label], i) => (
+                      <span key={file}>
+                        {i > 0 && ' · '}
+                        <a
+                          href={`./data/export/${file}`}
+                          download
+                          className="text-violet-lit underline decoration-grid hover:decoration-violet-lit"
+                        >
+                          {label}
+                        </a>
+                      </span>
+                    ))}
+                  </p>
                 </>
               ) : null}
 
@@ -944,13 +984,20 @@ export default function MapApp() {
                 В реестре слева {totals.count}{' '}
                 {plural(totals.count, 'объект', 'объекта', 'объектов')}
                 {raw ? `, отобранных из ${raw}` : ''}.
-                Каждый просмотрен человеком по снимку 0,4–0,8 м на пиксель
+                Каждый просмотрен человеком по снимку 0,4–0,8 м на пиксель:{' '}
+                {totals.confirmed}{' '}
+                {plural(totals.confirmed, 'опознан', 'опознаны', 'опознаны')} как свалка
+                {totals.pending > 0 && (
+                  <>
+                    , {totals.pending} по снимку не разобрать — они ждут выезда
+                  </>
+                )}
                 {totals.ground > 0 && (
                   <>
-                    , и{' '}
+                    ;{' '}
                     <span className="text-emerald">
                       {totals.ground}{' '}
-                      {plural(totals.ground, 'подтверждён', 'подтверждены', 'подтверждены')}
+                      {plural(totals.ground, 'подтверждён', 'подтверждены', 'подтверждены')} выездом
                     </span>
                   </>
                 )}
@@ -1142,7 +1189,7 @@ function ObjectCard({ f, split }: { f: Feature; split?: Split }) {
                 выездом, «проверено по снимку» — прямая неправда, а
                 источник проверки здесь и есть главное. */}
             <span className="text-xs text-muted-2">
-              {p.check_source === 'ground' ? 'Проверено человеком' : 'Проверено по снимку'}
+              {p.check_source === 'ground' ? 'Проверено выездом' : 'Проверено по снимку'}
             </span>
             <span className={`flex items-center gap-1.5 text-sm ${visualOf(p)!.tone}`}>
               <span

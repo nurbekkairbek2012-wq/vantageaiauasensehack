@@ -23,6 +23,7 @@ class TestGracefulAbsence:
 
     def test_builder_returns_none_instead_of_raising(self, monkeypatch):
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+        monkeypatch.delenv("GEMINI_API_KEY", raising=False)
         assert build_verifier() is None
 
     def test_failure_gives_zero_confidence_not_a_verdict(self):

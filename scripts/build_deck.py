@@ -84,7 +84,18 @@ def numbers() -> dict:
     # 43,0 млн на экране «Экономика» были одним числом, а не двумя
     # похожими.
     econ = json.loads((DATA / "economy.json").read_text(encoding="utf-8"))
-    dates = pd.to_datetime(site["break_date"])
+    # Матрица машинного просмотра — из scripts/screen_metrics.py, а не
+    # вписанные «34 из 35»: после пересмотра разметки они разошлись с
+    # данными.
+    screen_path = DATA / "screen.json"
+    screen = (json.loads(screen_path.read_text(encoding="utf-8"))
+              if screen_path.exists() else {})
+    # Деньги, возраст и штрафы — по опознанным как свалка, как на сайте.
+    # Объекты «не разобрать» стоят в очереди выезда, но в суммы не входят.
+    sure = site[site["visual_check"] == "landfill"]
+    if sure.empty:
+        sure = site
+    pending_sums = (econ.get("pending") or {}).get("sum_of_medians", {})
     rejected = funnel["rejected"]
 
     def cut(share: float) -> int:
@@ -131,18 +142,29 @@ def numbers() -> dict:
         "passed": rejected.get("ПРОШЁЛ ОТСЕВ", 0),
         "published": len(site),
         "dumps": int((site["visual_check"] == "landfill").sum()),
+        "pending": int((site["visual_check"] == "unclear").sum()),
         "ground": int((site["check_source"] == "ground").sum()),
-        "damage": site["damage_p50"].sum() / 1e6,
-        "low": site["damage_p10"].sum() / 1e6,
-        "high": site["damage_p90"].sum() / 1e6,
-        "area_ha": site["area_m2"].sum() / 1e4,
-        "mass": site["mass_t"].sum(),
-        "co2": site["co2e_t"].sum(),
-        "penalty": site["penalty_kzt"].sum() / 1e6,
-        "age": (pd.Timestamp.today() - dates).dt.days.mean() / 365.25,
+        "damage": sure["damage_p50"].sum() / 1e6,
+        "low": sure["damage_p10"].sum() / 1e6,
+        "high": sure["damage_p90"].sum() / 1e6,
+        "area_ha": sure["area_m2"].sum() / 1e4,
+        "mass": sure["mass_t"].sum(),
+        "co2": sure["co2e_t"].sum(),
+        "penalty": sure["penalty_kzt"].sum() / 1e6,
+        # Возраст на дату прогона — тот же, на котором посчитан метан.
+        "age": float(sure["age_years"].astype(float).mean()),
         "oldest": (lambda d: f"{MONTHS[d.month - 1]} {d.year}")(
-            site["break_date"].min()),
-        "biggest": site["area_m2"].max(),
+            pd.to_datetime(sure["break_date"]).min()),
+        "biggest": sure["area_m2"].max(),
+        "pending_mass": pending_sums.get("mass_t", 0),
+        "pending_removal": pending_sums.get("removal_kzt", 0) / 1e6,
+        "screen_n": screen.get("objects", 0),
+        "screen_work": 100 * screen.get("workload_removed", 0),
+        "screen_rejected": screen.get("rejected", 0),
+        "screen_rejected_dump": screen.get("rejected_landfill", 0),
+        "screen_dumps": screen.get("dumps", 0),
+        "screen_kept": screen.get("dumps_kept", 0),
+        "screen_recall_low": 100 * screen.get("recall_low", 0),
         "lift_low": metrics.get("lift_low", 0),
         "pr_low": metrics.get("pr_auc_low", 0),
         "pr_high": metrics.get("pr_auc_high", 0),
@@ -157,19 +179,13 @@ def numbers() -> dict:
 
 
 def css() -> str:
-    faces = []
-    for weight, name in ((400, "golos-text-400-cyrillic"), (500, "golos-text-500-cyrillic"),
-                         (600, "golos-text-600-cyrillic")):
-        path = FONTS / f"{name}.woff2"
-        if path.exists():
-            faces.append(f"""@font-face{{font-family:'Golos';font-weight:{weight};
-              font-display:block;src:url('{data_uri(path)}') format('woff2');}}""")
-    for name in ("oswald-500-cyrillic", "oswald-600-cyrillic"):
-        path = FONTS / f"{name}.woff2"
-        if path.exists():
-            weight = name.split("-")[1]
-            faces.append(f"""@font-face{{font-family:'Oswald';font-weight:{weight};
-              font-display:block;src:url('{data_uri(path)}') format('woff2');}}""")
+    # Все наборы символов, а не только кириллица: латиница «Vantage AI»,
+    # цифры и знак тенге иначе уходили в запасной шрифт с засечками.
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from fontfaces import font_faces
+
+    faces = [font_faces("Golos", "golos-text", (400, 500, 600)),
+             font_faces("Oswald", "oswald", (500, 600))]
 
     return "\n".join(faces) + f"""
     * {{ margin:0; padding:0; box-sizing:border-box; }}
@@ -298,12 +314,13 @@ def slides(n: dict) -> str:
       <p class="lead" style="margin-top:26px;max-width:60ch">
         Спутник находит несанкционированные свалки, система считает потери
         в тенге и говорит, в каком порядке их устранять. Проверено под
-        Астаной: {n['dumps']} объектов, каждый подтверждён выездом.
+        Астаной: {n['dumps']} свалок опознаны человеком по снимку высокого
+        разрешения, ещё {n['pending']} объектов ждут выезда.
       </p>
       <dl class="stats" style="max-width:900px">
-        <div class="stat"><dt>Отходов найдено</dt>
+        <div class="stat"><dt>Отходов на опознанных свалках</dt>
           <dd class="num big lit">{ru(n['mass_sum'])}<span style="font-size:30px"> т</span></dd></div>
-        <div class="stat"><dt>Потери бюджета по списку</dt>
+        <div class="stat"><dt>Потери бюджета по ним</dt>
           <dd class="num big">{ru(n['net'], 1)}<span style="font-size:30px"> млн ₸</span></dd></div>
         <div class="stat"><dt>Экономия правильного решения</dt>
           <dd class="num big em">{ru(n['saving'], 1)}<span style="font-size:30px"> млн ₸</span></dd></div>
@@ -318,8 +335,8 @@ def slides(n: dict) -> str:
       <div class="row" style="margin-top:8px">
         <div class="col">
           <ul>
-            <li><b>Первый счёт — вывоз.</b> {ru(n['mass_sum'])} тонн на одном квадрате
-              20 × 20 км — это <b>{ru(n['removal'], 1)} млн ₸</b> бюджету, и в план
+            <li><b>Первый счёт — вывоз.</b> {ru(n['mass_sum'])} тонн на {n['dumps']}
+              опознанных свалках одного квадрата 20 × 20 км — это <b>{ru(n['removal'], 1)} млн ₸</b> бюджету, и в план
               уборки они не заложены: объектов нет в реестрах.</li>
             <li><b>Второй счёт — потерянный ресурс.</b> Внутри тех же тонн лежит
               пластика, бумаги, металла и стекла на <b>{ru(n['recyclable'], 1)} млн ₸</b>
@@ -334,8 +351,9 @@ def slides(n: dict) -> str:
         </div>
         <div class="col">{shot('pixel.png')}
           <p class="note" style="margin-top:12px">
-            Один пиксель за восемь лет. Вегетация упала и не вернулась — так
-            выглядит свалка на снимке Sentinel-2.</p>
+            Крупнейшая опознанная свалка за восемь лет: шесть сезонов
+            вегетации, потом провал без возврата — так она выглядит на
+            снимках Sentinel-2.</p>
         </div>
       </div>
             </div>
@@ -352,19 +370,22 @@ def slides(n: dict) -> str:
               <td class="r">{n['raw']}</td></tr>
           <tr><td class="k">Дошли до списка после проверки</td>
               <td class="r">{n['published']}</td></tr>
-          <tr><td class="k">Подтверждено выездом на место</td>
-              <td class="r em">{n['ground']}</td></tr>
+          <tr><td class="k">Опознаны как свалка по снимку</td>
+              <td class="r em">{n['dumps']}</td></tr>
+          <tr><td class="k">Ждут выезда — по снимку не разобрать</td>
+              <td class="r am">{n['pending']}</td></tr>
           <tr><td class="k">Лежит средняя свалка</td>
               <td class="r">{ru(n['age'], 1)} года</td></tr>
           <tr><td class="k">Самая старая возникла</td>
               <td class="r">{n['oldest']}</td></tr>
-          <tr><td class="k">Отходов в списке</td>
+          <tr><td class="k">Отходов на опознанных свалках</td>
               <td class="r">{ru(n['mass_sum'])} т</td></tr>
         </table></div>
         <div class="col">
           <div class="num mid lit">{ru(n['net'], 1)} млн ₸</div>
-          <p class="note" style="margin-top:8px">чистые потери по объектам,
-            пережившим проверку глазами</p>
+          <p class="note" style="margin-top:8px">чистые потери по опознанным
+            свалкам; ждущие выезда добавят до {ru(n['pending_removal'], 1)} млн ₸
+            вывоза, если подтвердятся</p>
           <div class="num mid" style="margin-top:26px">{ru(n['co2_total'])} т CO₂-экв</div>
           <p class="note" style="margin-top:8px">метан за двадцать лет, из них
             <b style="color:var(--amber)">{ru(n['emitted'])} т уже выброшено</b> —
@@ -394,8 +415,8 @@ def slides(n: dict) -> str:
           <b>ИИ отсеивает лишнее</b><span>карьеры, стройки, вода, жильё —
           {n['raw']} → {n['passed']} до человека</span></div>
         <div class="link"><span class="step">4</span>
-          <b>Человек подтверждает</b><span>снимок 0,4–0,8 м на пиксель,
-          {n['ground']} проверены выездом</span></div>
+          <b>Человек решает по снимку</b><span>0,4–0,8 м на пиксель:
+          {n['dumps']} свалок, {n['pending']} — на выезд</span></div>
         <div class="link"><span class="step">5</span>
           <b>Система считает деньги</b><span>масса, вывоз, возвратное сырьё,
           метан — с интервалом</span></div>
@@ -413,7 +434,7 @@ def slides(n: dict) -> str:
           <dd class="num mid lit">{n['published']}</dd></div>
         <div class="stat"><dt>потерь стало видно</dt>
           <dd class="num mid">{ru(n['net'], 1)} млн ₸</dd></div>
-        <div class="stat"><dt>выезда закрывают половину суммы</dt>
+        <div class="stat"><dt>выезда закрывают половину суммы очереди</dt>
           <dd class="num mid em">{n['half_trips']}</dd></div>
       </dl>
             </div>
@@ -453,7 +474,7 @@ def slides(n: dict) -> str:
     # 6 ── Что нашли
     s.append(f"""<section class="slide">
       <div class="kicker">Результат</div>
-      <h2>{n['dumps']} свалок, и каждая проверена<br>человеком на месте</h2>
+      <h2>{n['dumps']} свалок опознаны человеком,<br>{n['pending']} ждут выезда</h2>
       <div class="body">
       <div class="row" style="margin-top:14px">
         <div class="col" style="flex:1.25">{shot('map.png')}</div>
@@ -465,8 +486,9 @@ def slides(n: dict) -> str:
             <tr><td class="k">Просмотрено человеком</td><td class="r">{n['passed']}</td></tr>
             <tr><td class="k">Отвергнуто при просмотре</td>
                 <td class="r am">{n['passed'] - n['published']}</td></tr>
-            <tr><td class="k">Опубликовано</td><td class="r lit">{n['published']}</td></tr>
-            <tr><td class="k">Подтверждено выездом</td><td class="r em">{n['ground']}</td></tr>
+            <tr><td class="k">В очереди выезда</td><td class="r lit">{n['published']}</td></tr>
+            <tr><td class="k">— опознаны как свалка</td><td class="r em">{n['dumps']}</td></tr>
+            <tr><td class="k">— по снимку не разобрать</td><td class="r am">{n['pending']}</td></tr>
           </table>
           <p class="note" style="margin-top:18px">
             Отвергнутые не спрятаны: {n['passed'] - n['published']} собственные находки
@@ -503,10 +525,10 @@ def slides(n: dict) -> str:
           </table>
         </div>
         <div class="col">
-          <div class="num mid lit">71%</div>
+          <div class="num mid lit">{ru(n['screen_work'])}%</div>
           <p class="note" style="margin-top:8px">ручной работы снимает машинный
-            просмотр снимков — измерено на 49 объектах с человеческим
-            вердиктом</p>
+            просмотр снимков — измерено на {n['screen_n']} объектах с
+            человеческим вердиктом</p>
           <p style="margin-top:18px">Дороже всего не найденный объект, а
             <b style="color:var(--line)">зря совершённый выезд</b>. Поэтому
             главная экономия здесь не в поиске, а в очереди: программа
@@ -531,9 +553,12 @@ def slides(n: dict) -> str:
           <table>
             <tr><th>Что измерено</th><th style="text-align:right">Результат</th></tr>
             <tr><td class="k">Машинный просмотр снимает ручной работы</td>
-                <td class="r lit">71%</td></tr>
-            <tr><td class="k">Из них отказов верных</td><td class="r">34 из 35</td></tr>
-            <tr><td class="k">Свалок находит</td><td class="r">7 из 8</td></tr>
+                <td class="r lit">{ru(n['screen_work'])}%</td></tr>
+            <tr><td class="k">Опознанных свалок среди его отказов</td>
+                <td class="r">{n['screen_rejected_dump']} из {n['screen_rejected']}</td></tr>
+            <tr><td class="k">Полнота, нижняя граница 90%</td>
+                <td class="r">{ru(n['screen_recall_low'])}%
+                  ({n['screen_kept']} из {n['screen_dumps']})</td></tr>
             <tr><td class="k">Риск появления, выигрыш над случайным</td>
                 <td class="r lit">не хуже ×{n['lift_low']:.0f}</td></tr>
             <tr><td class="k">Риск появления, PR-AUC (интервал)</td>
@@ -549,9 +574,11 @@ def slides(n: dict) -> str:
             поверхности.</b> ИИ сокращает их до короткой очереди, отсортированной
             по деньгам, и оставляет проверку человеку: {n['raw']} → {n['passed']} →
             {n['published']}.</p>
-          <p style="margin-top:16px"><b style="color:var(--line)">Одну свалку из
-            восьми модель теряет</b> — поэтому её оценка остаётся подсказкой, а
-            решение за человеком. Лишний объект в очереди стоит минуты;
+          <p style="margin-top:16px"><b style="color:var(--line)">Опознанных
+            свалок в проверке всего {n['screen_dumps']}</b>, и
+            {n['screen_kept']} из {n['screen_dumps']} совместимо с полнотой
+            {ru(n['screen_recall_low'])}% — поэтому оценка модели остаётся
+            подсказкой, а решение за человеком. Лишний объект в очереди стоит минуты;
             выброшенный не вернётся никогда.</p>
           <p style="margin-top:16px">Оценка риска проверена <b
             style="color:var(--line)">по времени</b>: обучена на объектах до
@@ -571,8 +598,8 @@ def slides(n: dict) -> str:
       <div class="row" style="margin-top:16px">
         <div class="col">
           <div class="num mid lit">{ru(n['net'], 1)} млн ₸</div>
-          <p class="note" style="margin-top:8px">сумма медиан: складывается из
-            столбца на экране</p>
+          <p class="note" style="margin-top:8px">сумма медиан по опознанным
+            свалкам: складывается из столбца на экране</p>
           <div class="num" style="font-size:28px;margin-top:20px;color:var(--muted)">
             {ru(n['band_low'], 1)} — {ru(n['band_high'], 1)} млн ₸</div>
           <p class="note" style="margin-top:8px">интервал по списку целиком,
@@ -635,10 +662,11 @@ def slides(n: dict) -> str:
             карта риска на год вперёд, Telegram-бот для жителей, инструмент
             разметки. Показываем их, только если спросят: один доведённый
             до конца путь убедительнее шести начатых.</p>
-          <p style="margin-top:16px"><b style="color:var(--line)">Сайт
-            открывается с флешки</b> и работает без интернета — шрифты,
-            данные и подложка лежат локально. Проверено автоматически, и
-            это же запасной план на случай, если в зале не будет сети.</p>
+          <p style="margin-top:16px"><b style="color:var(--line)">Данные — в
+            сборке, а не в облаке.</b> Объекты, деньги, черновик акта и шрифты
+            приезжают вместе со страницей; сеть нужна только подложке снимков.
+            Без сети остаётся рабочий инструмент на пустом фоне — проверено
+            автоматически.</p>
           <div style="margin-top:18px">
             <span class="pill">Python · xarray · dask · rasterio</span>
             <span class="pill">PyTorch</span>
@@ -674,8 +702,8 @@ def slides(n: dict) -> str:
                 <td class="r">осталось {n['passed']}</td></tr>
             <tr><td class="k">Инспектор получил очередь по деньгам</td>
                 <td class="r lit">{n['half_trips']} выезда = 50% суммы</td></tr>
-            <tr><td class="k">Выехал, подтвердил, подписал акт</td>
-                <td class="r em">{n['ground']} подтверждены</td></tr>
+            <tr><td class="k">Выехал, сфотографировал, подписал акт</td>
+                <td class="r em">кадр с координатами</td></tr>
             <tr><td class="k">Через месяц — проверка устранения</td>
                 <td class="r">убрали или засыпали</td></tr>
           </table>
@@ -713,9 +741,11 @@ def slides(n: dict) -> str:
         <div class="col">
           <table>
             <tr><th>Что уже есть</th><th style="text-align:right">Сколько</th></tr>
-            <tr><td class="k">Найдено и подтверждено выездом</td>
-                <td class="r em">{n['ground']} объектов</td></tr>
-            <tr><td class="k">Потери, которые стали видимыми</td>
+            <tr><td class="k">Опознано свалок по снимку</td>
+                <td class="r em">{n['dumps']}</td></tr>
+            <tr><td class="k">Ждут выезда</td>
+                <td class="r am">{n['pending']}</td></tr>
+            <tr><td class="k">Потери на опознанных свалках</td>
                 <td class="r lit">{ru(n['net'], 1)} млн ₸</td></tr>
             <tr><td class="k">Возвратного сырья в этих отходах</td>
                 <td class="r em">{ru(n['recyclable'], 1)} млн ₸</td></tr>
@@ -724,8 +754,8 @@ def slides(n: dict) -> str:
           <p style="margin-top:14px"><b style="color:var(--line)">Подписка на область
             под наблюдением</b> — по квадратным километрам: ежемесячный пересчёт,
             очередь по деньгам, контроль устранения. Пояс вокруг областного центра —
-            400 км², около четырёх часов машинного времени в месяц; один найденный
-            объект здесь в среднем стоит {ru(n['net'] / n['dumps'], 1)} млн ₸ потерь.</p>
+            400 км², около четырёх часов машинного времени в месяц; одна
+            опознанная свалка здесь в среднем стоит {ru(n['net'] / n['dumps'], 1)} млн ₸ потерь.</p>
 
         </div>
         <div class="col">
@@ -743,8 +773,8 @@ def slides(n: dict) -> str:
             github.com/k41270075-stack/hakathon</p>
           <p style="margin-top:8px"><b style="color:var(--line)">Живой продукт:</b>
             hakathon-lyart.vercel.app</p>
-          <p class="note" style="margin-top:22px">682 автоматические проверки,
-            семь страниц в трёх браузерах, карта работает без интернета.
+          <p class="note" style="margin-top:22px">Больше 700 автоматических
+            проверок, семь страниц в трёх браузерах, данные карты в сборке.
             Все числа этой деки читаются из выгрузки прогона — ни одно не
             вписано руками.</p>
           <p class="note" style="margin-top:12px">Пилот на восемь недель расписан
@@ -803,8 +833,8 @@ def main() -> int:
     print(f"   двенадцать слайдов, {size // 1024} КБ")
     print()
     print("Числа взяты из выгрузки прогона:")
-    print(f"   свалок {n['dumps']}, подтверждено выездом {n['ground']}, "
-          f"ущерб {ru(n['damage'], 1)} млн ₸")
+    print(f"   опознано свалок {n['dumps']}, ждут выезда {n['pending']}, "
+          f"подтверждено выездом {n['ground']}, ущерб {ru(n['damage'], 1)} млн ₸")
     return 0
 
 

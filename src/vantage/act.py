@@ -255,12 +255,18 @@ def register_cyrillic_font() -> tuple[str, str]:
     )
 
 
-def render_pdf(act: ActDraft, path: str | Path, *, allow_draft: bool = True) -> Path:
+def render_pdf(act: ActDraft, path: str | Path, *, allow_draft: bool = True,
+               sample: bool = False) -> Path:
     """Отрендерить акт в PDF.
 
     ``allow_draft=False`` включает строгий режим выгрузки официального
     документа: непроверенный акт вызовет исключение, а не напечатается
     с оговоркой мелким шрифтом.
+
+    ``sample=True`` — образец заполнения: поверх листа печатается
+    «ОБРАЗЕЦ». Нужен для документов, которые показывают заказчику, как
+    выглядит акт: подтверждённый акт без такой пометки с вымышленной
+    подписью читался бы как настоящий.
     """
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4
@@ -419,6 +425,16 @@ def render_pdf(act: ActDraft, path: str | Path, *, allow_draft: bool = True) -> 
         pdf.drawString(margin, footer_y, chunk)
         footer_y -= 3.6 * mm
     pdf.drawString(margin, 10 * mm, "VANTAGE · Future Minds Hackathon 2026 · трек EcoFin")
+
+    # Водяной знак образца — поверх всего; у черновика свой знак ниже.
+    if sample:
+        pdf.saveState()
+        pdf.setFillColor(colors.Color(0.2, 0.2, 0.2, alpha=0.08))
+        pdf.setFont(font_bold, 80)
+        pdf.translate(page_width / 2, page_height / 2 - 60 * mm)
+        pdf.rotate(38)
+        pdf.drawCentredString(0, 0, "ОБРАЗЕЦ")
+        pdf.restoreState()
 
     # Водяной знак черновика — поверх всего содержимого
     if not act.is_official:

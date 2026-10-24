@@ -51,52 +51,79 @@ type EconObject = {
   co2e_next_year_t: number;
   penalty_kzt: number;
   check_source: string;
+  visual_check: string;
   removal_status: string;
+};
+
+type Totals = {
+  objects: number;
+  area_m2: number;
+  mass_t: Band;
+  removal_kzt: Band;
+  recyclable_kzt: Band;
+  climate_kzt: Band;
+  damage_kzt: Band;
+  naive_damage_kzt: Band;
+  plain_kzt: Band;
+  sorted_kzt: Band;
+  saving_kzt: Band;
+  breakeven_share: number;
+  sum_of_medians: {
+    mass_t: number;
+    removal_kzt: number;
+    recyclable_kzt: number;
+    climate_kzt: number;
+    damage_kzt: number;
+    co2e_t: number;
+    co2e_emitted_t: number;
+    co2e_preventable_t: number;
+    co2e_next_year_t: number;
+    plain_kzt: number;
+    sorted_kzt: number;
+    saving_kzt: number;
+  };
+  co2e_t: number;
+  co2e_emitted_t: number;
+  co2e_preventable_t: number;
+  penalty_kzt: number;
+  waiting_year_co2e_t: number;
+  waiting_year_kzt: number;
 };
 
 type Economy = {
   generated: string;
   iterations: number;
-  queue: { raw: number; auto_rejected: number; reviewed: number; published: number; ground: number };
+  queue: {
+    raw: number; auto_rejected: number; reviewed: number; published: number;
+    confirmed: number; pending: number; ground: number;
+  };
   objects: EconObject[];
   priority: { n: number; id: string; share: number }[];
-  totals: {
-    objects: number;
-    area_m2: number;
-    mass_t: Band;
-    removal_kzt: Band;
-    recyclable_kzt: Band;
-    climate_kzt: Band;
-    damage_kzt: Band;
-    naive_damage_kzt: Band;
-    plain_kzt: Band;
-    sorted_kzt: Band;
-    saving_kzt: Band;
-    breakeven_share: number;
-    sum_of_medians: {
-      mass_t: number;
-      removal_kzt: number;
-      recyclable_kzt: number;
-      climate_kzt: number;
-      damage_kzt: number;
-      co2e_t: number;
-      co2e_emitted_t: number;
-      co2e_preventable_t: number;
-      co2e_next_year_t: number;
-      plain_kzt: number;
-      sorted_kzt: number;
-      saving_kzt: number;
-    };
-    co2e_t: number;
-    co2e_emitted_t: number;
-    co2e_preventable_t: number;
-    penalty_kzt: number;
-    waiting_year_co2e_t: number;
-    waiting_year_kzt: number;
-  };
+  /* По чему считаны главные суммы: confirmed — только по опознанным как
+     свалка, listed — по всему списку (подтверждённых ещё нет). */
+  basis: 'confirmed' | 'listed';
+  totals: Totals;
+  /* То же по объектам «не разобрать»: сколько добавится, если выезд их
+     подтвердит. В главные суммы не входит. */
+  pending: Totals | null;
   sensitivity: Record<string, number>;
   sensitivity_area_m2: number;
   provenance: Record<string, { title: string; kind: string; note: string }>;
+};
+
+/* Матрица машинного просмотра — scripts/screen_metrics.py. Числа в тексте
+   ниже раньше были вписаны руками и разошлись с разметкой после её
+   пересмотра; теперь их пишет скрипт. */
+type Screen = {
+  objects: number;
+  workload_removed: number;
+  rejected: number;
+  rejected_not_landfill: number;
+  rejected_unclear: number;
+  rejected_landfill: number;
+  dumps: number;
+  dumps_kept: number;
+  recall_low: number;
 };
 
 const num = (v: number, d = 0) =>
@@ -105,7 +132,12 @@ const num = (v: number, d = 0) =>
 /* Деньги на этом экране всегда в миллионах и всегда с одним знаком.
    Смешивать «89 831 088 ₸» и «45,7 млн ₸» в одной таблице нельзя: глаз
    сравнивает длину строки быстрее, чем читает разряды. */
-const mln = (v: number, d = 1) => `${num(v / 1e6, d)} млн ₸`;
+const mln = (v: number, d = 1) =>
+  /* Знак после запятой всегда, а не «до одного»: «2 млн ₸» в столбце рядом
+     с «1,3 млн ₸» читается как другая точность, хотя это 2,0. */
+  Number.isFinite(v)
+    ? `${(v / 1e6).toLocaleString('ru-RU', { minimumFractionDigits: d, maximumFractionDigits: d })} млн ₸`
+    : '—';
 
 const kzt = (v: number) =>
   Math.abs(v) >= 1e6 ? mln(v) : `${num(v / 1e3)} тыс ₸`;
@@ -141,8 +173,13 @@ function Badge({ kind }: { kind: string }) {
 export default function Economy() {
   const [data, setData] = useState<Economy | null>(null);
   const [failed, setFailed] = useState(false);
+  const [screen, setScreen] = useState<Screen | null>(null);
 
   useEffect(() => {
+    fetch('./data/screen.json')
+      .then((r) => (r.ok ? r.json() : null))
+      .then(setScreen)
+      .catch(() => setScreen(null));
     fetch('./data/economy.json')
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error('нет выгрузки'))))
       .then(setData)
@@ -232,13 +269,28 @@ export default function Economy() {
             Отходы — это ресурс, вывезенный мимо экономики
           </h1>
           <p className="mt-5 max-w-[62ch] text-lg leading-relaxed text-muted">
-            {num(sum.mass_t)} тонн, найденных под Астаной, стоят бюджету{' '}
+            {num(sum.mass_t)} тонн на {t.objects}{' '}
+            {data.basis === 'confirmed' ? 'свалках, опознанных по снимку,' : 'объектах списка'}{' '}
+            стоят бюджету{' '}
             <strong className="font-normal text-line">{mln(sum.removal_kzt)}</strong> на вывоз.
             Внутри этих же тонн лежит вторсырья на{' '}
             <strong className="font-normal text-emerald">{mln(sum.recyclable_kzt)}</strong> —
             {' '}{num(recovery * 100)}% стоимости уборки возвращается, если разбирать, а не
             просто перевозить на полигон.
           </p>
+          {/* Объекты «не разобрать» названы сразу под главной суммой, а не
+              сложены с ней. Их ущерб — предположение до выезда, и сумма,
+              которую показывают заказчику, должна держаться на проверенном. */}
+          {data.pending && (
+            <p className="mt-3 max-w-[62ch] text-sm leading-relaxed text-muted-2">
+              Ещё {data.pending.objects}{' '}
+              {data.pending.objects === 1 ? 'объект ждёт' : 'объектов ждут'} выезда: по
+              снимку их не разобрать. Если подтвердятся — это ещё{' '}
+              {num(data.pending.sum_of_medians.mass_t)} т и{' '}
+              {mln(data.pending.sum_of_medians.removal_kzt)} на вывоз. В суммы на этой
+              странице они не входят.
+            </p>
+          )}
 
           {/* Цепочка кейса: ресурс → потеря → ИИ → приоритет → деньги.
               Она стоит первой и именно строкой: жюри должно увидеть связку
@@ -299,7 +351,7 @@ export default function Economy() {
                 </div>
               ))}
               <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 py-4">
-                <dt className="text-base text-line">Чистый ущерб по списку</dt>
+                <dt className="text-base text-line">Чистый ущерб по опознанным свалкам</dt>
                 <dd className="tabular text-right">
                   <div className="font-display text-2xl leading-none text-violet-lit">{mln(sum.damage_kzt)}</div>
                   <div className="mt-1 text-xs text-muted-2">
@@ -341,8 +393,8 @@ export default function Economy() {
                 </div>
                 <div className="tabular mt-2 font-display text-2xl text-line">{kzt(t.penalty_kzt)}</div>
                 <p className="mt-2 text-sm leading-relaxed text-muted-2">
-                  штрафы по ст. 344 ч. 2-1 КоАП РК по всем {t.objects} объектам, если
-                  нарушители установлены. Возврат в бюджет, а не снижение
+                  штрафы по ст. 344 ч. 2-1 КоАП РК по {t.objects} опознанным
+                  объектам, если нарушители установлены. Возврат в бюджет, а не снижение
                   ущерба.
                 </p>
               </div>
@@ -387,8 +439,8 @@ export default function Economy() {
           <p className="mt-4 max-w-[62ch] text-muted">
             Сумма ущерба — это диагноз. Решение принимается сравнением:
             вывезти всё на полигон как есть или разобрать на площадке и
-            сдать то, что имеет цену. Ниже — обе сметы по всем{' '}
-            {t.objects} объектам.
+            сдать то, что имеет цену. Ниже — обе сметы по{' '}
+            {t.objects} опознанным свалкам.
           </p>
 
           <div className="mt-8 grid gap-8 lg:grid-cols-[1.1fr_1fr]">
@@ -457,7 +509,7 @@ export default function Economy() {
                 Третье решение — не делать ничего — бюджету сегодня не стоит
                 ничего, и поэтому свалки лежат годами. Его цена приходит
                 позже и не деньгами: {num(sum.co2e_next_year_t)} т CO₂-экв за
-                следующий год по всему списку, сырьё продолжает гнить, а
+                следующий год по опознанным свалкам, сырьё продолжает гнить, а
                 объект растёт. Роста мы не моделируем и не делаем вид, что
                 моделируем.
               </p>
@@ -471,11 +523,16 @@ export default function Economy() {
             {cut?.half} выезда закрывают половину суммы
           </h2>
           <p className="mt-4 max-w-[60ch] text-muted">
-            Пятнадцать точек — это не рекомендация, а список. Рекомендация —
-            порядок: объекты отсортированы по деньгам, и накопленная доля
-            показывает, где можно остановиться. {cut?.most} выездов закрывают
-            80% суммы, оставшиеся {t.objects - (cut?.most ?? 0)} стоят вместе меньше
-            пятой части.
+            Список точек — это ещё не рекомендация. Рекомендация — порядок:
+            все {data.objects.length} объектов очереди отсортированы по деньгам, и
+            накопленная доля показывает, где можно остановиться. {cut?.most} выездов
+            закрывают 80% суммы очереди, оставшиеся{' '}
+            {data.objects.length - (cut?.most ?? 0)} стоят вместе меньше пятой части.
+          </p>
+          <p className="mt-3 max-w-[60ch] text-sm leading-relaxed text-muted-2">
+            В очереди и опознанные свалки, и объекты «не разобрать»: к первым
+            едут составлять акт, ко вторым — выяснить, что там лежит.
+            Помеченные «нужен выезд» в итоговые суммы страницы не входят.
           </p>
 
           <div className="mt-8 overflow-x-auto">
@@ -501,11 +558,15 @@ export default function Economy() {
                     <td className="tabular py-2.5 pr-3 text-muted-2">{n}</td>
                     <td className="py-2.5 pr-3 text-line">
                       {obj.id}
-                      {obj.check_source === 'ground' && (
+                      {obj.check_source === 'ground' ? (
                         <span className="ml-2 text-[10px] uppercase tracking-[0.08em] text-emerald">
                           выезд
                         </span>
-                      )}
+                      ) : obj.visual_check !== 'landfill' ? (
+                        <span className="ml-2 text-[10px] uppercase tracking-[0.08em] text-amber">
+                          нужен выезд
+                        </span>
+                      ) : null}
                     </td>
                     <td className="tabular py-2.5 pr-3 text-right text-muted">
                       {obj.break_date ? obj.break_date.slice(0, 7).replace('-', '.') : '—'}
@@ -549,7 +610,7 @@ export default function Economy() {
               [num(data.queue.reviewed), 'просмотрел человек',
                'по снимку 0,4–0,8 м на пиксель'],
               [num(data.queue.published), 'дошли до списка',
-               `из них ${data.queue.ground} подтверждено`],
+               `${data.queue.confirmed} опознаны, ${data.queue.pending} ждут выезда`],
             ].map(([big, what, note]) => (
               <div key={String(what)} className="bg-soot-2 px-4 py-5">
                 <div className="tabular font-display text-[clamp(1.5rem,2.6vw,2rem)] leading-none text-violet-lit">
@@ -561,14 +622,21 @@ export default function Economy() {
             ))}
           </div>
 
-          <p className="mt-6 max-w-[70ch] text-sm leading-relaxed text-muted-2">
-            Машинный просмотр снимков измерен отдельно, на 49 объектах с
-            человеческим вердиктом: он снимает 71% ручной работы, ошибается в
-            одном отказе из тридцати пяти и теряет одну свалку из восьми.
-            Поэтому его вердикт — подсказка: объект снимает человек, а не
-            модель. Разбор с матрицей ошибок — в{' '}
-            <span className="text-line">docs/AI_RESULTS.md</span>.
-          </p>
+          {screen && (
+            <p className="mt-6 max-w-[70ch] text-sm leading-relaxed text-muted-2">
+              Машинный просмотр снимков измерен отдельно, на {screen.objects}{' '}
+              объектах с человеческим вердиктом: он снимает{' '}
+              {num(screen.workload_removed * 100)}% ручной работы. Среди его{' '}
+              {screen.rejected} отказов {screen.rejected_not_landfill} — точно не
+              свалка, {screen.rejected_unclear} — «не разобрать»
+              {screen.rejected_landfill > 0
+                ? `, и ${screen.rejected_landfill} — опознанная свалка`
+                : ', и ни одной опознанной свалки'}
+              . Опознанных свалок в проверке всего {screen.dumps} — нижняя граница
+              полноты {num(screen.recall_low * 100)}%, и поэтому вердикт машины —
+              подсказка: объект снимает человек, а не модель.
+            </p>
+          )}
         </section>
 
         {/* ── Что уже потеряно ──────────────────────────────────────── */}

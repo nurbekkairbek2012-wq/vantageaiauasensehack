@@ -1,0 +1,7 @@
+{
+ "verdict": "not_dump",
+ "confidence": 0.98,
+ "category": "building_or_warehouse",
+ "reasoning": "На изображении видно, что на месте выделенного контура возведено капитальное здание с крышей.",
+ "n_images": 2
+}

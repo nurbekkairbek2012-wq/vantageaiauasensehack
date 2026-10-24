@@ -86,9 +86,19 @@ def build_story(
             }
         )
 
-    total_damage = float(candidates["damage_p50"].sum()) if "damage_p50" in candidates else 0.0
-    total_low = float(candidates["damage_p10"].sum()) if "damage_p10" in candidates else 0.0
-    total_high = float(candidates["damage_p90"].sum()) if "damage_p90" in candidates else 0.0
+    # Деньги — по опознанным как свалка, как на сайте и в экономике.
+    # Объекты «не разобрать» стоят в списке, но их ущерб до выезда —
+    # предположение, и сцена называет их отдельно, а не складывает.
+    sure = candidates
+    if "visual_check" in candidates:
+        confirmed = candidates[candidates["visual_check"] == "landfill"]
+        if not confirmed.empty:
+            sure = confirmed
+    pending = len(candidates) - len(sure)
+
+    total_damage = float(sure["damage_p50"].sum()) if "damage_p50" in sure else 0.0
+    total_low = float(sure["damage_p10"].sum()) if "damage_p10" in sure else 0.0
+    total_high = float(sure["damage_p90"].sum()) if "damage_p90" in sure else 0.0
 
     marker = DEMO_MARKER if is_demo else {"is_demo": False}
 
@@ -112,7 +122,11 @@ def build_story(
             {
                 "id": "found",
                 "title": "Что есть на самом деле",
-                "line": f"Мы нашли {len(candidates)} объектов.",
+                "line": (
+                    f"Мы нашли {len(candidates)} объектов: {len(sure)} опознаны "
+                    f"по снимку как свалка, {pending} ждут выезда."
+                    if pending else f"Мы нашли {len(candidates)} объектов."
+                ),
                 "layers": ["registry", "candidates"],
             },
             {
@@ -127,8 +141,9 @@ def build_story(
                 "id": "money",
                 "title": "Оценка ущерба",
                 "line": (
-                    f"{len(candidates)} объектов = "
+                    f"{len(sure)} {'опознанных свалок' if pending else 'объектов'} = "
                     f"{total_low / 1e6:.0f}–{total_high / 1e6:.0f} млн ₸ ущерба."
+                    + (f" Ещё {pending} из {len(candidates)} — после выезда." if pending else "")
                 ),
                 "layers": ["candidates"],
                 "panel": "money",
@@ -143,7 +158,10 @@ def build_story(
             {
                 "id": "risk",
                 "title": "Прогноз",
-                "line": "А здесь свалки ещё нет. Она появится здесь.",
+                # Не «она появится здесь»: модель ранжирует риск, а не
+                # предсказывает событие, и положительных ячеек после
+                # отсечки одиннадцать. Обещание точки защищать нечем.
+                "line": "А здесь свалки ещё нет. Здесь риск её появления выше всего.",
                 "layers": ["risk"],
             },
             {
@@ -157,6 +175,8 @@ def build_story(
         "totals": {
             "registry_known": int(registry_count),
             "objects": len(candidates),
+            "confirmed": len(sure),
+            "pending": pending,
             "damage_p10": total_low,
             "damage_p50": total_damage,
             "damage_p90": total_high,
