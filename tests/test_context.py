@@ -281,3 +281,36 @@ class TestRejectionReport:
         empty = gpd.GeoDataFrame({"geometry": []}, geometry="geometry", crs=UTM)
         with pytest.raises(KeyError):
             rejection_report(empty)
+
+
+class TestEmptyLayersAreLoud:
+    """Пустой слой дорог обязан ронять прогон, а не отсеивать всё молча.
+
+    Ночью 22 августа Overpass не ответил на запросы по Алматы и Шымкенту.
+    Слой дорог пришёл пустым, расстояние до дороги стало бесконечным у
+    всех кандидатов, и отсев забраковал 499 объектов из 499 с причиной
+    «нет подъезда». Отчёт при этом выглядел осмысленно — правдоподобные
+    числа по правдоподобным причинам, — и понять, что данных не было
+    вовсе, можно было только по отсутствию причины «совпал с объектом
+    OSM».
+
+    Молчаливый отказ, дающий правдоподобный результат, опаснее падения:
+    падение видно сразу, а такой результат уезжает на сайт.
+    """
+
+    def test_empty_roads_raise(self, monkeypatch, tmp_path):
+        import geopandas as gpd
+
+        from vantage import context as ctx
+
+        empty = gpd.GeoDataFrame({"geometry": []}, crs="EPSG:32642")
+        monkeypatch.setattr(ctx.OverpassClient, "query", lambda *a, **k: {"elements": []})
+        monkeypatch.setattr(ctx, "overpass_to_gdf", lambda *a, **k: empty)
+
+        from vantage.config import load_settings
+
+        settings = load_settings()
+        aoi = AOI.from_bbox((71.4, 51.1, 71.5, 51.2), name="t",
+                            crs_working=settings.project.crs_working)
+        with pytest.raises(RuntimeError, match="дорог"):
+            ctx.fetch_context(aoi, settings, cache_dir=tmp_path)
