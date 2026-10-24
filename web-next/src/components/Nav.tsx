@@ -29,18 +29,21 @@ const LINKS: [Surface, string, string][] = [
 
 export function Nav({ current, children }: { current: Surface; children?: React.ReactNode }) {
   return (
-    <header className="flex shrink-0 flex-wrap items-center justify-between gap-x-8 gap-y-3 border-b border-grid px-5 py-3">
-      <div className="flex flex-wrap items-center gap-x-7 gap-y-2">
+    // min-w-0 на контейнерах обязателен: элемент flex по умолчанию не
+    // сжимается меньше своего содержимого, и пять ссылок в ряд распирали
+    // страницу на 34 пикселя при ширине 390 — на всех страницах сразу.
+    <header className="flex w-full shrink-0 flex-wrap items-center justify-between gap-x-8 gap-y-3 border-b border-grid px-4 py-3 sm:px-5">
+      <div className="flex min-w-0 flex-wrap items-center gap-x-6 gap-y-2">
         <a href="./index.html" className="no-underline" aria-label="VANTAGE, на главную">
           <Logo size={26} />
         </a>
-        <nav className="flex items-center gap-1">
+        <nav className="flex min-w-0 flex-wrap items-center gap-x-1 gap-y-1">
           {LINKS.map(([key, href, label]) => (
             <a
               key={key}
               href={href}
               aria-current={current === key ? 'page' : undefined}
-              className={`rounded-sm px-3 py-1.5 text-sm no-underline transition-colors duration-150 ${
+              className={`whitespace-nowrap rounded-sm px-2.5 py-1.5 text-sm no-underline transition-colors duration-150 sm:px-3 ${
                 current === key
                   ? 'bg-violet-deep/60 text-line'
                   : 'text-muted hover:bg-soot-2 hover:text-line'

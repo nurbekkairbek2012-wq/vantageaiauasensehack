@@ -13,7 +13,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: actions/setup-python@v5
         with:
@@ -25,11 +25,23 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev,ml,service]"
 
+      # Версии геостека печатаются всегда. Тесты геометрии проходили
+      # локально и падали здесь; разница оказалась в pandas, а не в коде,
+      # и без этой строки её пришлось искать пятью прогонами.
+      - name: Версии окружения
+        run: python scripts/print_versions.py
+
       - name: Линтер
         run: ruff check src tests
 
+      # Через ci_report, а не голым pytest: он превращает падения в
+      # аннотации GitHub. Логи прогонов закрыты для тех, у кого нет
+      # доступа к репозиторию, а аннотации публичны — это единственный
+      # канал, по которому текст упавшего assert доезжает до того, кто
+      # чинит. Разбирать красный workflow вслепую стоило полдня.
       - name: Тесты
-        run: pytest -q
+        run: python scripts/ci_report.py tests
 
       - name: Проверка готовности к сдаче
+        if: always()
         run: vantage doctor

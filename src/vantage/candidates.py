@@ -376,7 +376,11 @@ def to_geojson(
     for column in out.columns:
         if column == "geometry":
             continue
-        if np.issubdtype(out[column].dtype, np.datetime64):
+        # pandas.api.types, а не np.issubdtype: в pandas 3 строковые
+        # колонки получили собственный StringDtype, и numpy на нём падает
+        # с «Cannot interpret StringDtype as a data type». Проверять тип
+        # колонки pandas надо средствами pandas.
+        if pd.api.types.is_datetime64_any_dtype(out[column]):
             # strftime, а не astype: pandas не разрешает приводить
             # DatetimeArray к datetime64[D] напрямую, а astype(str) на
             # NaT даёт строку 'NaT' вместо null в JSON.

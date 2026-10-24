@@ -153,7 +153,7 @@ export default function MapApp() {
   return (
     <div className="flex h-screen flex-col">
       <Nav current="map">
-        <dl className="flex items-baseline gap-6 text-sm">
+        <dl className="flex min-w-0 flex-wrap items-baseline gap-x-6 gap-y-1 text-sm">
           <div className="flex items-baseline gap-2">
             <dt className="text-muted-2">Объектов</dt>
             <dd className="tabular font-display text-lg text-line">{totals.count}</dd>

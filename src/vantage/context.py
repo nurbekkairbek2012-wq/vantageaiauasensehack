@@ -32,6 +32,7 @@ from pathlib import Path
 
 import geopandas as gpd
 import numpy as np
+import pandas as pd
 import requests
 from shapely.ops import unary_union
 
@@ -314,7 +315,9 @@ def apply_context_filter(
     отсева, а его объяснения.
     """
     if candidates.empty:
-        return candidates.assign(reject_reason=None, passes_context=False)
+        return candidates.assign(
+            reject_reason=pd.Series(dtype=object), passes_context=False
+        )
     if candidates.crs != layers.crs:
         candidates = candidates.to_crs(layers.crs)
 
@@ -350,7 +353,12 @@ def apply_context_filter(
         else:
             reasons.append(None)
 
-    result["reject_reason"] = reasons
+    # dtype=object задан явно. В pandas 3 список строк с None внутри
+    # становится StringDtype, и None молча превращается в nan — а «нет
+    # причины отклонения» это именно None, отсутствие значения. Проверка
+    # `reason is None` после такого превращения перестаёт работать, и
+    # прошедший отсев кандидат выглядит отклонённым по причине «nan».
+    result["reject_reason"] = pd.Series(reasons, index=result.index, dtype=object)
     result["passes_context"] = [r is None for r in reasons]
 
     log.info(
