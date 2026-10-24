@@ -1,0 +1,872 @@
+{
+ "V8477": {
+  "verdict": "not_landfill",
+  "confidence": 0.85,
+  "note": "канал с насыпью вдоль реки, до — пойма; земляные работы",
+  "reviewer": "claude-vision"
+ },
+ "V9816": {
+  "verdict": "not_landfill",
+  "confidence": 0.95,
+  "note": "территория больницы: парковка и газон у корпуса",
+  "reviewer": "claude-vision"
+ },
+ "V6895": {
+  "verdict": "not_landfill",
+  "confidence": 0.7,
+  "note": "трава и грунтовка в контуре, рядом песчаный карьер; куч не видно",
+  "reviewer": "claude-vision"
+ },
+ "V5615": {
+  "verdict": "not_landfill",
+  "confidence": 0.55,
+  "note": "дачный массив, сухая растительность и кусты; явных куч нет",
+  "reviewer": "claude-vision"
+ },
+ "V7638": {
+  "verdict": "landfill",
+  "confidence": 0.75,
+  "note": "у грунтовки нарушенный грунт и россыпь светлых обломков, до — луг",
+  "reviewer": "claude-vision"
+ },
+ "V4477": {
+  "verdict": "not_landfill",
+  "confidence": 0.95,
+  "note": "ипподром: новый павильон и мощёная площадка с тентами",
+  "reviewer": "claude-vision"
+ },
+ "V8848": {
+  "verdict": "not_landfill",
+  "confidence": 0.7,
+  "note": "в контуре огороженная подстанция; рядом вне контура белый мусор у пруда",
+  "reviewer": "claude-vision"
+ },
+ "V4533": {
+  "verdict": "not_landfill",
+  "confidence": 0.85,
+  "note": "берег озера: смена уреза воды и прибрежной растительности, весенний снимок",
+  "reviewer": "claude-vision"
+ },
+ "V8238": {
+  "verdict": "not_landfill",
+  "confidence": 0.6,
+  "note": "огороженная промплощадка у трассы, рядом площадка песка; крупный снимок размыт",
+  "reviewer": "claude-vision"
+ },
+ "V1143": {
+  "verdict": "not_landfill",
+  "confidence": 0.85,
+  "note": "лесополоса, часть деревьев исчезла; мусора нет",
+  "reviewer": "claude-vision"
+ },
+ "V7859": {
+  "verdict": "not_landfill",
+  "confidence": 0.95,
+  "note": "новая автотрасса, контур на полотне",
+  "reviewer": "claude-vision"
+ },
+ "V5138": {
+  "verdict": "not_landfill",
+  "confidence": 0.85,
+  "note": "ветропарк: дороги и площадки турбин; в контуре трава",
+  "reviewer": "claude-vision"
+ },
+ "V3252": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "новая дамба вдоль реки, контур на насыпи",
+  "reviewer": "claude-vision"
+ },
+ "V9839": {
+  "verdict": "unclear",
+  "confidence": 0.5,
+  "note": "пустырь промзоны: экскаватор, тёмные кучи грунта, ямы и навалы — ссыпка или земляные работы",
+  "reviewer": "claude-vision"
+ },
+ "V5232": {
+  "verdict": "not_landfill",
+  "confidence": 0.8,
+  "note": "новая дорога у пруда, контур на полотне; мелкие светлые пятна у края",
+  "reviewer": "claude-vision"
+ },
+ "V5868": {
+  "verdict": "not_landfill",
+  "confidence": 0.75,
+  "note": "песчаная площадка со следами техники у канала: карьер/намыв, мусора не видно",
+  "reviewer": "claude-vision"
+ },
+ "V1145": {
+  "verdict": "not_landfill",
+  "confidence": 0.85,
+  "note": "расширение ж/д станции: новые пути на месте пустыря",
+  "reviewer": "claude-vision"
+ },
+ "V8881": {
+  "verdict": "not_landfill",
+  "confidence": 0.95,
+  "note": "реконструкция дороги: была грунтовка, стал асфальт",
+  "reviewer": "claude-vision"
+ },
+ "V4994": {
+  "verdict": "not_landfill",
+  "confidence": 0.97,
+  "note": "новый большой склад, контур на крыше",
+  "reviewer": "claude-vision"
+ },
+ "V9315": {
+  "verdict": "not_landfill",
+  "confidence": 0.75,
+  "note": "городской пустырь у проспекта, в контуре трава/грунт; рядом стройка",
+  "reviewer": "claude-vision"
+ },
+ "V3546": {
+  "verdict": "not_landfill",
+  "confidence": 0.95,
+  "note": "новая дорога у развязки, контур на полотне",
+  "reviewer": "claude-vision"
+ },
+ "V8025": {
+  "verdict": "not_landfill",
+  "confidence": 0.7,
+  "note": "песчаный карьер с котлованом и техникой; ряды мелких куч — вероятно отвал вскрыши",
+  "reviewer": "claude-vision"
+ },
+ "V6560": {
+  "verdict": "not_landfill",
+  "confidence": 0.85,
+  "note": "плотина водохранилища: новая грунтовка вдоль, мокрые места засыпаны; мусора нет",
+  "reviewer": "claude-vision"
+ },
+ "V9997": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "контур на крыше нового склада; вне контура к северу — поле навалов, похоже на ссыпку",
+  "reviewer": "claude-vision"
+ },
+ "V3631": {
+  "verdict": "landfill",
+  "confidence": 0.65,
+  "note": "пустырь между ж/д и складами, съезд с грунтовки, россыпь светлых навалов",
+  "reviewer": "claude-vision"
+ },
+ "V3401": {
+  "verdict": "not_landfill",
+  "confidence": 0.85,
+  "note": "степь у канала: трава и колеи",
+  "reviewer": "claude-vision"
+ },
+ "V9357": {
+  "verdict": "not_landfill",
+  "confidence": 0.97,
+  "note": "новое здание (резиденция) в лесопосадке, контур на крыше",
+  "reviewer": "claude-vision"
+ },
+ "V6889": {
+  "verdict": "not_landfill",
+  "confidence": 0.8,
+  "note": "затопленный котлован у трассы, контур на воде; на берегу куча песка",
+  "reviewer": "claude-vision"
+ },
+ "V1921": {
+  "verdict": "not_landfill",
+  "confidence": 0.7,
+  "note": "новая база со складами, в контуре двор с техникой и материалами",
+  "reviewer": "claude-vision"
+ },
+ "V4957": {
+  "verdict": "not_landfill",
+  "confidence": 0.95,
+  "note": "новое многополосное шоссе на месте берега",
+  "reviewer": "claude-vision"
+ },
+ "V2829": {
+  "verdict": "not_landfill",
+  "confidence": 0.97,
+  "note": "новый особняк в лесопосадке, контур на крыше",
+  "reviewer": "claude-vision"
+ },
+ "V3120": {
+  "verdict": "not_landfill",
+  "confidence": 0.95,
+  "note": "асфальтированная площадка с павильонами у проспекта",
+  "reviewer": "claude-vision"
+ },
+ "V1752": {
+  "verdict": "not_landfill",
+  "confidence": 0.85,
+  "note": "расширение ж/д станции, новые пути",
+  "reviewer": "claude-vision"
+ },
+ "V1956": {
+  "verdict": "unclear",
+  "confidence": 0.5,
+  "note": "пустырь у промзоны: белые пятна у контура, тёмное пятно внутри; белое частично было и раньше",
+  "reviewer": "claude-vision"
+ },
+ "V4463": {
+  "verdict": "not_landfill",
+  "confidence": 0.75,
+  "note": "новый грузовой терминал: козловой кран, ж/д ветка, выровненная площадка",
+  "reviewer": "claude-vision"
+ },
+ "V3754": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "поле: граница пашни и залежи, смена оборота",
+  "reviewer": "claude-vision"
+ },
+ "V5003": {
+  "verdict": "landfill",
+  "confidence": 0.85,
+  "note": "масса отходов: пёстрая серо-белая текстура мусора, фильтратные пруды; возможно официальный полигон",
+  "reviewer": "claude-vision"
+ },
+ "V7058": {
+  "verdict": "not_landfill",
+  "confidence": 0.95,
+  "note": "новый склад с синей крышей, вокруг грунт и асфальт",
+  "reviewer": "claude-vision"
+ },
+ "V7331": {
+  "verdict": "unclear",
+  "confidence": 0.5,
+  "note": "вокруг свежие белые навалы, в самом контуре заросли у грунтовки",
+  "reviewer": "claude-vision"
+ },
+ "V8627": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "питомник/лесопосадки рядами, контур у грунтовки",
+  "reviewer": "claude-vision"
+ },
+ "V3593": {
+  "verdict": "not_landfill",
+  "confidence": 0.75,
+  "note": "база стройматериалов: силосы, штабели, кучи песка во дворе",
+  "reviewer": "claude-vision"
+ },
+ "V9210": {
+  "verdict": "not_landfill",
+  "confidence": 0.85,
+  "note": "грунтовая дамба через заболоченное озеро, смена уровня воды",
+  "reviewer": "claude-vision"
+ },
+ "V2822": {
+  "verdict": "not_landfill",
+  "confidence": 0.8,
+  "note": "песчаный карьер с затопленным котлованом, контур у края",
+  "reviewer": "claude-vision"
+ },
+ "V5357": {
+  "verdict": "not_landfill",
+  "confidence": 0.8,
+  "note": "обочина дороги у лесопосадок, полосы нарушенной земли; куч нет",
+  "reviewer": "claude-vision"
+ },
+ "V8933": {
+  "verdict": "not_landfill",
+  "confidence": 0.85,
+  "note": "двор новых складов со штабелями материалов",
+  "reviewer": "claude-vision"
+ },
+ "V3166": {
+  "verdict": "not_landfill",
+  "confidence": 0.95,
+  "note": "новая школа со стадионом, контур на здании и дорожках",
+  "reviewer": "claude-vision"
+ },
+ "V4981": {
+  "verdict": "not_landfill",
+  "confidence": 0.95,
+  "note": "новая развязка, контур на газоне у съезда",
+  "reviewer": "claude-vision"
+ },
+ "V5082": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "луг у полей, в контуре трава",
+  "reviewer": "claude-vision"
+ },
+ "V7923": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "луг у полей, контур на траве",
+  "reviewer": "claude-vision"
+ },
+ "V7534": {
+  "verdict": "not_landfill",
+  "confidence": 0.85,
+  "note": "степь с грунтовками и молодыми посадками, трава в контуре",
+  "reviewer": "claude-vision"
+ },
+ "V1926": {
+  "verdict": "not_landfill",
+  "confidence": 0.6,
+  "note": "огороженный двор с металлоломом и техникой — приёмка металла/склад",
+  "reviewer": "claude-vision"
+ },
+ "V2651": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "придорожный сервис у трассы, контур на новых постройках; мусор за ними вне контура",
+  "reviewer": "claude-vision"
+ },
+ "V2288": {
+  "verdict": "not_landfill",
+  "confidence": 0.95,
+  "note": "стройка жилого комплекса, контур на строящемся доме",
+  "reviewer": "claude-vision"
+ },
+ "V8598": {
+  "verdict": "not_landfill",
+  "confidence": 0.65,
+  "note": "асфальтированный двор с кучами материала и грузовиками у ж/д; вне контура россыпь мусора",
+  "reviewer": "claude-vision"
+ },
+ "V7955": {
+  "verdict": "landfill",
+  "confidence": 0.9,
+  "note": "ряды куч от самосвалов, россыпь строймусора, засыпан мокрый котлован; между трассой и ж/д",
+  "reviewer": "claude-vision"
+ },
+ "V4897": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "луг у полей, трава",
+  "reviewer": "claude-vision"
+ },
+ "V6084": {
+  "verdict": "unclear",
+  "confidence": 0.45,
+  "note": "разрытый пустырь с прудами, рядом тёмные навалы; в контуре растительность у пруда",
+  "reviewer": "claude-vision"
+ },
+ "V4270": {
+  "verdict": "not_landfill",
+  "confidence": 0.75,
+  "note": "огороженный двор с контейнерами; южнее вне контура ряды навалов",
+  "reviewer": "claude-vision"
+ },
+ "V7294": {
+  "verdict": "not_landfill",
+  "confidence": 0.95,
+  "note": "новая улица на месте снесённых дач у школы",
+  "reviewer": "claude-vision"
+ },
+ "V2814": {
+  "verdict": "not_landfill",
+  "confidence": 0.95,
+  "note": "съезд развязки, контур на полотне",
+  "reviewer": "claude-vision"
+ },
+ "V7991": {
+  "verdict": "not_landfill",
+  "confidence": 0.85,
+  "note": "край березового колка, побурела растительность; мусора нет",
+  "reviewer": "claude-vision"
+ },
+ "V7597": {
+  "verdict": "not_landfill",
+  "confidence": 0.95,
+  "note": "насыпь новой автотрассы",
+  "reviewer": "claude-vision"
+ },
+ "V5630": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "поле/луг у колка, смена оборота",
+  "reviewer": "claude-vision"
+ },
+ "V9967": {
+  "verdict": "not_landfill",
+  "confidence": 0.7,
+  "note": "пересохшее болото с тростником, серое пятно под ЛЭП; куч нет",
+  "reviewer": "claude-vision"
+ },
+ "V9529": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "канал с насыпью, как лист 1",
+  "reviewer": "claude-vision"
+ },
+ "V8812": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "стройплощадка жилого квартала, контур на проезде у забора",
+  "reviewer": "claude-vision"
+ },
+ "V2938": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "дамба-дорога через озеро, смена уровня воды",
+  "reviewer": "claude-vision"
+ },
+ "V4459": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "канал и дренажная канава вдоль насыпи",
+  "reviewer": "claude-vision"
+ },
+ "V1491": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "луг у полей",
+  "reviewer": "claude-vision"
+ },
+ "V8661": {
+  "verdict": "unclear",
+  "confidence": 0.45,
+  "note": "огороженный пустырь промзоны, нарушенный грунт, мелкий мусор у края",
+  "reviewer": "claude-vision"
+ },
+ "V2291": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "новое здание в промквартале на месте зарослей",
+  "reviewer": "claude-vision"
+ },
+ "V1025": {
+  "verdict": "not_landfill",
+  "confidence": 0.75,
+  "note": "заброшенный посёлок с руинами, в контуре трава",
+  "reviewer": "claude-vision"
+ },
+ "V1094": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "луг у колков",
+  "reviewer": "claude-vision"
+ },
+ "V3151": {
+  "verdict": "not_landfill",
+  "confidence": 0.8,
+  "note": "песчаная площадка у базы строителей канала",
+  "reviewer": "claude-vision"
+ },
+ "V3482": {
+  "verdict": "unclear",
+  "confidence": 0.45,
+  "note": "заросший пустырь у ТЭЦ, мелкие светлые предметы; раньше рядом склад металлолома",
+  "reviewer": "claude-vision"
+ },
+ "V9558": {
+  "verdict": "unclear",
+  "confidence": 0.5,
+  "note": "край поля: несколько свежих куч грунта, нарушенный дёрн",
+  "reviewer": "claude-vision"
+ },
+ "V5190": {
+  "verdict": "not_landfill",
+  "confidence": 0.85,
+  "note": "колок у грунтовки, деревья поредели",
+  "reviewer": "claude-vision"
+ },
+ "V2601": {
+  "verdict": "not_landfill",
+  "confidence": 0.7,
+  "note": "огороженный участок засыпан песком, у края склад материалов",
+  "reviewer": "claude-vision"
+ },
+ "V5504": {
+  "verdict": "not_landfill",
+  "confidence": 0.8,
+  "note": "песчаная площадка базы строителей канала, техника",
+  "reviewer": "claude-vision"
+ },
+ "V6731": {
+  "verdict": "not_landfill",
+  "confidence": 0.85,
+  "note": "участок пашни у садов, смена культуры",
+  "reviewer": "claude-vision"
+ },
+ "V3408": {
+  "verdict": "not_landfill",
+  "confidence": 0.8,
+  "note": "намыв/отвал песка у канала, площадка вскрыши",
+  "reviewer": "claude-vision"
+ },
+ "V6855": {
+  "verdict": "unclear",
+  "confidence": 0.45,
+  "note": "тот же огороженный пустырь промзоны, что лист 70; нарушенный грунт",
+  "reviewer": "claude-vision"
+ },
+ "V8366": {
+  "verdict": "landfill",
+  "confidence": 0.9,
+  "note": "засыпанный котлован у ж/д: пёстрый строймусор и бытовые отходы, съезды самосвалов",
+  "reviewer": "claude-vision"
+ },
+ "V9820": {
+  "verdict": "not_landfill",
+  "confidence": 0.97,
+  "note": "спортплощадка внутри ипподрома",
+  "reviewer": "claude-vision"
+ },
+ "V8304": {
+  "verdict": "not_landfill",
+  "confidence": 0.95,
+  "note": "развязка, контур на съездах и газоне",
+  "reviewer": "claude-vision"
+ },
+ "V5145": {
+  "verdict": "not_landfill",
+  "confidence": 0.85,
+  "note": "огороженный двор при усадьбе у дороги, в контуре трава",
+  "reviewer": "claude-vision"
+ },
+ "V3629": {
+  "verdict": "not_landfill",
+  "confidence": 0.85,
+  "note": "степь, весенний снимок с остатками снега",
+  "reviewer": "claude-vision"
+ },
+ "V9509": {
+  "verdict": "not_landfill",
+  "confidence": 0.85,
+  "note": "заболоченный луг у трассы, смена растительности",
+  "reviewer": "claude-vision"
+ },
+ "V6940": {
+  "verdict": "not_landfill",
+  "confidence": 0.85,
+  "note": "степь с посадками, как лист 50",
+  "reviewer": "claude-vision"
+ },
+ "V6046": {
+  "verdict": "landfill",
+  "confidence": 0.6,
+  "note": "пруд на пустыре, у контура и вокруг свежие белые навалы мусора",
+  "reviewer": "claude-vision"
+ },
+ "V2785": {
+  "verdict": "not_landfill",
+  "confidence": 0.75,
+  "note": "степь весной, белое — снег; в контуре старая площадка",
+  "reviewer": "claude-vision"
+ },
+ "V8090": {
+  "verdict": "not_landfill",
+  "confidence": 0.7,
+  "note": "затопленный котлован/карьер, контур на воде; у края немного мусора",
+  "reviewer": "claude-vision"
+ },
+ "V8328": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "дамба-дорога через озеро, как лист 67",
+  "reviewer": "claude-vision"
+ },
+ "V7605": {
+  "verdict": "not_landfill",
+  "confidence": 0.95,
+  "note": "новые жилые дома и проезд",
+  "reviewer": "claude-vision"
+ },
+ "V6270": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "огородные участки, пашня",
+  "reviewer": "claude-vision"
+ },
+ "V1019": {
+  "verdict": "not_landfill",
+  "confidence": 0.8,
+  "note": "новая дорога и обочина у складов, контур у полотна",
+  "reviewer": "claude-vision"
+ },
+ "V1474": {
+  "verdict": "not_landfill",
+  "confidence": 0.6,
+  "note": "авторазборка/стоянка у трассы: машины и детали во дворе",
+  "reviewer": "claude-vision"
+ },
+ "V4406": {
+  "verdict": "not_landfill",
+  "confidence": 0.75,
+  "note": "песчаная площадка базы строителей канала, на месте болота",
+  "reviewer": "claude-vision"
+ },
+ "V8376": {
+  "verdict": "not_landfill",
+  "confidence": 0.85,
+  "note": "газон у склада в промзоне",
+  "reviewer": "claude-vision"
+ },
+ "V9648": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "луг у полей",
+  "reviewer": "claude-vision"
+ },
+ "V2326": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "граница поля и луга",
+  "reviewer": "claude-vision"
+ },
+ "V5899": {
+  "verdict": "not_landfill",
+  "confidence": 0.97,
+  "note": "новые цеха с красной крышей",
+  "reviewer": "claude-vision"
+ },
+ "V4754": {
+  "verdict": "not_landfill",
+  "confidence": 0.95,
+  "note": "новая дорога на месте залива, стройка ЖК",
+  "reviewer": "claude-vision"
+ },
+ "V1870": {
+  "verdict": "not_landfill",
+  "confidence": 0.97,
+  "note": "новые склады на рынке",
+  "reviewer": "claude-vision"
+ },
+ "V2334": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "склад-площадка модульных блоков/вагончиков",
+  "reviewer": "claude-vision"
+ },
+ "V4156": {
+  "verdict": "not_landfill",
+  "confidence": 0.8,
+  "note": "расчищенная площадка у новой школы в посёлке",
+  "reviewer": "claude-vision"
+ },
+ "V4771": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "дамба через озеро, как листы 67 и 93",
+  "reviewer": "claude-vision"
+ },
+ "V9092": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "степь у огороженного участка, трава",
+  "reviewer": "claude-vision"
+ },
+ "V2111": {
+  "verdict": "not_landfill",
+  "confidence": 0.8,
+  "note": "песчаная площадка-подсыпка у трассы, рядом водоочистная",
+  "reviewer": "claude-vision"
+ },
+ "V9114": {
+  "verdict": "not_landfill",
+  "confidence": 0.97,
+  "note": "новые здания в лесопосадке",
+  "reviewer": "claude-vision"
+ },
+ "V7603": {
+  "verdict": "not_landfill",
+  "confidence": 0.97,
+  "note": "новый склад с красной крышей",
+  "reviewer": "claude-vision"
+ },
+ "V2859": {
+  "verdict": "not_landfill",
+  "confidence": 0.85,
+  "note": "заросшая траншея у лесопосадок",
+  "reviewer": "claude-vision"
+ },
+ "V5918": {
+  "verdict": "not_landfill",
+  "confidence": 0.95,
+  "note": "стройка подстанции/объекта у развязки",
+  "reviewer": "claude-vision"
+ },
+ "V5729": {
+  "verdict": "not_landfill",
+  "confidence": 0.75,
+  "note": "степь весной со снегом",
+  "reviewer": "claude-vision"
+ },
+ "V6540": {
+  "verdict": "not_landfill",
+  "confidence": 0.95,
+  "note": "развязка трассы, контур на полотне",
+  "reviewer": "claude-vision"
+ },
+ "V5766": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "луг у полей",
+  "reviewer": "claude-vision"
+ },
+ "V1283": {
+  "verdict": "not_landfill",
+  "confidence": 0.85,
+  "note": "стройплощадка: кучи грунта и щебня, техника, бытовки",
+  "reviewer": "claude-vision"
+ },
+ "V5162": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "новая школа в посёлке, контур на обочине/тротуаре",
+  "reviewer": "claude-vision"
+ },
+ "V5679": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "луг у полей",
+  "reviewer": "claude-vision"
+ },
+ "V1927": {
+  "verdict": "not_landfill",
+  "confidence": 0.55,
+  "note": "двор базы с металлом и техникой; россыпь хлама у забора",
+  "reviewer": "claude-vision"
+ },
+ "V5799": {
+  "verdict": "not_landfill",
+  "confidence": 0.8,
+  "note": "угол вспаханного участка у дач",
+  "reviewer": "claude-vision"
+ },
+ "V1296": {
+  "verdict": "not_landfill",
+  "confidence": 0.95,
+  "note": "съезд развязки, контур на полотне",
+  "reviewer": "claude-vision"
+ },
+ "V7385": {
+  "verdict": "not_landfill",
+  "confidence": 0.85,
+  "note": "степь/луг с колеями, смена влажности",
+  "reviewer": "claude-vision"
+ },
+ "V8997": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "прокладка трубопровода вдоль трассы, траншея",
+  "reviewer": "claude-vision"
+ },
+ "V1695": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "огородные участки",
+  "reviewer": "claude-vision"
+ },
+ "V1816": {
+  "verdict": "not_landfill",
+  "confidence": 0.95,
+  "note": "новая дорога на месте залива, как лист 103",
+  "reviewer": "claude-vision"
+ },
+ "V3558": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "парковка у торгового центра на месте зарослей",
+  "reviewer": "claude-vision"
+ },
+ "V9219": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "стройка каркасных ангаров у ТЭЦ",
+  "reviewer": "claude-vision"
+ },
+ "V7724": {
+  "verdict": "unclear",
+  "confidence": 0.45,
+  "note": "двор с машинами и металлоломом на месте пустыря — склад лома или стихийная свалка",
+  "reviewer": "claude-vision"
+ },
+ "V5777": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "огородные участки",
+  "reviewer": "claude-vision"
+ },
+ "V3463": {
+  "verdict": "not_landfill",
+  "confidence": 0.85,
+  "note": "поле с грунтовкой и ЛЭП",
+  "reviewer": "claude-vision"
+ },
+ "V9701": {
+  "verdict": "not_landfill",
+  "confidence": 0.85,
+  "note": "огороженный газон у нового здания",
+  "reviewer": "claude-vision"
+ },
+ "V8611": {
+  "verdict": "not_landfill",
+  "confidence": 0.85,
+  "note": "пруд у кладбища, уровень воды и берег",
+  "reviewer": "claude-vision"
+ },
+ "V3501": {
+  "verdict": "not_landfill",
+  "confidence": 0.97,
+  "note": "новое здание в городе",
+  "reviewer": "claude-vision"
+ },
+ "V1494": {
+  "verdict": "not_landfill",
+  "confidence": 0.85,
+  "note": "степь у лесопосадок, растительность восстановилась",
+  "reviewer": "claude-vision"
+ },
+ "V7544": {
+  "verdict": "not_landfill",
+  "confidence": 0.97,
+  "note": "новое здание в коттеджном квартале",
+  "reviewer": "claude-vision"
+ },
+ "V4073": {
+  "verdict": "not_landfill",
+  "confidence": 0.85,
+  "note": "заболоченный луг, смена влажности",
+  "reviewer": "claude-vision"
+ },
+ "V9498": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "берег канала, насыпь",
+  "reviewer": "claude-vision"
+ },
+ "V9708": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "трубопровод вдоль трассы, как лист 124",
+  "reviewer": "claude-vision"
+ },
+ "V3979": {
+  "verdict": "not_landfill",
+  "confidence": 0.97,
+  "note": "стройка жилого комплекса",
+  "reviewer": "claude-vision"
+ },
+ "V2029": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "стройка ангаров у ТЭЦ, как лист 128",
+  "reviewer": "claude-vision"
+ },
+ "V5047": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "снос домов, асфальтированная площадка у склада",
+  "reviewer": "claude-vision"
+ },
+ "V7594": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "луг у пашни",
+  "reviewer": "claude-vision"
+ },
+ "V3869": {
+  "verdict": "not_landfill",
+  "confidence": 0.9,
+  "note": "дамба канала на месте поймы",
+  "reviewer": "claude-vision"
+ },
+ "V6298": {
+  "verdict": "not_landfill",
+  "confidence": 0.85,
+  "note": "колок у грунтовки, деревья поредели",
+  "reviewer": "claude-vision"
+ }
+}

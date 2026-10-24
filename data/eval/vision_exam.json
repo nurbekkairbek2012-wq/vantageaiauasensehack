@@ -1,0 +1,126 @@
+{
+ "all": {
+  "objects": 145,
+  "dumps": 7,
+  "not": 126,
+  "dumps_lost": 2,
+  "dumps_named": 4,
+  "not_cut": 123,
+  "not_named_dump": 1,
+  "agreement_decided": 0.955,
+  "roc_auc": 0.898,
+  "kept_recall_low": 0.341,
+  "workload_removed": 0.976
+ },
+ "north": {
+  "objects": 59,
+  "dumps": 7,
+  "not": 44,
+  "dumps_lost": 2,
+  "dumps_named": 4,
+  "not_cut": 42,
+  "not_named_dump": 0,
+  "agreement_decided": 0.902,
+  "roc_auc": 0.893,
+  "kept_recall_low": 0.341,
+  "workload_removed": 0.955
+ },
+ "disputes": [
+  {
+   "candidate_id": "astana_industrial_west:C00009",
+   "area": "outputs_astana_industrial_west",
+   "human": "unclear",
+   "ai": "not_landfill",
+   "confidence": 0.85,
+   "note": "заболоченный луг, смена влажности"
+  },
+  {
+   "candidate_id": "astana_industrial_west:C00129",
+   "area": "outputs_astana_industrial_west",
+   "human": "unclear",
+   "ai": "not_landfill",
+   "confidence": 0.8,
+   "note": "песчаная площадка у базы строителей канала"
+  },
+  {
+   "candidate_id": "astana_industrial_west:C00300",
+   "area": "outputs_astana_industrial_west",
+   "human": "unclear",
+   "ai": "landfill",
+   "confidence": 0.75,
+   "note": "у грунтовки нарушенный грунт и россыпь светлых обломков, до — луг"
+  },
+  {
+   "candidate_id": "astana_industrial_west:C00313",
+   "area": "outputs_astana_industrial_west",
+   "human": "not_landfill",
+   "ai": "landfill",
+   "confidence": 0.65,
+   "note": "пустырь между ж/д и складами, съезд с грунтовки, россыпь светлых навалов"
+  },
+  {
+   "candidate_id": "astana_industrial_west:C00461",
+   "area": "outputs_astana_industrial_west",
+   "human": "unclear",
+   "ai": "not_landfill",
+   "confidence": 0.75,
+   "note": "огороженный двор с контейнерами; южнее вне контура ряды навалов"
+  },
+  {
+   "candidate_id": "real:C00031",
+   "area": "outputs_real",
+   "human": "not_landfill",
+   "ai": "unclear",
+   "confidence": 0.45,
+   "note": "двор с машинами и металлоломом на месте пустыря — склад лома или стихийная свалка"
+  },
+  {
+   "candidate_id": "real:C00098",
+   "area": "outputs_real",
+   "human": "unclear",
+   "ai": "not_landfill",
+   "confidence": 0.65,
+   "note": "асфальтированный двор с кучами материала и грузовиками у ж/д; вне контура россыпь мусора"
+  },
+  {
+   "candidate_id": "real:C00221",
+   "area": "outputs_real",
+   "human": "landfill",
+   "ai": "not_landfill",
+   "confidence": 0.7,
+   "note": "в контуре огороженная подстанция; рядом вне контура белый мусор у пруда"
+  },
+  {
+   "candidate_id": "real:C00317",
+   "area": "outputs_real",
+   "human": "landfill",
+   "ai": "unclear",
+   "confidence": 0.45,
+   "note": "разрытый пустырь с прудами, рядом тёмные навалы; в контуре растительность у пруда"
+  },
+  {
+   "candidate_id": "real:C00331",
+   "area": "outputs_real",
+   "human": "landfill",
+   "ai": "not_landfill",
+   "confidence": 0.9,
+   "note": "контур на крыше нового склада; вне контура к северу — поле навалов, похоже на ссыпку"
+  },
+  {
+   "candidate_id": "real:C00333",
+   "area": "outputs_real",
+   "human": "not_landfill",
+   "ai": "unclear",
+   "confidence": 0.5,
+   "note": "край поля: несколько свежих куч грунта, нарушенный дёрн"
+  },
+  {
+   "candidate_id": "real:C00334",
+   "area": "outputs_real",
+   "human": "unclear",
+   "ai": "not_landfill",
+   "confidence": 0.8,
+   "note": "затопленный котлован у трассы, контур на воде; на берегу куча песка"
+  }
+ ]
+}

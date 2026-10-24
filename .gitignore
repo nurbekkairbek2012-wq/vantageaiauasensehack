@@ -146,3 +146,15 @@ models/dinov2_chip_b.joblib
 models/dinov2_chip_own.joblib
 models/dinov2_chip_own_b.joblib
 models/dinov2_chip_open_b.joblib
+
+# Открытые наборы (скачиваются скриптами, в репозиторий не входят)
+data/cwld/
+# Листы машинного просмотра: снимки Esri, пересобираются scripts/vision_sheets.py
+data/vision/*/
+models/rs_clip/
+data/rs_clip_*.npz
+data/dinov2_embeddings_cwld.npz
+models/dinov2_chip_open_cwld.joblib
+# Данные госмониторинга: условия не указаны, скачивает scripts/gov_waste.py
+data/gov_waste/
+data/eval/gov_diag/
