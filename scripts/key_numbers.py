@@ -66,6 +66,11 @@ def main() -> int:
     funnel = json.loads((DATA / "funnel.json").read_text(encoding="utf-8"))
     metrics = json.loads((DATA / "metrics.json").read_text(encoding="utf-8"))
     cities = json.loads((DATA / "cities.json").read_text(encoding="utf-8"))
+    # Метрики сиамской сети лежат отдельным файлом и на сайте не
+    # показываются. В деке из них берётся ROC-AUC 0,908, и без строки здесь
+    # на вопрос «откуда это» пришлось бы искать по репозиторию.
+    model_path = DATA / "model.json"
+    model = json.loads(model_path.read_text(encoding="utf-8")) if model_path.exists() else {}
     labels = gpd.read_file("labels_manual.geojson")
 
     dumps = int((site["visual_check"] == "landfill").sum())
@@ -176,6 +181,11 @@ def main() -> int:
         "| Своя модель на нашей разметке | 0,326 (0,202 – 0,450) | **хуже случайного, не поставлена** |",
         "| Пять признаков, свалка против склада | 0,500 | различает не спектр, а карта |",
         "| Пять признаков, промзона против поля | 0,930 | и это единственное, что они умеют |",
+        *([f"| Сеть по парам «до/после», ROC-AUC | {ru(model.get('roc_auc_oof', 0), 3)} "
+           f"| вневыборочно, деление по объектам, {int(model.get('folds', 0))} частей |",
+           f"| она же, PR-AUC | {ru(model.get('pr_auc_oof', 0), 3)} при базовой "
+           f"{ru(model.get('base_rate', 0), 3)} | кусков {int(model.get('n_pieces', 0))}, "
+           f"положительных {int(model.get('n_positive', 0))} |"] if model else []),
         "",
         "## Чего у нас нет — говорить самим",
         "",
