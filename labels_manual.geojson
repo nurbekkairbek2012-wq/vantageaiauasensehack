@@ -3,10 +3,8 @@
 "name": "labels_manual",
 "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
 "features": [
-{ "type": "Feature", "properties": { "verdict": "свалка", "candidate_id": "C00034", "area_m2": 5596.0, "источник": "прошёл отсев", "note": null }, "geometry": { "type": "Point", "coordinates": [ 71.517207, 51.165169 ] } },
 { "type": "Feature", "properties": { "verdict": "свалка", "candidate_id": "C00106", "area_m2": 2103.0, "источник": "прошёл отсев", "note": null }, "geometry": { "type": "Point", "coordinates": [ 71.548502, 51.161074 ] } },
 { "type": "Feature", "properties": { "verdict": "свалка", "candidate_id": "C00114", "area_m2": 1999.0, "источник": "прошёл отсев", "note": null }, "geometry": { "type": "Point", "coordinates": [ 71.482847, 51.207637 ] } },
-{ "type": "Feature", "properties": { "verdict": "свалка", "candidate_id": "C00196", "area_m2": 1099.0, "источник": "прошёл отсев", "note": null }, "geometry": { "type": "Point", "coordinates": [ 71.515794, 51.164571 ] } },
 { "type": "Feature", "properties": { "verdict": "не свалка", "candidate_id": "C00021", "area_m2": 7399.0, "источник": "прошёл отсев", "note": null }, "geometry": { "type": "Point", "coordinates": [ 71.523879, 51.159396 ] } },
 { "type": "Feature", "properties": { "verdict": "не свалка", "candidate_id": "C00050", "area_m2": 4200.0, "источник": "прошёл отсев", "note": null }, "geometry": { "type": "Point", "coordinates": [ 71.647608, 51.231858 ] } },
 { "type": "Feature", "properties": { "verdict": "не свалка", "candidate_id": "C00060", "area_m2": 3699.0, "источник": "прошёл отсев", "note": null }, "geometry": { "type": "Point", "coordinates": [ 71.651023, 51.231467 ] } },
@@ -181,6 +179,8 @@
 { "type": "Feature", "properties": { "verdict": "не свалка", "candidate_id": null, "area_m2": null, "источник": null, "note": "просмотрено глазами 23 августа: западная промзона, после фильтра водотоков" }, "geometry": { "type": "Point", "coordinates": [ 71.3610735, 51.1068195 ] } },
 { "type": "Feature", "properties": { "verdict": "не свалка", "candidate_id": null, "area_m2": null, "источник": null, "note": "просмотрено глазами 23 августа: западная промзона, после фильтра водотоков" }, "geometry": { "type": "Point", "coordinates": [ 71.23831138418079, 51.197553 ] } },
 { "type": "Feature", "properties": { "verdict": "не свалка", "candidate_id": null, "area_m2": null, "источник": null, "note": "просмотрено глазами 23 августа: западная промзона, после фильтра водотоков" }, "geometry": { "type": "Point", "coordinates": [ 71.221439614406776, 51.2039005 ] } },
-{ "type": "Feature", "properties": { "verdict": "не свалка", "candidate_id": null, "area_m2": null, "источник": null, "note": "просмотрено глазами 23 августа: западная промзона, после фильтра водотоков" }, "geometry": { "type": "Point", "coordinates": [ 71.2251395, 51.06074 ] } }
+{ "type": "Feature", "properties": { "verdict": "не свалка", "candidate_id": null, "area_m2": null, "источник": null, "note": "просмотрено глазами 23 августа: западная промзона, после фильтра водотоков" }, "geometry": { "type": "Point", "coordinates": [ 71.2251395, 51.06074 ] } },
+{ "type": "Feature", "properties": { "verdict": "не свалка", "candidate_id": null, "area_m2": null, "источник": null, "note": "пересмотрено 23 августа: автомобильная разборка, у площадки хозяин и забор" }, "geometry": { "type": "Point", "coordinates": [ 71.517206789862655, 51.165169 ] } },
+{ "type": "Feature", "properties": { "verdict": "не свалка", "candidate_id": null, "area_m2": null, "источник": null, "note": "пересмотрено 23 августа: автомобильная разборка, у площадки хозяин и забор" }, "geometry": { "type": "Point", "coordinates": [ 71.515793987515607, 51.164571 ] } }
 ]
 }
