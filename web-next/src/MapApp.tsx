@@ -591,11 +591,21 @@ export default function MapApp() {
             />
             <div className="pointer-events-auto flex flex-col gap-1.5 rounded-sm border border-grid bg-soot/90 px-3 py-2 text-xs backdrop-blur-sm">
               <label className="flex min-h-[32px] cursor-pointer items-center gap-2 py-0.5">
-                <input type="checkbox" checked={showRisk} onChange={(e) => setShowRisk(e.target.checked)} />
+                <input
+                  type="checkbox"
+                  checked={showRisk}
+                  onChange={(e) => setShowRisk(e.target.checked)}
+                  className="shrink-0"
+                />
                 <span className="text-muted">Зоны риска</span>
               </label>
               <label className="flex min-h-[32px] cursor-pointer items-center gap-2 py-0.5">
-                <input type="checkbox" checked={showRegistry} onChange={(e) => setShowRegistry(e.target.checked)} />
+                <input
+                  type="checkbox"
+                  checked={showRegistry}
+                  onChange={(e) => setShowRegistry(e.target.checked)}
+                  className="shrink-0"
+                />
                 <span className="text-muted">Известные объекты</span>
               </label>
             </div>
