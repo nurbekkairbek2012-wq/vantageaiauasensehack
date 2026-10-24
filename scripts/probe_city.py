@@ -108,7 +108,53 @@ def share_of_usable(bbox: tuple[float, float, float, float], settings) -> tuple[
     return float(good.mean()), len(layers.roads), len(layers.settlements)
 
 
-def verdict(share: float) -> str:
+def share_of_industry(bbox: tuple[float, float, float, float], settings) -> float:
+    """Доля промышленной земли — второй замер, и он про класс, а не про место.
+
+    Первая попытка мерить пригодность области по доле ПАШНИ провалилась:
+    поля вокруг Алматы не размечены в OpenStreetMap, и замер давал 4% там,
+    где глазами пашня занимает почти всё.
+
+    С промышленностью наоборот: её размечают, потому что у неё есть
+    владелец, адрес и кадастр. И она оказалась откалиброванным
+    предсказателем — проверено на трёх областях с известным исходом:
+
+        север Астаны     3,11%   →  3 подтверждённых + 5 опознанных
+        восток Астаны    0,00%   →  0 настоящих из 33 находок
+        запад Астаны     0,67%   →  считается
+
+    Логика за этим простая. Детектор ищет место, где растительность
+    исчезла навсегда. В промзоне такое событие редкое и потому значимое; в
+    поле оно рядовое — залежь, смена оборота, заброшенный огород.
+    """
+    import geopandas as gpd
+    from shapely.geometry import box
+    from shapely.ops import unary_union
+
+    from vantage.aoi import AOI
+    from vantage.context import OverpassClient, _bbox_clause, overpass_to_gdf
+
+    crs = settings.project.crs_working
+    aoi = AOI.from_bbox(bbox, name="probe", crs_working=crs)
+    clause = _bbox_clause(aoi)
+    query = (
+        "[out:json][timeout:180];("
+        f'way["landuse"~"^(industrial|quarry|construction|railway|landfill)$"]({clause});'
+        f'relation["landuse"~"^(industrial|quarry|construction|railway|landfill)$"]({clause});'
+        f'way["man_made"="works"]({clause});'
+        ");out geom;"
+    )
+    client = OverpassClient(settings.paths.resolve("data_cache"))
+    layer = overpass_to_gdf(client.query(query), target_crs=crs)
+    if layer.empty:
+        return 0.0
+    area = gpd.GeoDataFrame(geometry=[box(*bbox)], crs=4326).to_crs(crs)
+    total = float(area.area.iloc[0])
+    covered = unary_union(layer.geometry.values).intersection(area.geometry.iloc[0]).area
+    return float(covered / total) if total else 0.0
+
+
+def verdict(share: float, industry: float | None = None) -> str:
     """Словами — чтобы решение принималось без пересчёта в голове.
 
     Границы откалиброваны на трёх прогонах, два из которых провалились:
@@ -120,6 +166,14 @@ def verdict(share: float) -> str:
     То есть замер предсказал бы оба провала до того, как на них ушло
     четыре с половиной часа счёта. Три точки — мало для закона, но
     достаточно, чтобы не запускать область с нулём процентов."""
+    # Промышленность решает раньше площади: восточный пояс имел 23,3%
+    # годной земли — «хорошая область» — и ноль настоящих свалок из
+    # тридцати трёх находок, потому что промышленной земли там 0,00%.
+    if industry is not None and industry < 0.003:
+        return ("НЕ ЗАПУСКАТЬ: промышленной земли нет — находки будут "
+                "сельскими, как в восточном поясе (0 настоящих из 33)")
+    if industry is not None and industry < 0.01:
+        return "рискованно: промышленной земли мало, ждите много ложных находок"
     if share < 0.03:
         return "НЕ ЗАПУСКАТЬ: пригодной земли практически нет, ноль объектов предрешён"
     if share < 0.10:
@@ -181,8 +235,13 @@ def main() -> int:
         except Exception as error:
             print(f"{name:12s} — не измерено: {str(error)[:70]}")
             continue
-        print(f"{name:12s} годной земли {share * 100:5.1f}%   "
-              f"(дорог {roads}, жилья {homes})   {verdict(share)}")
+        try:
+            industry = share_of_industry(bbox, settings)
+        except Exception:
+            industry = None
+        shown = f"{industry * 100:5.2f}%" if industry is not None else "  ?  "
+        print(f"{name:12s} годной земли {share * 100:5.1f}%   промышленной {shown}   "
+              f"{verdict(share, industry)}")
     print()
     print("Замер не смотрит на снимки — он говорит только о том, есть ли в области")
     print("земля, которую отсев в принципе может пропустить. Это нижняя граница:")

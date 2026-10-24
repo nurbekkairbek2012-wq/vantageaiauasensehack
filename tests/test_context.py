@@ -314,3 +314,45 @@ class TestEmptyLayersAreLoud:
                             crs_working=settings.project.crs_working)
         with pytest.raises(RuntimeError, match="дорог"):
             ctx.fetch_context(aoi, settings, cache_dir=tmp_path)
+
+
+class TestEmptyAnswerFromGlobalMirror:
+    """Пустой ответ глобального зеркала — это ответ, а не отказ.
+
+    Правило «пустой ответ считать отказом» появилось против региональных
+    инстансов: такой на чужой регион отвечает 200 и пустым списком, и
+    принять это за «объектов нет» значит тихо испортить весь отсев.
+
+    Но для глобального зеркала пустота означает правду. Пока правило было
+    общим, прогон по восточному поясу Астаны не мог пройти НИКОГДА: один
+    из запросов там честно возвращает ноль элементов, и это считалось
+    отказом шесть кругов подряд, а потом прогон падал.
+    """
+
+    def test_empty_from_global_is_accepted(self, monkeypatch, tmp_path):
+        from vantage import context as ctx
+
+        class FakeResponse:
+            status_code = 200
+
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return {"elements": []}
+
+        calls = []
+
+        def fake_post(url, **kwargs):
+            calls.append(url)
+            return FakeResponse()
+
+        monkeypatch.setattr(ctx.requests, "post", fake_post)
+        client = ctx.OverpassClient(tmp_path)
+        payload = client.query("[out:json];out count;", use_cache=False)
+
+        assert payload == {"elements": []}
+        assert len(calls) == 1, (
+            f"обошёл {len(calls)} зеркал вместо одного — пустой ответ "
+            "глобального зеркала снова считается отказом"
+        )
