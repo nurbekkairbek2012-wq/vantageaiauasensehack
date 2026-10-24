@@ -183,6 +183,12 @@ def passport(pdf, row, econ: dict | None, gemini: dict | None, fonts, page_no: i
                                  "insufficient_data": "данных мало"}.get(
                                      str(row.get("removal_status")), "—")),
     ]
+    # Сверка с открытой картой госмониторинга отходов (scripts/gov_waste.py).
+    gov_m = row.get("gov_registry_m")
+    if gov_m is not None and gov_m == gov_m:
+        place.append(("Госмониторинг отходов",
+                      "есть на его карте" if float(gov_m) <= 100
+                      else f"нет на карте, ближайшая в {ru(float(gov_m) / 1000, 1)} км"))
     money = []
     if econ:
         money = [

@@ -26,17 +26,6 @@ type Props = Record<string, unknown>;
 const MONTHS = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
   'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
 
-const kzt = (v: unknown) => {
-  const n = Number(v);
-  if (!Number.isFinite(n)) return '—';
-  // Десятичный разделитель — запятая. toFixed даёт точку, и в акте суммы
-  // выглядели как «8.3 млн ₸» при «8,3 млн ₸» на карте того же объекта.
-  // В документе, который подписывает должностное лицо, две записи одной
-  // суммы — повод для вопроса.
-  if (Math.abs(n) >= 1e6) return `${(n / 1e6).toFixed(1).replace('.', ',')} млн ₸`;
-  return `${Math.round(n).toLocaleString('ru-RU')} ₸`;
-};
-
 const num = (v: unknown, d = 0) => {
   const n = Number(v);
   return Number.isFinite(n) ? n.toLocaleString('ru-RU', { maximumFractionDigits: d }) : '—';
@@ -47,95 +36,82 @@ function humanDate(v: unknown) {
   return Number.isNaN(d.getTime()) ? '—' : `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+/* Сумма в тенге целиком, как пишут в документах: «8 302 282 тенге». */
+const tenge = (v: unknown) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? `${Math.round(n).toLocaleString('ru-RU')} тенге` : '—';
+};
+
+/* Та же структура и тот же вид, что у акта в PDF (src/vantage/act.py):
+   служебный документ, только чёрный, Times New Roman, пометка «ПРОЕКТ»,
+   раздел для итогов выезда и строки подписей. */
 export function Act({ p, center }: { p: Props; center: [number, number] | null }) {
   const today = new Date().toLocaleDateString('ru-RU');
-  // Number(null) === 0, и ноль проходит проверку на конечность. Пустая
-  // вероятность превращалась в «Оценка модели 0%» — то есть в документе
-  // появлялось утверждение «модель уверена, что это не свалка». Проверять
+  // Number(null) === 0, и ноль проходит проверку на конечность: проверять
   // надо наличие значения, а не его конечность.
   const has = (v: unknown) => v !== null && v !== undefined && v !== '' && Number.isFinite(Number(v));
-  const conf = has(p.probability) ? Number(p.probability) : null;
-  const evidence = has(p.evidence_score) ? Number(p.evidence_score) : null;
+  const score = has(p.highres_score) ? Number(p.highres_score) : null;
+  const emitted = Number(p.co2e_emitted_t);
+  const total = Number(p.co2e_t);
 
-  const rows: [string, string][][] = [
-    [
-      ['Координаты (WGS84)', center ? `${center[0].toFixed(6)}, ${center[1].toFixed(6)}` : '—'],
+  const sections: [string, [string, string][]][] = [
+    ['1. Сведения об объекте', [
+      ['Координаты (WGS 84)', center ? `${center[0].toFixed(6)}, ${center[1].toFixed(6)}` : '—'],
       ['Площадь', `${num(p.area_m2)} м²`],
-      ['Дата возникновения', humanDate(p.break_date)],
+      ['Дата возникновения (по снимкам)', humanDate(p.break_date)],
+      ['Дата выявления', today],
       ['Оценка массы отходов', `${num(p.mass_t)} т`],
-    ],
-    [
-      ['Метод', 'дистанционное зондирование: Sentinel-2, Sentinel-1, Landsat 8/9'],
-      /* В акт идут обе величины, и обе с оговоркой о происхождении. Это
-         документ, который читает человек с полномочиями: «оценка модели
-         100%» без указания, на чём модель училась и видела ли она этот
-         объект, в акте недопустима. */
-      conf !== null
-        ? [
-            'Оценка модели',
-            `${Math.round(conf * 100)}% (вневыборочная: объект не входил в обучение). `
-              + `Согласие физических признаков ${evidence !== null ? Math.round(evidence * 100) : '—'}%`
-              + ` (${p.n_agreeing ?? '—'} из 5)`,
-          ]
-        : [
-            'Согласие физических признаков',
-            evidence !== null
-              ? `${Math.round(evidence * 100)}% (${p.n_agreeing ?? '—'} из 5). `
-                + 'Модель по этому объекту не высказывалась: он не входил в обучающую выборку'
-              : 'не рассчитано',
-          ],
-      ['Подтверждено независимых источников съёмки', String(p.verify_providers ?? 0)],
-      ['Контроль устранения', String(p.removal_note ?? 'не проводился')],
-    ],
-    [
-      ['Диапазон ущерба (P10–P90)', `${kzt(p.damage_p10)} – ${kzt(p.damage_p90)}`],
-      ['Медианная оценка', kzt(p.damage_p50)],
-      ['Эмиссия за 20 лет', `${num(p.co2e_t)} т CO₂-экв.`],
-      /* Уже причинённый вред стоит отдельной строкой от прогнозного.
-         Для акта это принципиально: возмещению подлежит причинённый вред,
-         а не предотвращённый, и должностное лицо должно видеть их порознь.
-         Строка появляется, только если возраст объекта посчитан. */
-      ...(Number(p.co2e_emitted_t) > 0
-        ? ([[
-            'Из них уже выброшено',
-            `${num(p.co2e_emitted_t)} т CO₂-экв. — `
-            + `${Math.round((Number(p.co2e_emitted_t) / Number(p.co2e_t)) * 100)}% `
-            + `за ${num(p.age_years, 1)} года с момента возникновения`,
-          ]] as [string, string][])
+    ]],
+    ['2. Основания выявления', [
+      ['Признаки по снимкам', `совпало признаков: ${p.n_agreeing ?? '—'} из 5`],
+      ['Независимых источников съёмки', String(p.verify_providers ?? 0)],
+      ...(score !== null
+        ? ([['Оценка модели по снимку',
+            `${score.toFixed(2).replace('.', ',')} из 1 (подсказка, не вероятность)`]] as [string, string][])
         : []),
-    ],
-    [
+      ['Контроль устранения', String(p.removal_note ?? 'не проводился')],
+    ]],
+    ['3. Оценка ущерба (метод Монте-Карло)', [
+      ['Диапазон оценки (P10–P90)', `${tenge(p.damage_p10)} – ${tenge(p.damage_p90)}`],
+      ['Медианная оценка', tenge(p.damage_p50)],
+      ['Выбросы метана за 20 лет',
+        `${num(p.co2e_t)} т CO₂-экв.`
+        + (emitted > 0 && total > 0
+          ? `, из них уже выброшено ${num(emitted)} т (${Math.round((emitted / total) * 100)} %)`
+          : '')],
+    ]],
+    ['4. Применимая норма', [
       ['Статья', String(p.penalty_article ?? 'ст. 344, ч. 2-1 КоАП РК')],
-      ['Размер санкции', kzt(p.penalty_kzt)],
-    ],
-  ];
-
-  const titles = [
-    '1. Сведения об объекте',
-    '2. Основания выявления',
-    '3. Оценка ущерба',
-    '4. Применимая норма',
+      ['Размер санкции', tenge(p.penalty_kzt)],
+    ]],
+    ['5. Результаты выездной проверки', [
+      ['Отходы на месте', '□ обнаружены   □ не обнаружены   □ не установлено'],
+      ['Вид отходов', '□ бытовые   □ строительные   □ грунт   □ иное: ________'],
+      ['Фотографии с координатами', 'прилагаются, ____ шт.'],
+    ]],
   ];
 
   return (
     <article id="act-print" aria-hidden="true">
-      <p className="act-draft">
-        ЧЕРНОВИК. Документ сформирован автоматически системой Vantage AI на основе
-        вероятностной модели и НЕ является официальным. Требуется проверка и
-        подтверждение уполномоченным лицом.
+      <p className="act-mark">ПРОЕКТ</p>
+      <h1>АКТ</h1>
+      <p className="act-sub">о выявлении несанкционированного размещения отходов</p>
+      <div className="act-place">
+        <span>г. Астана</span>
+        <span>«___» ____________ 20___ г. № {String(p.candidate_id ?? '—')}</span>
+      </div>
+      <p>
+        Основание: результаты дистанционного мониторинга территории (система
+        Vantage AI; снимки Sentinel-2, Sentinel-1, Landsat 8/9 и снимки высокого
+        разрешения).
       </p>
 
-      <h1>АКТ о выявлении несанкционированного размещения отходов</h1>
-      <p className="act-sub">
-        № {String(p.candidate_id ?? '—')} от {today}
-      </p>
-
-      {rows.map((table, i) => (
-        <section key={titles[i]}>
-          <h2>{titles[i]}</h2>
+      {sections.map(([title, rows]) => (
+        <section key={title}>
+          <h2>{title}</h2>
           <table>
             <tbody>
-              {table.map(([k, v]) => (
+              {rows.map(([k, v]) => (
                 <tr key={k}>
                   <td>{k}</td>
                   <td>{v}</td>
@@ -146,17 +122,23 @@ export function Act({ p, center }: { p: Props; center: [number, number] | null }
         </section>
       ))}
 
-      <div className="act-sign">
-        <div>подпись проверяющего</div>
-        <div>должность, ФИО</div>
-      </div>
+      <table className="act-sign">
+        <tbody>
+          {['Составил:', 'Проверил:'].map((who) => (
+            <tr key={who}>
+              <td>{who}</td>
+              <td>должность</td>
+              <td>подпись</td>
+              <td>Ф. И. О.</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
 
       <p className="act-foot">
-        Результаты получены методом дистанционного зондирования и представляют
-        собой оценку вероятности, а не юридическое доказательство. Решение о
-        статусе объекта, размере ущерба и применении санкций принимается
-        уполномоченным лицом по итогам выездной проверки.
-        Vantage AI · Future Minds Hackathon 2026.
+        Оценка получена дистанционно и не является юридическим доказательством.
+        Статус объекта, размер ущерба и применение санкций устанавливает
+        уполномоченное лицо по итогам выездной проверки.
       </p>
     </article>
   );

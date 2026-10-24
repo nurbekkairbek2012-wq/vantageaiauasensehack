@@ -54,6 +54,20 @@ FONT_CANDIDATES = (
      "/System/Library/Fonts/Supplemental/Arial Bold.ttf"),
 )
 
+#: Шрифт служебного документа — Times New Roman, как требуют правила
+#: документирования для официальной переписки. Liberation Serif и DejaVu
+#: Serif — замена с теми же метриками (Linux, CI). Если нет ни одного,
+#: берётся рубленый шрифт из FONT_CANDIDATES: кириллица важнее гарнитуры.
+DOCUMENT_FONT_CANDIDATES = (
+    ("VantageSerif", r"C:\Windows\Fonts\times.ttf", r"C:\Windows\Fonts\timesbd.ttf"),
+    ("VantageSerif", "/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf",
+     "/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf"),
+    ("VantageSerif", "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
+     "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf"),
+    ("VantageSerif", "/System/Library/Fonts/Supplemental/Times New Roman.ttf",
+     "/System/Library/Fonts/Supplemental/Times New Roman Bold.ttf"),
+)
+
 #: Названия месяцев в именительном падеже.
 #: Явная таблица, а не locale: setlocale меняет состояние всего процесса,
 #: русская локаль может быть не установлена на машине, а на Windows её
@@ -260,6 +274,21 @@ def register_cyrillic_font() -> tuple[str, str]:
     )
 
 
+def register_document_font() -> tuple[str, str]:
+    """Шрифт служебного документа: Times New Roman или замена с теми же метриками."""
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+
+    for name, regular, bold in DOCUMENT_FONT_CANDIDATES:
+        if Path(regular).exists():
+            bold_name = f"{name}-Bold"
+            if name not in pdfmetrics.getRegisteredFontNames():
+                pdfmetrics.registerFont(TTFont(name, regular))
+                pdfmetrics.registerFont(TTFont(bold_name, bold if Path(bold).exists() else regular))
+            return name, bold_name
+    return register_cyrillic_font()
+
+
 def render_pdf(act: ActDraft, path: str | Path, *, allow_draft: bool = True,
                sample: bool = False) -> Path:
     """Отрендерить акт в PDF.
@@ -274,9 +303,11 @@ def render_pdf(act: ActDraft, path: str | Path, *, allow_draft: bool = True,
     подписью читался бы как настоящий.
     """
     from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER, TA_RIGHT
     from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import ParagraphStyle
     from reportlab.lib.units import mm
-    from reportlab.pdfgen import canvas
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
     if not act.is_official and not allow_draft:
         raise ActNotApprovedError(
@@ -285,177 +316,151 @@ def render_pdf(act: ActDraft, path: str | Path, *, allow_draft: bool = True,
             "и должностью проверяющего."
         )
 
-    font, font_bold = register_cyrillic_font()
+    # Оформление служебного документа: только чёрный, Times New Roman 12,
+    # поля 30/15/20/20 мм, таблицы тонкой линией. До 27 сентября акт был
+    # цветным (красная и зелёная лента, золотые разделители, розовая
+    # плашка) — на проекторе красиво, в папке с документами чужеродно, и
+    # на чёрно-белом принтере половина выходила серыми пятнами.
+    font, font_bold = register_document_font()
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
 
-    page_width, page_height = A4
-    pdf = canvas.Canvas(str(path), pagesize=A4)
-    pdf.setTitle(f"Акт {act.candidate_id}")
+    black = colors.black
+    body = ParagraphStyle("body", fontName=font, fontSize=12, leading=14.5, textColor=black)
+    small = ParagraphStyle("small", parent=body, fontSize=10, leading=12)
+    cell = ParagraphStyle("cell", parent=body, fontSize=11, leading=13)
+    head = ParagraphStyle("head", parent=body, fontName=font_bold, spaceBefore=6, spaceAfter=2)
+    title = ParagraphStyle("title", parent=body, fontName=font_bold, fontSize=14, leading=17,
+                           alignment=TA_CENTER)
+    subtitle = ParagraphStyle("subtitle", parent=body, alignment=TA_CENTER)
+    mark = ParagraphStyle("mark", parent=body, fontName=font_bold, alignment=TA_RIGHT)
 
-    margin = 18 * mm
-    y = page_height - margin
+    def esc(text: str) -> str:
+        return str(text).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
-    def line(text: str, *, size: int = 10, bold: bool = False, gap: float = 5.5 * mm,
-             color=colors.black, indent: float = 0.0) -> None:
-        nonlocal y
-        pdf.setFont(font_bold if bold else font, size)
-        pdf.setFillColor(color)
-        pdf.drawString(margin + indent, y, text)
-        y -= gap
+    def table(rows: list[tuple[str, str]]) -> Table:
+        data = [[Paragraph(esc(k), cell), Paragraph(esc(v), cell)] for k, v in rows]
+        tbl = Table(data, colWidths=[62 * mm, None])
+        tbl.setStyle(TableStyle([
+            ("GRID", (0, 0), (-1, -1), 0.5, black),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 4),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+            ("TOPPADDING", (0, 0), (-1, -1), 2),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+        ]))
+        return tbl
 
-    def field_row(label: str, value: str) -> None:
-        nonlocal y
-        pdf.setFont(font, 10)
-        pdf.setFillColor(colors.HexColor("#555555"))
-        pdf.drawString(margin, y, label)
-        pdf.setFont(font_bold, 10)
-        pdf.setFillColor(colors.black)
-        pdf.drawString(margin + 62 * mm, y, value)
-        y -= 5.5 * mm
+    def tenge(value: float) -> str:
+        return f"{_kzt(value)} тенге"
 
-    def separator() -> None:
-        nonlocal y
-        y -= 1 * mm
-        pdf.setStrokeColor(colors.HexColor("#C9A227"))
-        pdf.setLineWidth(0.8)
-        pdf.line(margin, y, page_width - margin, y)
-        y -= 6 * mm
+    story: list = []
+    # Пометка вместо цветной ленты: так помечают проекты и образцы
+    # служебных документов.
+    if sample:
+        story.append(Paragraph("ОБРАЗЕЦ", mark))
+    if not act.is_official:
+        story.append(Paragraph("ПРОЕКТ", mark))
+    story += [Spacer(1, 2 * mm), Paragraph("АКТ", title),
+              Paragraph("о выявлении несанкционированного размещения отходов", subtitle),
+              Spacer(1, 4 * mm)]
 
-    # --- Шапка со статусом ---------------------------------------------- #
-    if act.is_official:
-        band_color = colors.HexColor("#1F6B3B")
-        band_text = "ПРОВЕРЕНО ЧЕЛОВЕКОМ"
-    else:
-        band_color = colors.HexColor("#B03A3A")
-        band_text = "ЧЕРНОВИК — НЕ ЯВЛЯЕТСЯ ОФИЦИАЛЬНЫМ ДОКУМЕНТОМ"
+    when = (act.approval.approved_at.strftime("%d.%m.%Y") if act.approval
+            else "«___» ____________ 20___ г.")
+    place = Table([[Paragraph("г. Астана", body),
+                    Paragraph(f"{esc(when)}&nbsp;&nbsp;&nbsp;№ {esc(act.candidate_id)}", mark)]],
+                  colWidths=[None, 95 * mm])
+    place.setStyle(TableStyle([("LEFTPADDING", (0, 0), (-1, -1), 0),
+                               ("RIGHTPADDING", (0, 0), (-1, -1), 0)]))
+    story += [place, Spacer(1, 4 * mm),
+              Paragraph("Основание: результаты дистанционного мониторинга территории "
+                        "(система Vantage AI; снимки Sentinel-2, Sentinel-1, Landsat 8/9 "
+                        "и снимки высокого разрешения).", body)]
 
-    pdf.setFillColor(band_color)
-    pdf.rect(0, page_height - 14 * mm, page_width, 14 * mm, stroke=0, fill=1)
-    pdf.setFillColor(colors.white)
-    pdf.setFont(font_bold, 11)
-    pdf.drawCentredString(page_width / 2, page_height - 9 * mm, band_text)
+    story += [Paragraph("1. Сведения об объекте", head), table([
+        ("Координаты (WGS 84)", act.coordinates_text()),
+        ("Площадь", f"{_kzt(act.area_m2)} м²"),
+        ("Дата возникновения (по снимкам)",
+         format_month_year(act.appeared_date) if act.appeared_date else "не определена"),
+        ("Дата выявления",
+         act.detected_date.strftime("%d.%m.%Y") if act.detected_date else "—"),
+        ("Оценка массы отходов", f"{_kzt(act.mass_t_p50)} т"),
+    ])]
 
-    y = page_height - 26 * mm
-    line("АКТ", size=17, bold=True, gap=7 * mm)
-    line("о выявлении несанкционированного размещения отходов", size=11, gap=5 * mm)
-    line(
-        f"№ {act.candidate_id} от {act.created_at.strftime('%d.%m.%Y')}",
-        size=9, gap=7 * mm, color=colors.HexColor("#555555"),
-    )
-    separator()
-
-    # --- Объект ---------------------------------------------------------- #
-    line("1. СВЕДЕНИЯ ОБ ОБЪЕКТЕ", size=11, bold=True, gap=7 * mm)
-    field_row("Координаты (WGS84)", act.coordinates_text())
-    field_row("Площадь", f"{act.area_m2:,.0f} м²".replace(",", " "))
-    field_row(
-        "Дата возникновения",
-        format_month_year(act.appeared_date) if act.appeared_date else "не определена",
-    )
-    field_row("Дата выявления", act.detected_date.strftime("%d.%m.%Y") if act.detected_date else "—")
-    field_row("Оценка массы отходов", f"{act.mass_t_p50:,.0f} т".replace(",", " "))
-    separator()
-
-    # --- Основания ------------------------------------------------------- #
-    line("2. ОСНОВАНИЯ ВЫЯВЛЕНИЯ", size=11, bold=True, gap=7 * mm)
-    line("Дистанционное зондирование: Sentinel-2, Sentinel-1, Landsat 8/9.", size=9, gap=5 * mm)
+    grounds: list[tuple[str, str]] = []
     if act.evidence_text:
-        for chunk in _wrap(act.evidence_text, 95):
-            line(chunk, size=9, gap=4.5 * mm)
+        grounds.append(("Признаки по снимкам", _evidence_short(act.evidence_text)))
+    if act.verification_providers:
+        grounds.append(("Независимых источников съёмки", str(act.verification_providers)))
     if act.model_probability is not None:
         # Не проценты: оценка не откалибрована, и «37%» читается как
         # вероятность, которой она не является (AI_RESULTS.md, 1с).
         score = f"{act.model_probability:.2f}".replace(".", ",")
-        field_row("Оценка модели", f"{score} из 1 — подсказка, не вероятность")
-    if act.verification_providers:
-        field_row(
-            "Доверификация",
-            f"подтверждено независимыми источниками: {act.verification_providers}",
-        )
-    separator()
+        grounds.append(("Оценка модели по снимку", f"{score} из 1 (подсказка, не вероятность)"))
+    if grounds:
+        story += [Paragraph("2. Основания выявления", head), table(grounds)]
 
-    # --- Ущерб ----------------------------------------------------------- #
-    line("3. ОЦЕНКА УЩЕРБА", size=11, bold=True, gap=7 * mm)
-    field_row("Диапазон оценки", act.damage_text())
-    field_row("Эмиссия за 20 лет", f"{act.co2e_t_p50:,.0f} т CO₂-экв.".replace(",", " "))
-    if act.co2e_emitted_t_p50 > 0:
-        # Строка про уже причинённый вред стоит отдельно от прогнозной.
-        # Для акта это принципиально: возмещению подлежит причинённый вред,
-        # а не предотвращённый, и должностное лицо должно видеть их порознь.
-        share = act.co2e_emitted_t_p50 / act.co2e_t_p50 * 100 if act.co2e_t_p50 else 0
-        field_row(
-            "Из них уже выброшено",
-            # Пробел в разрядах и запятая в дроби ставятся раздельно:
-            # общий replace превратил бы «2,3 года» в «2 3 года».
-            f"{act.co2e_emitted_t_p50:,.0f}".replace(",", " ")
-            + f" т CO₂-экв. — {share:.0f}% за "
-            + f"{act.age_years:.1f}".replace(".", ",")
-            + " года с момента возникновения",
-        )
-    line(
-        "Диапазон отражает неопределённость исходных допущений и получен методом Монте-Карло.",
-        size=8, gap=6 * mm, color=colors.HexColor("#555555"),
-    )
-    separator()
+    emissions = f"{_kzt(act.co2e_t_p50)} т CO₂-экв."
+    if act.co2e_emitted_t_p50 > 0 and act.co2e_t_p50:
+        # Уже причинённый вред — отдельно от прогнозного: возмещению
+        # подлежит причинённый, и должностное лицо видит их порознь.
+        share = act.co2e_emitted_t_p50 / act.co2e_t_p50 * 100
+        emissions += f", из них уже выброшено {_kzt(act.co2e_emitted_t_p50)} т ({share:.0f} %)"
+    story += [Paragraph("3. Оценка ущерба (метод Монте-Карло)", head), table([
+        ("Диапазон оценки (P10–P90)",
+         f"{_kzt(act.damage_p10_kzt)} – {tenge(act.damage_p90_kzt)}"),
+        ("Медианная оценка", tenge(act.damage_p50_kzt)),
+        ("Выбросы метана за 20 лет", emissions),
+    ])]
 
-    # --- Правовые основания ---------------------------------------------- #
-    line("4. ПРИМЕНИМАЯ НОРМА", size=11, bold=True, gap=7 * mm)
-    field_row("Статья", act.penalty_article)
-    for chunk in _wrap(act.penalty_article_title, 95):
-        line(chunk, size=9, gap=4.5 * mm)
-    y -= 1 * mm
-    field_row("Размер санкции", f"{act.penalty_mrp} МРП = {_kzt(act.penalty_kzt)} ₸")
-    separator()
+    story += [Paragraph("4. Применимая норма", head), table([
+        ("Статья", f"{act.penalty_article}. {act.penalty_article_title}"),
+        ("Размер санкции", f"{act.penalty_mrp} МРП = {tenge(act.penalty_kzt)}"),
+    ])]
 
-    # --- Подтверждение --------------------------------------------------- #
-    line("5. СТАТУС ДОКУМЕНТА", size=11, bold=True, gap=7 * mm)
+    # Итог выезда заполняет человек: именно эта графа делает проект актом.
+    story += [Paragraph("5. Результаты выездной проверки", head), table([
+        ("Отходы на месте", "□ обнаружены   □ не обнаружены   □ не установлено"),
+        ("Вид отходов", "□ бытовые   □ строительные   □ грунт   □ иное: ________"),
+        ("Фотографии с координатами", "прилагаются, ____ шт."),
+    ])]
+
+    story.append(Spacer(1, 6 * mm))
     if act.approval:
-        field_row("Проверил", act.approval.reviewer_name)
-        field_row("Должность", act.approval.reviewer_position)
-        field_row("Дата проверки", act.approval.approved_at.strftime("%d.%m.%Y %H:%M"))
+        sign_rows = [["Проверил:", esc(act.approval.reviewer_position), "подпись",
+                      esc(act.approval.reviewer_name)]]
         if act.approval.note:
-            for chunk in _wrap(f"Примечание: {act.approval.note}", 95):
-                line(chunk, size=9, gap=4.5 * mm)
+            story += [Paragraph(f"Примечание: {esc(act.approval.note)}", small),
+                      Spacer(1, 4 * mm)]
     else:
-        pdf.setFillColor(colors.HexColor("#FCF1F1"))
-        pdf.rect(margin, y - 14 * mm, page_width - 2 * margin, 17 * mm, stroke=0, fill=1)
-        y -= 2 * mm
-        for chunk in _wrap(DRAFT_WARNING, 92):
-            line(chunk, size=9, gap=4.5 * mm, color=colors.HexColor("#B03A3A"), indent=3 * mm)
-        y -= 6 * mm
+        sign_rows = [["Составил:", "должность", "подпись", "Ф. И. О."],
+                     ["Проверил:", "должность", "подпись", "Ф. И. О."]]
+    signs = Table([[Paragraph(c, small) for c in row] for row in sign_rows],
+                  colWidths=[22 * mm, 60 * mm, 30 * mm, None], rowHeights=10 * mm)
+    signs.setStyle(TableStyle([
+        ("LINEABOVE", (1, 0), (-1, -1), 0.5, black),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 2),
+    ]))
+    story.append(signs)
 
-    # --- Подвал ---------------------------------------------------------- #
-    pdf.setFont(font, 7.5)
-    pdf.setFillColor(colors.HexColor("#777777"))
-    footer_y = 20 * mm
-    for chunk in _wrap(DISCLAIMER, 118):
-        pdf.drawString(margin, footer_y, chunk)
-        footer_y -= 3.6 * mm
-    pdf.drawString(margin, 10 * mm, "VANTAGE · Future Minds Hackathon 2026 · трек EcoFin")
+    story += [Spacer(1, 3 * mm), Paragraph(
+        "Оценка получена дистанционно и не является юридическим доказательством. "
+        "Статус объекта, размер ущерба и применение санкций устанавливает "
+        "уполномоченное лицо по итогам выездной проверки.", small)]
 
-    # Водяной знак образца — поверх всего; у черновика свой знак ниже.
-    if sample:
-        pdf.saveState()
-        pdf.setFillColor(colors.Color(0.2, 0.2, 0.2, alpha=0.08))
-        pdf.setFont(font_bold, 80)
-        pdf.translate(page_width / 2, page_height / 2 - 60 * mm)
-        pdf.rotate(38)
-        pdf.drawCentredString(0, 0, "ОБРАЗЕЦ")
-        pdf.restoreState()
+    def footer(canvas_, doc_) -> None:
+        canvas_.saveState()
+        canvas_.setFont(font, 9)
+        canvas_.setFillColor(black)
+        canvas_.drawString(30 * mm, 12 * mm, f"Акт № {act.candidate_id} · Vantage AI")
+        canvas_.drawRightString(A4[0] - 15 * mm, 12 * mm, f"стр. {doc_.page}")
+        canvas_.restoreState()
 
-    # Водяной знак черновика — поверх всего содержимого
-    if not act.is_official:
-        pdf.saveState()
-        pdf.setFillColor(colors.Color(0.69, 0.23, 0.23, alpha=0.10))
-        pdf.setFont(font_bold, 68)
-        pdf.translate(page_width / 2, page_height / 2)
-        pdf.rotate(38)
-        pdf.drawCentredString(0, 0, "ЧЕРНОВИК")
-        pdf.restoreState()
-
-    pdf.showPage()
-    pdf.save()
+    doc = SimpleDocTemplate(str(path), pagesize=A4, leftMargin=30 * mm, rightMargin=15 * mm,
+                            topMargin=20 * mm, bottomMargin=20 * mm,
+                            title=f"Акт {act.candidate_id}", author="Vantage AI")
+    doc.build(story, onFirstPage=footer, onLaterPages=footer)
     log.info("Акт %s сохранён (%s): %s", act.candidate_id, act.status, path)
     return path
 
@@ -463,6 +468,23 @@ def render_pdf(act: ActDraft, path: str | Path, *, allow_draft: bool = True,
 # --------------------------------------------------------------------------- #
 #  Вспомогательное
 # --------------------------------------------------------------------------- #
+
+
+def _evidence_short(text: str) -> str:
+    """«сработало признаков: 2 из 5. падение … — 100%; …» → без процентов.
+
+    Проценты силы признака в акте читаются как вероятность, а это доля от
+    насыщения шкалы. В документе нужно, КАКИЕ признаки совпали, а не их
+    внутренняя шкала.
+    """
+    import re
+
+    head, sep, rest = text.partition(". ")
+    if not sep:
+        return text
+    names = [re.sub(r"\s*—\s*\d+%$", "", s.strip()) for s in rest.split(";") if s.strip()]
+    head = head.replace("сработало признаков", "совпало признаков")
+    return f"{head} ({', '.join(names)})" if names else head
 
 
 def _kzt(value: float) -> str:
@@ -518,5 +540,6 @@ __all__ = [
     "Approval",
     "format_month_year",
     "register_cyrillic_font",
+    "register_document_font",
     "render_pdf",
 ]

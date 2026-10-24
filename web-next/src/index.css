@@ -466,84 +466,88 @@ input[type='range']:focus-visible::-webkit-slider-thumb {
      родителем, и печать выходила пустой. */
   body > *:not(#act-root) { display: none !important; }
 
+  /* Белый лист при любой настройке «печатать фон»: иначе тёмная тема
+     сайта печаталась вокруг акта чёрной рамкой. */
+  html, body { background: #fff !important; color: #000 !important; }
+  /* Страница объявлена тёмной (meta color-scheme: dark), и Chrome красит
+     ею поля листа, даже когда фон белый. На печати схема — светлая. */
+  :root { color-scheme: light !important; }
+
   #act-root, #act-print { display: block !important; }
 
+  /* Служебный документ: только чёрный, Times New Roman 12 pt, поля
+     30/15/20/20 мм, таблицы тонкой линией — как акт в PDF
+     (src/vantage/act.py), чтобы две выгрузки одного акта не отличались. */
   #act-print {
     color: #000;
     background: #fff;
-    font-family: 'Golos Text', Georgia, serif;
-    font-size: 11pt;
-    line-height: 1.45;
+    font-family: 'Times New Roman', Times, 'Liberation Serif', serif;
+    font-size: 12pt;
+    line-height: 1.2;
     max-width: 100%;
   }
 
+  #act-print p { margin: 0 0 6pt; }
+
+  #act-print .act-mark {
+    text-align: right;
+    font-weight: 700;
+    margin: 0 0 6pt;
+  }
+
   #act-print h1 {
-    font-family: 'Golos Text', Georgia, serif;
-    font-size: 16pt;
+    font-family: inherit;
+    font-size: 14pt;
     font-weight: 700;
     letter-spacing: 0;
     text-align: center;
-    margin: 0 0 4pt;
+    margin: 0;
   }
 
+  #act-print .act-sub { text-align: center; margin: 0 0 12pt; }
+
+  #act-print .act-place {
+    display: flex;
+    justify-content: space-between;
+    margin: 0 0 8pt;
+    font-weight: 700;
+  }
+
+  #act-print .act-place span:first-child { font-weight: 400; }
+
   #act-print h2 {
-    font-family: 'Golos Text', Georgia, serif;
+    font-family: inherit;
     font-size: 12pt;
     font-weight: 700;
     letter-spacing: 0;
-    margin: 14pt 0 5pt;
-  }
-
-  #act-print .act-draft {
-    border: 2pt solid #000;
-    padding: 7pt 9pt;
-    margin: 0 0 14pt;
-    font-weight: 700;
-    text-transform: uppercase;
-    font-size: 9.5pt;
-    line-height: 1.35;
-  }
-
-  #act-print .act-sub {
-    text-align: center;
-    margin: 0 0 6pt;
-    font-size: 10pt;
+    margin: 8pt 0 3pt;
   }
 
   #act-print table {
     width: 100%;
     border-collapse: collapse;
+    font-size: 11pt;
   }
 
   #act-print td {
-    border: 0.5pt solid #666;
-    padding: 4pt 6pt;
+    border: 0.5pt solid #000;
+    padding: 2pt 4pt;
     vertical-align: top;
   }
 
-  #act-print td:first-child { width: 42%; color: #333; }
+  #act-print td:first-child { width: 36%; }
 
-  #act-print .act-sign {
-    display: flex;
-    justify-content: space-between;
-    gap: 24pt;
-    margin-top: 34pt;
-    font-size: 9.5pt;
-    color: #333;
-  }
+  #act-print .act-sign { margin-top: 18pt; font-size: 10pt; }
 
-  #act-print .act-sign > div {
-    flex: 1;
+  #act-print .act-sign td {
+    border: 0;
     border-top: 0.5pt solid #000;
-    padding-top: 4pt;
+    padding: 2pt 4pt 16pt;
   }
 
-  #act-print .act-foot {
-    margin-top: 20pt;
-    font-size: 8.5pt;
-    line-height: 1.35;
-    color: #333;
-  }
+  #act-print .act-sign td:first-child { border-top: 0; width: 16%; }
 
-  @page { margin: 16mm; }
+  #act-print .act-foot { margin-top: 8pt; font-size: 10pt; }
+
+  @page { size: A4; margin: 20mm 15mm 20mm 30mm; }
 }
