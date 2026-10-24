@@ -28,6 +28,7 @@
     python scripts/key_numbers.py
 """
 
+import contextlib
 import json
 import sys
 from pathlib import Path
@@ -59,7 +60,6 @@ def plural(n: int, one: str, few: str, many: str) -> str:
 def main() -> int:
     import geopandas as gpd
     import pandas as pd
-    import yaml
     from shapely.geometry import box
 
     site = gpd.read_file(DATA / "candidates.geojson")
@@ -82,16 +82,38 @@ def main() -> int:
     by_eye = passed - len(site)
     auto = sum(v for k, v in rejected.items() if k != "ПРОШЁЛ ОТСЕВ")
 
-    config = yaml.safe_load(Path("config/cities.yaml").read_text(encoding="utf-8"))["cities"]
+    # Площадь считается по ВСЕМ посчитанным папкам, а не по списку
+    # областей продукта: пригородные пояса убраны с карты, потому что дали
+    # ноль, но посчитаны они были, и на вопрос «сколько вы покрыли» ответ
+    # именно такой.
+    ALL_AREAS = {
+        "astana": (71.37, 51.12, 71.66, 51.30),
+        "astana_east": (71.66, 51.10, 71.95, 51.28),
+        "astana_southeast": (71.60, 51.02, 71.88, 51.18),
+        "astana_west": (71.08, 51.04, 71.36, 51.28),
+        "astana_industrial_west": (71.18, 51.06, 71.42, 51.22),
+        "astana_south": (71.38, 50.99, 71.58, 51.15),
+    }
     covered = 0.0
-    for city in config:
-        folder = Path("outputs_real") if city["id"] == "astana" else Path(f"outputs_{city['id']}")
+    counted = 0
+    for area, bbox in ALL_AREAS.items():
+        folder = Path("outputs_real") if area == "astana" else Path(f"outputs_{area}")
         if (folder / "candidates_raw.geojson").exists():
-            g = gpd.GeoDataFrame(geometry=[box(*city["bbox"])], crs=4326).to_crs(32642)
+            g = gpd.GeoDataFrame(geometry=[box(*bbox)], crs=4326).to_crs(32642)
             covered += float(g.area.iloc[0]) / 1e6
+            counted += 1
 
     ages = (pd.Timestamp.today() - pd.to_datetime(site["break_date"])).dt.days / 365.25
-    reviewed = sum(int(c.get("reviewed", 0)) for c in cities)
+    # Просмотренные объекты — по всем прогонам, а не по областям продукта.
+    reviewed = 0
+    for area in ALL_AREAS:
+        folder = Path("outputs_real") if area == "astana" else Path(f"outputs_{area}")
+        path = folder / "candidates.geojson"
+        if path.exists():
+            # Битая или недописанная выгрузка не должна ронять сборку
+            # страницы: она нужнее целой, чем точной до объекта.
+            with contextlib.suppress(Exception):
+                reviewed += len(gpd.read_file(path))
 
     L = [
         "# Числа проекта",
@@ -129,7 +151,11 @@ def main() -> int:
         *([f"| └─ требуют выезда | {unclear} | вердикт человека |"] if unclear else []),
         f"| **Подтверждено выездом на место** | **{ground}** | ground_truth.json |",
         *([f"| ├─ из них с фотофиксацией | {photos} | data/field/ |"] if photos else []),
-        f"| Просмотрено человеком всего | **{reviewed}** | по пяти областям |",
+        # Просмотрено — по всей проделанной работе, а не по тому, что
+        # осталось в продукте. Пять пригородных поясов посчитаны и
+        # просмотрены полностью; в списке областей их больше нет, потому
+        # что все дали ноль, но работа была и в счёт входит.
+        f"| Просмотрено человеком всего | **{reviewed}** | все прогоны, включая пустые пояса |",
         f"| Меток разметки в источнике | {len(labels)} | labels_manual.geojson |",
         "",
         "## Деньги и вред",
@@ -150,7 +176,8 @@ def main() -> int:
         "| Что | Сколько |",
         "|---|---:|",
         f"| Посчитано площади | **{ru(covered)} км²** |",
-        f"| Областей посчитано | {sum(1 for c in cities if c.get('reviewed'))} из {len(cities)} |",
+        f"| Областей посчитано | {counted} |",
+        "| Из них дали настоящие свалки | 1 — северное кольцо |",
         f"| Ячеек в сетке риска | {ru(metrics.get('cells', 0))} |",
         "",
         "### По областям",

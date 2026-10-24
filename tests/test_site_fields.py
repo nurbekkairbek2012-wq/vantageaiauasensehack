@@ -22,6 +22,7 @@
 
 import json
 from pathlib import Path
+from typing import ClassVar
 
 import pytest
 
@@ -190,7 +191,7 @@ class TestNoPrivateLayerLeaks:
     """
 
     #: Файлы, которых в публикации быть не должно, и чем это грозит.
-    FORBIDDEN = {
+    FORBIDDEN: ClassVar[dict[str, str]] = {
         "risk_private.geojson": "точные вероятности по каждой ячейке сетки",
         "access.log": "журнал обращений к закрытым данным",
         "citizen_reports.jsonl": "сообщения жителей с их геопозицией",

@@ -372,8 +372,12 @@ def render_pdf(act: ActDraft, path: str | Path, *, allow_draft: bool = True) -> 
         share = act.co2e_emitted_t_p50 / act.co2e_t_p50 * 100 if act.co2e_t_p50 else 0
         field_row(
             "Из них уже выброшено",
-            f"{act.co2e_emitted_t_p50:,.0f} т CO₂-экв. — {share:.0f}% "
-            f"за {act.age_years:.1f} года с момента возникновения".replace(",", " "),
+            # Пробел в разрядах и запятая в дроби ставятся раздельно:
+            # общий replace превратил бы «2,3 года» в «2 3 года».
+            f"{act.co2e_emitted_t_p50:,.0f}".replace(",", " ")
+            + f" т CO₂-экв. — {share:.0f}% за "
+            + f"{act.age_years:.1f}".replace(".", ",")
+            + " года с момента возникновения",
         )
     line(
         "Диапазон отражает неопределённость исходных допущений и получен методом Монте-Карло.",

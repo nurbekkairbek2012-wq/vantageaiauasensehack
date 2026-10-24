@@ -28,7 +28,7 @@
 месте, отдавался с кодом 200, и страница правильно показывала «Скачать
 видео». Тест, который кричит на исправное, перестают читать.
 
-    python scripts/smoke.py
+    python scripts/smoke.py [--browsers]
 """
 
 import subprocess
@@ -179,6 +179,42 @@ def main() -> int:
                   f"ошибок {len(offline_errors)}, внешних запросов срезано {len(outside)}")
             context.close()
             browser.close()
+
+            # ── Другие браузеры ────────────────────────────────────────
+            #
+            # По ключу --browsers, а не всегда: Firefox и WebKit добавляют
+            # к прогону минуту, а ломается в них редко.
+            #
+            # Но проверять надо, и вот почему: сайт открывают с чужой
+            # машины. У проверяющего может быть Safari на макбуке, и
+            # выяснять это на защите поздно. Ключ стоит прогнать перед
+            # сдачей — он в списке проверок в README.
+            if "--browsers" in sys.argv:
+                for engine in ("firefox", "webkit"):
+                    try:
+                        other = getattr(pw, engine).launch()
+                    except Exception as error:
+                        problems.append(f"{engine}: не запустился — {str(error)[:90]}")
+                        print(f"!!  {engine:16s} не запустился "
+                              f"(python -m playwright install {engine})")
+                        continue
+                    for page_name, expected in PAGES:
+                        page = other.new_page(viewport={"width": 1440, "height": 900})
+                        errors = []
+                        page.on("pageerror", lambda e, sink=errors: sink.append(str(e)))
+                        page.goto(f"http://127.0.0.1:{PORT}/{page_name}",
+                                  wait_until="networkidle", timeout=60_000)
+                        page.wait_for_timeout(2800)
+                        text = page.inner_text("body")
+                        if expected not in text:
+                            problems.append(f"{engine}/{page_name}: нет слова «{expected}»")
+                        for error in errors[:2]:
+                            problems.append(f"{engine}/{page_name}: {error[:110]}")
+                        mark = "OK  " if expected in text and not errors else "!!  "
+                        print(f"{mark}{engine + '/' + page_name:26s} "
+                              f"{len(text):5d} символов, ошибок {len(errors)}")
+                        page.close()
+                    other.close()
     finally:
         server.terminate()
 
