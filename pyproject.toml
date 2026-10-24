@@ -84,6 +84,24 @@ ignore = [
     "RUF003", # ambiguous character in comment
 ]
 
+[tool.ruff.lint.flake8-bugbear]
+# Depends/Query/Header/Path в значениях по умолчанию — документированная
+# идиома FastAPI, а не ошибка изменяемого аргумента. Без этой настройки
+# B008 заставляет писать код в обход фреймворка, что хуже во всех
+# отношениях, кроме тишины линтера.
+extend-immutable-calls = [
+    "fastapi.Depends",
+    "fastapi.Query",
+    "fastapi.Header",
+    "fastapi.Path",
+    "fastapi.Body",
+    "fastapi.File",
+    "fastapi.Form",
+    "Depends",
+    "Query",
+    "Header",
+]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q --strict-markers"
