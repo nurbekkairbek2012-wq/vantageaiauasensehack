@@ -192,3 +192,14 @@ def test_route_links_are_valid_telegram_html(bot):
     assert not re.search(r"&(?!amp;)", text)
     for trip in trips:
         assert " → ".join(trip["ids"]) in text
+
+
+def test_privacy_command_answers_everyone(bot, monkeypatch):
+    """/privacy — для любого, не только выездной группы: это право жителя."""
+    sent = []
+    monkeypatch.setattr(bot, "send", lambda chat, text: sent.append((chat, text)))
+    monkeypatch.setenv("VANTAGE_BOT_SUBSCRIBERS", "111")
+    bot.on_update({"message": {"chat": {"id": 222}, "text": "/privacy"}})
+    assert "не хранятся" in sent[-1][1]
+    assert "Қазақша" in sent[-1][1]
+    assert "/privacy" in bot.HELP

@@ -1,0 +1,85 @@
+{
+ "north": {
+  "windows": 2860,
+  "gov_dumps": 0,
+  "our_dumps": 4,
+  "models": {
+   "base": {
+    "gov": {
+     "roc_auc": null,
+     "top5": 0,
+     "top10": 0,
+     "top20": 0
+    },
+    "ours": {
+     "roc_auc": 0.907,
+     "top5": 1,
+     "top10": 2,
+     "top20": 4
+    }
+   },
+   "base + фон": {
+    "gov": {
+     "roc_auc": null,
+     "top5": 0,
+     "top10": 0,
+     "top20": 0
+    },
+    "ours": {
+     "roc_auc": 0.931,
+     "top5": 3,
+     "top10": 3,
+     "top20": 4
+    }
+   },
+   "base + фон + SkyCLIP": {
+    "gov": {
+     "roc_auc": null,
+     "top5": 0,
+     "top10": 0,
+     "top20": 0
+    },
+    "ours": {
+     "roc_auc": 0.955,
+     "top5": 2,
+     "top10": 4,
+     "top20": 4
+    }
+   }
+  }
+ },
+ "west": {
+  "windows": 2650,
+  "gov_dumps": 30,
+  "our_dumps": 0,
+  "models": {
+   "base": {
+    "gov": {
+     "roc_auc": 0.679,
+     "top5": 5,
+     "top10": 10,
+     "top20": 14
+    },
+    "ours": {}
+   },
+   "base + фон": {
+    "gov": {
+     "roc_auc": 0.686,
+     "top5": 4,
+     "top10": 9,
+     "top20": 13
+    },
+    "ours": {}
+   },
+   "base + фон + SkyCLIP": {
+    "gov": {
+     "roc_auc": 0.767,
+     "top5": 5,
+     "top10": 7,
+     "top20": 18
+    },
+    "ours": {}
+   }
+  }
+ }
+}
