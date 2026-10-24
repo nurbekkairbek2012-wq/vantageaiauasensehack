@@ -20,8 +20,7 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from probe_city import verdict  # noqa: E402
-
+from probe_city import verdict
 
 #: Замеренные области: (имя, годной земли, промышленной, контуров на км²).
 MEASURED = {

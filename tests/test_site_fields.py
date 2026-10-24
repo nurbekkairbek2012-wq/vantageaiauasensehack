@@ -129,3 +129,46 @@ class TestDecimalSeparator:
         assert not offenders, (
             "дробь печатается с точкой:" + chr(10) + chr(10).join(offenders)
         )
+
+
+class TestServiceAgreesWithTheSite:
+    """Сервис и сайт обязаны отвечать одно и то же на один вопрос.
+
+    API читает каталог артефактов из настроек, сайт — опубликованный
+    набор. Пока их никто не сводил, ``/health`` отвечал «24 объекта,
+    24,2 га» при пятнадцати объектах и 1,72 га на карте: сервис держал
+    данные прогона годичной давности.
+
+    Расхождение тихое — оба ответа выглядят осмысленно, и заметить его
+    можно, только спросив у обоих одно и то же. Проверяющий, который
+    откроет /health рядом с картой, спросит.
+    """
+
+    def test_object_count_matches(self):
+        import geopandas as gpd
+
+        published = ROOT / "web-next/public/data/candidates.geojson"
+        served = ROOT / "outputs/candidates.geojson"
+        if not (published.exists() and served.exists()):
+            pytest.skip("нет выгрузки или каталога сервиса")
+
+        assert len(gpd.read_file(served)) == len(gpd.read_file(published)), (
+            "сервис отдаёт не то же число объектов, что сайт — запустите "
+            "python scripts/publish_filter.py"
+        )
+
+    def test_area_and_damage_match(self):
+        import geopandas as gpd
+
+        published = ROOT / "web-next/public/data/candidates.geojson"
+        served = ROOT / "outputs/candidates.geojson"
+        if not (published.exists() and served.exists()):
+            pytest.skip("нет выгрузки или каталога сервиса")
+
+        a, b = gpd.read_file(served), gpd.read_file(published)
+        for column in ("area_m2", "damage_p50"):
+            if column not in a.columns or column not in b.columns:
+                continue
+            assert abs(a[column].sum() - b[column].sum()) < 1.0, (
+                f"{column}: сервис {a[column].sum():.0f}, сайт {b[column].sum():.0f}"
+            )

@@ -394,7 +394,13 @@ export default function MapApp() {
                  Читалось оно как уверенность и давало «34%» там, где модель
                  говорит 0,97. Согласие никуда не делось — оно рядом, в виде
                  «признаков n из 5», где его невозможно спутать с долей. */
-              const model = Number(p.probability);
+              /* Оценка модели по снимку — настоящая, посчитанная.
+                 Поле probability заполняет только генератор демонстрационных
+                 данных, и на настоящем прогоне оно пусто: в списке стояло
+                 «0%» у каждого объекта, что читалось как «модель уверена,
+                 что это не свалка». Здесь показывается highres_score —
+                 то, что модель действительно сказала по снимку 0,4–0,8 м. */
+              const model = Number(p.highres_score);
               const hasModel = Number.isFinite(model);
               const agreeing = Number(p.n_agreeing) || 0;
               return (
@@ -438,6 +444,20 @@ export default function MapApp() {
                         первую строку у одних объектов и на вторую у других,
                         и колонка переставала читаться сверху вниз. */}
                     <div className="mt-1 flex flex-wrap items-baseline gap-x-4 text-xs text-muted-2">
+                      {/* Оценка модели идёт первой в строке: её спрашивают
+                          чаще всего, а вердикт человека уже стоит справа
+                          сверху. Красится по величине, чтобы низкую было
+                          видно без чтения — модель ошибается, и прятать
+                          это нечестно. */}
+                      {hasModel && (
+                        <span
+                          className={`tabular ${model >= 0.75 ? 'text-violet-lit'
+                            : model >= 0.45 ? 'text-muted' : 'text-amber'}`}
+                          title="оценка модели по снимку 0,4–0,8 м: не вероятность, а место в очереди на проверку"
+                        >
+                          модель {Math.round(model * 100)}%
+                        </span>
+                      )}
                       <span className="tabular">{num(p.area_m2)} м²</span>
                       <span className="tabular">{kzt(p.damage_p50)}</span>
                       <span>{humanDate(p.break_date)}</span>

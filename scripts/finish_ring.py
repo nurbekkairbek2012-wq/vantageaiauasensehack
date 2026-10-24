@@ -57,7 +57,7 @@ logging.info("Отсев: %s", outcome.rejection)
 # и после этого не верит ни одному числу.
 (OUTPUTS / "funnel.json").write_text(
     json.dumps(
-        {"raw": int(len(merged)), "rejected": outcome.rejection},
+        {"raw": len(merged), "rejected": outcome.rejection},
         ensure_ascii=False, indent=1,
     ),
     encoding="utf-8",

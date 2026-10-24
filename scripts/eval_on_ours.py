@@ -61,11 +61,10 @@ VERDICT = {"landfill": 1, "not_landfill": 0}
 
 def picture(lat: float, lon: float, name: str, cfg, refresh: bool):
     """Снимок высокого разрешения вокруг точки, из кэша или из сети."""
+    from highres_cache import cache_name
     from PIL import Image
 
     from vantage.verify import PROVIDERS, fetch_tile_grid
-
-    from highres_cache import cache_name
 
     CACHE.mkdir(parents=True, exist_ok=True)
     # Ключ кэша — место и зум, а не номер объекта; почему именно так,
@@ -182,7 +181,7 @@ def main() -> int:
 
     log.info("")
     log.info("── Как модель оценила каждый ──")
-    for name, mark, score in sorted(zip(names, truth, scores), key=lambda x: -x[2]):
+    for name, mark, score in sorted(zip(names, truth, scores, strict=False), key=lambda x: -x[2]):
         log.info("  %.3f  %-11s  %s", score, "СВАЛКА" if mark else "не свалка", name)
     return 0
 

@@ -75,9 +75,10 @@ def overlaps(a, b, share: float = 0.35) -> bool:
 
 
 def main() -> int:
+    from probe_city import osm_density
+
     from vantage import env
     from vantage.config import load_settings
-    from probe_city import osm_density
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--step", type=float, default=0.12,

@@ -148,7 +148,7 @@ def main() -> int:
             size = max(max(w, h) for _x, _y, w, h in boxes) * CONTEXT
             want = min(3, len(boxes[:3]))   # столько же, сколько взяли мусора
             got = 0
-            for attempt in range(60):
+            for _attempt in range(60):
                 if got >= want:
                     break
                 cx = rng.uniform(size / 2, max(size / 2 + 1, image.width - size / 2))

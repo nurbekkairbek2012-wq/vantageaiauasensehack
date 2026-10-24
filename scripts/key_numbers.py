@@ -120,7 +120,7 @@ def main() -> int:
         f"| ├─ опознаны как свалки | **{dumps}** | вердикт человека |",
         f"| └─ требуют выезда | {unclear} | вердикт человека |",
         f"| **Подтверждено выездом на место** | **{ground}** | ground_truth.json |",
-        f"| ├─ из них с фотофиксацией | {photos and ground or 0} | data/field/ |",
+        f"| ├─ из них с фотофиксацией | {(photos and ground) or 0} | data/field/ |",
         f"| Просмотрено человеком всего | **{reviewed}** | по пяти областям |",
         f"| Меток разметки в источнике | {len(labels)} | labels_manual.geojson |",
         "",

@@ -375,7 +375,7 @@ class TestAoiReachesEveryStep:
         from vantage.aoi import AOI
 
         monkeypatch.setattr("vantage.context.fetch_context", fake_fetch)
-        monkeypatch.setattr("vantage.context.apply_context_filter", lambda c, l, cfg: c)
+        monkeypatch.setattr("vantage.context.apply_context_filter", lambda c, layers, cfg: c)
         monkeypatch.setattr("vantage.context.rejection_report", lambda f: {})
 
         pipe = mod.Pipeline()

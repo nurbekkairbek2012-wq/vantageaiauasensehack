@@ -480,7 +480,7 @@ def _classify_top(risk: pd.Series, *, quantiles: int = 4) -> pd.Series:
     if live.empty:
         return out
 
-    take = max(1, int(round(len(risk) * PUBLIC_TOP_SHARE)))
+    take = max(1, round(len(risk) * PUBLIC_TOP_SHARE))
     # method="first" вместо среднего: при одинаковом риске у сотни ячеек
     # средний ранг даёт им общее место, и отбор берёт либо все сто, либо
     # ни одной.

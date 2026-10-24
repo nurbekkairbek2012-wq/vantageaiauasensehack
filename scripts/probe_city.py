@@ -228,7 +228,7 @@ def verdict(share: float, industry: float | None = None,
 
     Границы откалиброваны на трёх прогонах, два из которых провалились:
 
-        Астана, кольцо      32,2%   хорошая        →  21 объект
+        Астана, кольцо      38,1%   хорошая        →  59 объектов, 15 свалок
         Алматы, прежняя      7,3%   рискованно     →   0 объектов
         Шымкент, прежняя     0,0%   не запускать   →   0 объектов
 
@@ -319,7 +319,7 @@ def main() -> int:
     print()
     for name, bbox in probes:
         try:
-            share, roads, homes = share_of_usable(bbox, settings)
+            share, _roads, _homes = share_of_usable(bbox, settings)
         except Exception as error:
             print(f"{name:12s} — не измерено: {str(error)[:70]}")
             continue

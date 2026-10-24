@@ -104,11 +104,10 @@ def picture(lat: float, lon: float, name: str, cfg, refresh: bool = False):
     съёмки в этом месте, а у другого — быть; у того же поставщика может не
     быть восемнадцатого зума, но быть семнадцатый.
     """
+    from highres_cache import cache_name
     from PIL import Image
 
     from vantage.verify import PROVIDERS, fetch_tile_grid
-
-    from highres_cache import cache_name
 
     CACHE.mkdir(parents=True, exist_ok=True)
     # Ключ кэша — место и зум, а не номер объекта: см. scripts/highres_cache.py.
@@ -170,7 +169,7 @@ def main() -> int:
     out = Path(args.out)
     out.mkdir(exist_ok=True)
 
-    cells: list[tuple[str, "Image.Image"]] = []
+    cells: list[tuple[str, Image.Image]] = []
     for row in data.itertuples():
         point = row.geometry.centroid
         image = picture(point.y, point.x, str(row.candidate_id), cfg, args.refresh)

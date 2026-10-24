@@ -50,8 +50,6 @@ import logging
 import sys
 from pathlib import Path
 
-import numpy as np
-
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s", datefmt="%H:%M:%S")
 log = logging.getLogger("chipmodel")
 if hasattr(sys.stdout, "reconfigure"):
@@ -132,7 +130,7 @@ def main() -> int:
 
     with torch.no_grad():
         features = net(torch.stack(batch)).numpy()
-    for cid, value in zip(ids, model.predict_proba(features)[:, 1]):
+    for cid, value in zip(ids, model.predict_proba(features)[:, 1], strict=False):
         scores[cid] = float(value)
 
     working = kept.to_crs(kept.crs)

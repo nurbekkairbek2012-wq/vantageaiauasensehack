@@ -69,7 +69,7 @@ def main() -> int:
                 for name in PAGES:
                     page = context.new_page()
                     errors: list[str] = []
-                    page.on("pageerror", lambda e: errors.append(str(e)))
+                    page.on("pageerror", lambda e, sink=errors: sink.append(str(e)))
                     page.goto(f"http://127.0.0.1:{PORT}/{name}", wait_until="networkidle")
                     page.wait_for_timeout(700)
 

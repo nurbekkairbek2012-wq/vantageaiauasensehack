@@ -49,7 +49,7 @@ def main() -> int:
 
     from vantage import env
     from vantage.config import load_settings
-    from vantage.verify import attach_verification, verify_candidates
+    from vantage.verify import verify_candidates
     from vantage.vlm import build_verifier
 
     if not CANDIDATES.exists():

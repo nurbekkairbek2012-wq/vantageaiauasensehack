@@ -94,7 +94,6 @@ class TestPlaceholderDetection:
 
     def test_fully_flat_frame_is_rejected(self):
         import numpy as np
-
         from review_sheets import looks_like_placeholder
 
         assert looks_like_placeholder(np.full((300, 300, 3), 200, dtype="uint8"))

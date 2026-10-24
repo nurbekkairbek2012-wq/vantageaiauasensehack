@@ -84,7 +84,7 @@ def main() -> int:
     log.info("ИТОГ: %s", outcome.to_text())
     log.info("Отсев: %s", outcome.rejection)
     (outputs / "funnel.json").write_text(
-        json.dumps({"raw": int(len(merged)), "rejected": outcome.rejection},
+        json.dumps({"raw": len(merged), "rejected": outcome.rejection},
                    ensure_ascii=False, indent=1),
         encoding="utf-8",
     )

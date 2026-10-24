@@ -13,6 +13,7 @@
  * честнее, чем прятать в переключатель.
  */
 
+import { ThemeSwitch } from './ThemeSwitch';
 import { Logo } from './Logo';
 
 export type Surface = 'index' | 'map' | 'timelapse' | 'forecast' | 'citizen' | 'label';
@@ -54,7 +55,13 @@ export function Nav({ current, children }: { current: Surface; children?: React.
           ))}
         </nav>
       </div>
-      {children}
+      {/* Переключатель темы стоит рядом с содержимым шапки, а не внутри
+          него: children у каждой страницы свои, и кнопка иначе то была бы,
+          то нет. */}
+      <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
+        {children}
+        <ThemeSwitch />
+      </div>
     </header>
   );
 }

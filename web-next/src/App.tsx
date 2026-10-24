@@ -34,8 +34,6 @@ const SiteView = lazy(() =>
 type Series = Parameters<typeof Tape>[0]['data'];
 type Feature = GeoJSON.Feature<GeoJSON.Geometry, Record<string, unknown>>;
 
-/* Отклонённые гипотезы показываются, а не прячутся. Причины отсева уже
-   пишутся в rejected.geojson, и до сих пор их не видел никто. */
 /* Стадии отсева и пояснение к каждой.
  *
  * Числа сюда НЕ вписываются. Раньше вписывались — 213, 124, 59, 3 при 429

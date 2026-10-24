@@ -120,7 +120,10 @@ def main() -> int:
         ids = data["candidate_id"].astype(str)
         seen |= set(ids)
 
-        def pick(field: str, default=None):
+        def pick(field: str, default=None, ids=ids):
+            # ids связывается умолчанием: иначе замыкание смотрит на
+            # переменную цикла, и при втором файле pick молча работал бы
+            # с номерами первого.
             return ids.map(lambda c: by_id[c].get(field, default) if c in by_id else None)
 
         data["ground_check"] = ids.map(

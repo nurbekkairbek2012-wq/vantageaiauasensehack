@@ -106,7 +106,9 @@ def drop_duplicates_by_place(objects):
     if pairs.empty:
         return objects
 
-    area = objects["area_m2"] if "area_m2" in objects else objects.geometry.area
+
+    # запасное значение здесь — вычисляемый ряд, а не константа.
+    area = objects["area_m2"] if "area_m2" in objects else objects.geometry.area  # noqa: SIM401
     drop = set()
     for left, right in zip(pairs["_i_left"], pairs["_i_right"], strict=True):
         loser = right if area.iat[left] >= area.iat[right] else left

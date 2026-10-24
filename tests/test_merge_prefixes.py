@@ -74,9 +74,8 @@ class TestPrefixesSeparateAreas:
     def test_unknown_area_stops_instead_of_guessing(self, tmp_path, monkeypatch):
         """Слияние с незаведённой областью обязано остановиться, а не угадать."""
         import geopandas as gpd
-        from shapely.geometry import Point
-
         import merge_cities
+        from shapely.geometry import Point
 
         folder = tmp_path / "outputs_astana_nowhere"
         folder.mkdir()
@@ -145,7 +144,6 @@ class TestOverlapDuplicatesAreRemoved:
 
     def test_empty_input_survives(self):
         import geopandas as gpd
-
         from merge_cities import drop_duplicates_by_place
 
         empty = gpd.GeoDataFrame({"candidate_id": [], "area_m2": []},

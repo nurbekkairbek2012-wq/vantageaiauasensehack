@@ -102,10 +102,11 @@ def main() -> int:
 
                 errors: list[str] = []
                 failures: list[str] = []
-                page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
-                page.on("pageerror", lambda e: errors.append(f"исключение: {e}"))
-                page.on("requestfailed", lambda r: (
-                    failures.append(f"{r.url[:90]} — {r.failure}")
+                page.on("console",
+                        lambda m, sink=errors: sink.append(m.text) if m.type == "error" else None)
+                page.on("pageerror", lambda e, sink=errors: sink.append(f"исключение: {e}"))
+                page.on("requestfailed", lambda r, sink=failures: (
+                    sink.append(f"{r.url[:90]} — {r.failure}")
                     if not any(host in r.url for host in FOREIGN)
                     and "ERR_ABORTED" not in (r.failure or "") else None
                 ))
@@ -137,6 +138,46 @@ def main() -> int:
                 print(f"{mark}{page_name:16s} {len(text):6d} символов, "
                       f"ошибок {len(errors)}, неудачных запросов {len(failures)}")
                 context.close()
+
+            # ── Карта без интернета ────────────────────────────────────
+            #
+            # На защите вайфай в зале может не работать, и это не редкость,
+            # а обычное дело. Проверяем, что карта переживёт: объекты,
+            # список и схематическая подложка лежат локально, из сети идут
+            # только тайлы снимка.
+            #
+            # Проверка стоит здесь, а не отдельным скриптом, потому что
+            # ломается она ровно от того же, от чего ломается всё
+            # остальное — от нового внешнего запроса, добавленного мимоходом.
+            context = browser.new_context(viewport={"width": 1440, "height": 900})
+            outside: list[str] = []
+
+            def gate(route, request):
+                if f"127.0.0.1:{PORT}" in request.url:
+                    route.continue_()
+                else:
+                    outside.append(request.url)
+                    route.abort()
+
+            context.route("**/*", gate)
+            page = context.new_page()
+            offline_errors: list[str] = []
+            page.on("pageerror", lambda e: offline_errors.append(str(e)))
+            page.goto(f"http://127.0.0.1:{PORT}/map.html", wait_until="domcontentloaded",
+                      timeout=60_000)
+            page.wait_for_timeout(3500)
+
+            text = page.inner_text("body")
+            rows = len(page.locator("aside li").all())
+            if "Найдено" not in text or rows == 0:
+                problems.append("карта без интернета: список объектов не отрисовался")
+            for error in offline_errors[:3]:
+                problems.append(f"карта без интернета: {error[:120]}")
+
+            mark = "OK  " if not offline_errors and rows else "!!  "
+            print(f"{mark}{'без интернета':16s} объектов {rows:2d}, "
+                  f"ошибок {len(offline_errors)}, внешних запросов срезано {len(outside)}")
+            context.close()
             browser.close()
     finally:
         server.terminate()

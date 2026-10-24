@@ -37,7 +37,6 @@
 """
 
 import argparse
-import json
 import logging
 import sys
 from pathlib import Path
@@ -160,7 +159,7 @@ def main() -> int:
         np.savez_compressed(CACHE, features=features, marks=marks, source=source)
         log.info("эмбеддинги сохранены: %s", CACHE)
 
-    names = list(FOLDERS) + ["Казахстан", "AerialWaste"]
+    names = [*FOLDERS, "Казахстан", "AerialWaste"]
     log.info("")
     log.info("── Смесь ──")
     for index in np.unique(source):

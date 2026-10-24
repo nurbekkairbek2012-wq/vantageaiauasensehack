@@ -205,7 +205,47 @@ def main() -> int:
     log.info("выгружено: %s", WEB)
 
     rebuild_story(kept)
+    sync_service(kept)
     return 0
+
+
+def sync_service(kept) -> None:
+    """Отдать сервису то же, что показывает сайт.
+
+    API читает каталог артефактов из настроек — ``outputs``, — а сайт
+    показывает отфильтрованный набор. Пока их никто не сводил, ``/health``
+    отвечал «24 объекта, 24,2 га» при пятнадцати объектах и 1,72 га на
+    карте: сервис держал данные прогона годичной давности.
+
+    Расхождение тихое: оба ответа выглядят осмысленно, и заметить его
+    можно, только спросив у обоих одно и то же. Проверяющий, который
+    откроет /health рядом с картой, спросит.
+
+    Копируются только слои, которые сервис отдаёт наружу. Акты и журнал
+    доступа — его собственное состояние, их трогать нельзя.
+    """
+    import shutil
+
+    from vantage.config import load_settings
+
+    try:
+        target = Path(load_settings().paths.resolve("outputs"))
+    except Exception as error:
+        log.warning("каталог сервиса не определён: %s", str(error)[:80])
+        return
+
+    target.mkdir(parents=True, exist_ok=True)
+    kept.to_file(target / "candidates.geojson", driver="GeoJSON")
+
+    web = Path(WEB).parent
+    copied = ["candidates.geojson"]
+    for name in ("risk_public.geojson", "registry.geojson", "metrics.json",
+                 "funnel.json", "story.json", "removal.json"):
+        source = web / name
+        if source.exists():
+            shutil.copy2(source, target / name)
+            copied.append(name)
+    log.info("сервису отдано то же, что сайту: %s → %s", ", ".join(copied), target)
 
 
 if __name__ == "__main__":
