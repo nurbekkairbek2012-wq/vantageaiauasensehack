@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
+from pathlib import Path
 
 import typer
 from rich.console import Console
@@ -195,7 +196,9 @@ def scenes(
             {"id": s.id, "datetime": s.datetime, "cloud_cover": s.cloud_cover, "bbox": list(s.bbox)}
             for s in found
         ]
-        with open(output, "w", encoding="utf-8") as fh:
+        out_path = Path(output)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        with out_path.open("w", encoding="utf-8") as fh:
             json.dump(payload, fh, ensure_ascii=False, indent=2)
         console.print(f"Сохранено: [green]{output}[/green]")
 
