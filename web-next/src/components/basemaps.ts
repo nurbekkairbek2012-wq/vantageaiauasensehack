@@ -42,6 +42,11 @@ export function createBasemapLayer(kind: Basemap, maxZoom = 18): L.TileLayer {
     minZoom: 9,
     maxZoom,
     keepBuffer: 2,
+    /* Без crossOrigin браузер не даёт выгрузить холст, на который попал
+       тайл с чужого домена: запись таймлапса прошла бы, а сохранение
+       упало бы на последнем шаге с ошибкой безопасности. Esri нужное
+       разрешение отдаёт — проверено. */
+    crossOrigin: 'anonymous',
     // Снимок Esri сам по себе ярче интерфейса; без притемнения фиолетовые
     // объекты на нём теряются, а глаз уходит на подложку вместо данных.
     className: kind === 'sat' ? 'basemap-sat' : 'basemap-scheme',

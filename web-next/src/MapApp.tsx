@@ -465,6 +465,40 @@ export default function MapApp() {
   );
 }
 
+/** Координаты в том виде, в каком их вбивают в навигатор. */
+function Coordinates({ center }: { center: [number, number] | null }) {
+  const [copied, setCopied] = useState(false);
+  if (!center) return null;
+
+  const text = `${center[0].toFixed(5)}, ${center[1].toFixed(5)}`;
+
+  return (
+    <div className="mt-3 flex items-baseline justify-between gap-3 rounded-sm border border-grid bg-soot-2 px-3 py-2.5">
+      <div className="min-w-0">
+        <p className="text-xs text-muted-2">Координаты</p>
+        {/* Пять знаков после запятой — это около метра. Больше писать
+            бессмысленно: контур объекта построен по пикселям в десять
+            метров, и точность подписи не может быть выше точности данных. */}
+        <p className="tabular mt-0.5 select-all text-sm text-line">{text}</p>
+      </div>
+      <button
+        type="button"
+        onClick={() => {
+          navigator.clipboard?.writeText(text).then(
+            () => { setCopied(true); setTimeout(() => setCopied(false), 1600); },
+            () => setCopied(false),
+          );
+        }}
+        className={`shrink-0 cursor-pointer rounded-sm border px-2.5 py-1 text-xs transition-colors duration-150 ${
+          copied ? 'border-violet-lit text-violet-lit' : 'border-grid text-muted hover:border-violet hover:text-line'
+        }`}
+      >
+        {copied ? 'Скопировано' : 'Копировать'}
+      </button>
+    </div>
+  );
+}
+
 function ObjectCard({ f }: { f: Feature }) {
   const p = f.properties;
   const score = Number(p.evidence_score) || 0;
@@ -532,6 +566,8 @@ function ObjectCard({ f }: { f: Feature }) {
             : `Признаков сработало ${Number(p.n_agreeing) || 0} из 5, согласие ${Math.round(score * 100)}%. Середина шкалы — объект стоит проверить глазами.`}
         </p>
       </div>
+
+      <Coordinates center={centerOf(f)} />
 
       <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-3 border-y border-grid py-4 text-sm">
         {[

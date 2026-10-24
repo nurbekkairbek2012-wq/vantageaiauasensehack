@@ -25,6 +25,7 @@ import { Nav } from './components/Nav';
 import { BasemapSwitch } from './components/BasemapSwitch';
 import { createBasemapLayer, type Basemap } from './components/basemaps';
 import { createHeatOverlay, riskToPoints, type HeatOverlay, type HeatPoint } from './components/HeatOverlay';
+import { canRecord, recordMap, saveBlob } from './components/recordMap';
 
 /** Восемь лет за столько секунд. Медленнее — скучно, быстрее — не читается. */
 const PLAY_SECONDS = 18;
@@ -39,6 +40,11 @@ export default function Timelapse() {
   const heat = useRef<HeatOverlay | null>(null);
   const riskHeat = useRef<HeatOverlay | null>(null);
   const raf = useRef(0);
+  /* Время для подписи на записи. Ссылка, а не состояние: замыкание внутри
+     запущенной записи держит то значение, которое было при её создании, и
+     подпись застывала — на всех кадрах стояло «прогноз», потому что
+     страница по умолчанию открыта в конце шкалы. */
+  const timeRef = useRef<number | null>(null);
   const started = useRef(0);
   const fitted = useRef(false);
 
@@ -47,6 +53,7 @@ export default function Timelapse() {
   const [basemap, setBasemap] = useState<Basemap>('sat');
   const [time, setTime] = useState<number | null>(null);
   const [playing, setPlaying] = useState(false);
+  const [recording, setRecording] = useState(false);
 
   /* Целые годы для подписей. Время внутри дробное — иначе не бывает
      плавности, — но кнопка «2019.5833333333333» это не год, а протечка
@@ -136,6 +143,12 @@ export default function Timelapse() {
     }
   }, [points]);
 
+  // Ссылка обновляется эффектом, а не при отрисовке: запись читает её из
+  // своего кадра, а писать в ref во время рендера React не разрешает.
+  useEffect(() => {
+    timeRef.current = at;
+  }, [at]);
+
   useEffect(() => {
     heat.current?.setTime(at);
     heat.current?.setHeatOpacity(1 - forecastMix * 0.6);
@@ -183,6 +196,42 @@ export default function Timelapse() {
   }, [playing, stop, first, end]);
 
   useEffect(() => () => { if (raf.current) cancelAnimationFrame(raf.current); }, []);
+
+  /* Скачивание таймлапса файлом.
+   *
+   * Показ вживую зависит от зала, проектора и чужого Wi-Fi. Файл на
+   * флешке не зависит ни от чего, и это единственная страница, где такой
+   * запас имеет смысл: карту можно показать скриншотом, движение — нет. */
+  const download = useCallback(async () => {
+    const node = host.current;
+    if (!node || recording) return;
+    stop();
+    setRecording(true);
+    try {
+      const span = end - first;
+      const blob = await recordMap(node, {
+        seconds: PLAY_SECONDS,
+        onFrame: (progress) => {
+          const now = first + progress * span;
+          timeRef.current = now;
+          setTime(now);
+        },
+        overlay: () => {
+          const now = timeRef.current ?? end;
+          const forecast = now > last + 0.15;
+          return {
+            big: forecast ? 'прогноз' : String(Math.floor(now)),
+            small: forecast
+              ? 'на 12 месяцев вперёд'
+              : `объектов к этому году: ${points.filter((p) => p.year != null && p.year <= now).length}`,
+          };
+        },
+      });
+      saveBlob(blob, 'vantage-ai-timelapse.webm');
+    } finally {
+      setRecording(false);
+    }
+  }, [recording, stop, end, first, last, points]);
 
   const label = at > last + 0.15 ? 'прогноз' : String(Math.floor(at));
 
@@ -250,6 +299,17 @@ export default function Timelapse() {
         >
           {playing ? 'Стоп' : 'Проиграть'}
         </button>
+
+        {canRecord() && (
+          <button
+            type="button"
+            onClick={download}
+            disabled={recording}
+            className="cursor-pointer rounded-sm border border-grid px-4 py-2.5 text-sm text-muted transition-colors duration-150 hover:border-violet hover:text-line disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {recording ? 'Записываю…' : 'Скачать видео'}
+          </button>
+        )}
 
         <input
           type="range"
