@@ -15,13 +15,16 @@
 
 import { Logo } from './Logo';
 
-export type Surface = 'index' | 'map' | 'timelapse' | 'forecast' | 'citizen';
+export type Surface = 'index' | 'map' | 'timelapse' | 'forecast' | 'citizen' | 'label';
 
 const LINKS: [Surface, string, string][] = [
   ['map', './map.html', 'Карта'],
   ['timelapse', './timelapse.html', 'Как росло'],
   ['forecast', './forecast.html', 'Прогноз'],
   ['citizen', './citizen.html', 'Жителям'],
+  // Разметка — инструмент, а не витрина, и стоит в конце: жюри она не
+  // нужна, а команде без неё не обучить сеть.
+  ['label', './label.html', 'Разметка'],
 ];
 
 export function Nav({ current, children }: { current: Surface; children?: React.ReactNode }) {

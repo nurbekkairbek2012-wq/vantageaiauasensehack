@@ -21,6 +21,7 @@ export default defineConfig({
         timelapse: resolve(__dirname, 'timelapse.html'),
         forecast: resolve(__dirname, 'forecast.html'),
         citizen: resolve(__dirname, 'citizen.html'),
+        label: resolve(__dirname, 'label.html'),
       },
     },
   },
