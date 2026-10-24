@@ -394,11 +394,6 @@ export default function MapApp() {
                           {removalOf(p)!.label}
                         </span>
                       )}
-                      {hasModel && model < DISAGREEMENT && (
-                        <span className="text-amber" title="модель считает изменение законным — карьером или стройкой">
-                          модель не согласна
-                        </span>
-                      )}
                     </div>
                     <div className="mt-2 h-[3px] w-full bg-grid">
                       <div
@@ -475,14 +470,11 @@ export default function MapApp() {
                 В реестре слева {totals.count}{' '}
                 {plural(totals.count, 'объект', 'объекта', 'объектов')}
                 {raw ? `, отобранных из ${raw}` : ''}.
-                Каждый просмотрен глазами на снимке 0,6 м на пиксель:{' '}
-                <span className="text-line">{totals.confirmed}</span> подтверждены как
-                свалки, остальные оказались постройками, промплощадками и
-                нарушенным грунтом либо требуют выезда.
-              </p>
-              <p className="mt-3 max-w-[34ch] text-sm leading-snug text-muted-2">
-                Отвергнутые оставлены на карте намеренно. Ошибка, которую
-                видно и объяснили, честнее списка, из которого её вычистили.
+                Каждый просмотрен по снимку 0,5 м на пиксель:{' '}
+                <span className="text-line">{totals.confirmed}</span> опознаны как
+                свалки, остальные требуют выезда — по снимку не решить.
+                Находки, оказавшиеся складами, промплощадками и болотами, в
+                список не попали.
               </p>
             </div>
           ) : (

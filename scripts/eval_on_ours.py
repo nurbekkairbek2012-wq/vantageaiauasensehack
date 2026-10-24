@@ -48,6 +48,12 @@ CANDIDATES = Path("outputs_real/candidates.geojson")
 CACHE = Path("data/highres")
 MODEL = Path("models/aerialwaste_chip.joblib")
 
+# Модель выбирается ключом --model: моделей стало несколько, и сравнивать
+# их надо одной и той же проверкой, а не разными скриптами.
+for _i, _a in enumerate(sys.argv):
+    if _a == "--model" and _i + 1 < len(sys.argv):
+        MODEL = Path(sys.argv[_i + 1])
+
 #: Вердикт разметки -> метка. «Не понятно» выброшено: объект, про который
 #: человек не смог решить, измерял бы нашу неуверенность, а не модель.
 VERDICT = {"landfill": 1, "not_landfill": 0}

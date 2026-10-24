@@ -1,9 +1,9 @@
 {
  "counts": {
-  "active": 20,
+  "active": 47,
   "possibly_removed": 1,
   "possibly_covered": 0,
-  "insufficient_data": 0
+  "insufficient_data": 1
  },
  "needs_field_check": [],
  "objects": [
@@ -330,6 +330,442 @@
     "ndvi_recovered": false,
     "bsi_normalized": false,
     "thermal_gone": true
+   },
+   "note": "объект активен: признаков устранения нет",
+   "warnings": []
+  },
+  {
+   "candidate_id": "C00199",
+   "status": "active",
+   "confidence": 0.0,
+   "n_agreeing": 2,
+   "n_observations": 43,
+   "consecutive_passes": 0,
+   "signals": {
+    "ndvi_recovered": false,
+    "bsi_normalized": true,
+    "thermal_gone": true
+   },
+   "note": "объект активен: признаков устранения нет",
+   "warnings": [
+    "признаки устранения есть, но подтверждены только на 0 проходах подряд из 2 нужных"
+   ]
+  },
+  {
+   "candidate_id": "C00200",
+   "status": "active",
+   "confidence": 0.0,
+   "n_agreeing": 1,
+   "n_observations": 36,
+   "consecutive_passes": 0,
+   "signals": {
+    "ndvi_recovered": false,
+    "bsi_normalized": false,
+    "thermal_gone": true
+   },
+   "note": "объект активен: признаков устранения нет",
+   "warnings": []
+  },
+  {
+   "candidate_id": "C00219",
+   "status": "active",
+   "confidence": 0.0,
+   "n_agreeing": 2,
+   "n_observations": 15,
+   "consecutive_passes": 0,
+   "signals": {
+    "ndvi_recovered": false,
+    "bsi_normalized": true,
+    "thermal_gone": true
+   },
+   "note": "объект активен: признаков устранения нет",
+   "warnings": [
+    "признаки устранения есть, но подтверждены только на 0 проходах подряд из 2 нужных"
+   ]
+  },
+  {
+   "candidate_id": "C00221",
+   "status": "active",
+   "confidence": 0.0,
+   "n_agreeing": 2,
+   "n_observations": 53,
+   "consecutive_passes": 0,
+   "signals": {
+    "ndvi_recovered": false,
+    "bsi_normalized": true,
+    "thermal_gone": true
+   },
+   "note": "объект активен: признаков устранения нет",
+   "warnings": [
+    "признаки устранения есть, но подтверждены только на 0 проходах подряд из 2 нужных"
+   ]
+  },
+  {
+   "candidate_id": "C00223",
+   "status": "active",
+   "confidence": 0.0,
+   "n_agreeing": 2,
+   "n_observations": 41,
+   "consecutive_passes": 0,
+   "signals": {
+    "ndvi_recovered": false,
+    "bsi_normalized": true,
+    "thermal_gone": true
+   },
+   "note": "объект активен: признаков устранения нет",
+   "warnings": [
+    "признаки устранения есть, но подтверждены только на 0 проходах подряд из 2 нужных"
+   ]
+  },
+  {
+   "candidate_id": "C00224",
+   "status": "active",
+   "confidence": 0.0,
+   "n_agreeing": 2,
+   "n_observations": 36,
+   "consecutive_passes": 0,
+   "signals": {
+    "ndvi_recovered": false,
+    "bsi_normalized": true,
+    "thermal_gone": true
+   },
+   "note": "объект активен: признаков устранения нет",
+   "warnings": [
+    "признаки устранения есть, но подтверждены только на 0 проходах подряд из 2 нужных"
+   ]
+  },
+  {
+   "candidate_id": "C00225",
+   "status": "active",
+   "confidence": 0.0,
+   "n_agreeing": 1,
+   "n_observations": 20,
+   "consecutive_passes": 0,
+   "signals": {
+    "ndvi_recovered": false,
+    "bsi_normalized": false,
+    "thermal_gone": true
+   },
+   "note": "объект активен: признаков устранения нет",
+   "warnings": []
+  },
+  {
+   "candidate_id": "C00244",
+   "status": "active",
+   "confidence": 0.0,
+   "n_agreeing": 1,
+   "n_observations": 46,
+   "consecutive_passes": 0,
+   "signals": {
+    "ndvi_recovered": false,
+    "bsi_normalized": false,
+    "thermal_gone": true
+   },
+   "note": "объект активен: признаков устранения нет",
+   "warnings": []
+  },
+  {
+   "candidate_id": "C00245",
+   "status": "active",
+   "confidence": 0.0,
+   "n_agreeing": 2,
+   "n_observations": 36,
+   "consecutive_passes": 0,
+   "signals": {
+    "ndvi_recovered": false,
+    "bsi_normalized": true,
+    "thermal_gone": true
+   },
+   "note": "объект активен: признаков устранения нет",
+   "warnings": [
+    "признаки устранения есть, но подтверждены только на 0 проходах подряд из 2 нужных"
+   ]
+  },
+  {
+   "candidate_id": "C00248",
+   "status": "active",
+   "confidence": 0.0,
+   "n_agreeing": 0,
+   "n_observations": 15,
+   "consecutive_passes": 0,
+   "signals": {
+    "ndvi_recovered": false,
+    "bsi_normalized": false,
+    "thermal_gone": false
+   },
+   "note": "объект активен: признаков устранения нет",
+   "warnings": []
+  },
+  {
+   "candidate_id": "C00252",
+   "status": "active",
+   "confidence": 0.0,
+   "n_agreeing": 1,
+   "n_observations": 39,
+   "consecutive_passes": 0,
+   "signals": {
+    "ndvi_recovered": false,
+    "bsi_normalized": false,
+    "thermal_gone": true
+   },
+   "note": "объект активен: признаков устранения нет",
+   "warnings": []
+  },
+  {
+   "candidate_id": "C00253",
+   "status": "insufficient_data",
+   "confidence": 0.0,
+   "n_agreeing": 0,
+   "n_observations": 0,
+   "consecutive_passes": 0,
+   "signals": {},
+   "note": "данных после обнаружения недостаточно (0 наблюдений)",
+   "warnings": [
+    "после обнаружения всего 0 наблюдений, нужно минимум 4"
+   ]
+  },
+  {
+   "candidate_id": "C00258",
+   "status": "active",
+   "confidence": 0.0,
+   "n_agreeing": 1,
+   "n_observations": 53,
+   "consecutive_passes": 0,
+   "signals": {
+    "ndvi_recovered": false,
+    "bsi_normalized": true,
+    "thermal_gone": false
+   },
+   "note": "объект активен: признаков устранения нет",
+   "warnings": []
+  },
+  {
+   "candidate_id": "C00263",
+   "status": "active",
+   "confidence": 0.0,
+   "n_agreeing": 2,
+   "n_observations": 53,
+   "consecutive_passes": 0,
+   "signals": {
+    "ndvi_recovered": false,
+    "bsi_normalized": true,
+    "thermal_gone": true
+   },
+   "note": "объект активен: признаков устранения нет",
+   "warnings": [
+    "признаки устранения есть, но подтверждены только на 0 проходах подряд из 2 нужных"
+   ]
+  },
+  {
+   "candidate_id": "C00313",
+   "status": "active",
+   "confidence": 0.0,
+   "n_agreeing": 0,
+   "n_observations": 33,
+   "consecutive_passes": 0,
+   "signals": {
+    "ndvi_recovered": false,
+    "bsi_normalized": false,
+    "thermal_gone": false
+   },
+   "note": "объект активен: признаков устранения нет",
+   "warnings": []
+  },
+  {
+   "candidate_id": "C00317",
+   "status": "active",
+   "confidence": 0.0,
+   "n_agreeing": 1,
+   "n_observations": 15,
+   "consecutive_passes": 0,
+   "signals": {
+    "ndvi_recovered": false,
+    "bsi_normalized": false,
+    "thermal_gone": true
+   },
+   "note": "объект активен: признаков устранения нет",
+   "warnings": []
+  },
+  {
+   "candidate_id": "C00318",
+   "status": "active",
+   "confidence": 0.0,
+   "n_agreeing": 1,
+   "n_observations": 16,
+   "consecutive_passes": 0,
+   "signals": {
+    "ndvi_recovered": false,
+    "bsi_normalized": true,
+    "thermal_gone": false
+   },
+   "note": "объект активен: признаков устранения нет",
+   "warnings": []
+  },
+  {
+   "candidate_id": "C00319",
+   "status": "active",
+   "confidence": 0.0,
+   "n_agreeing": 1,
+   "n_observations": 36,
+   "consecutive_passes": 4,
+   "signals": {
+    "ndvi_recovered": false,
+    "bsi_normalized": false,
+    "thermal_gone": true
+   },
+   "note": "объект активен: признаков устранения нет",
+   "warnings": []
+  },
+  {
+   "candidate_id": "C00323",
+   "status": "active",
+   "confidence": 0.0,
+   "n_agreeing": 2,
+   "n_observations": 16,
+   "consecutive_passes": 0,
+   "signals": {
+    "ndvi_recovered": false,
+    "bsi_normalized": true,
+    "thermal_gone": true
+   },
+   "note": "объект активен: признаков устранения нет",
+   "warnings": [
+    "признаки устранения есть, но подтверждены только на 0 проходах подряд из 2 нужных"
+   ]
+  },
+  {
+   "candidate_id": "C00324",
+   "status": "active",
+   "confidence": 0.0,
+   "n_agreeing": 1,
+   "n_observations": 41,
+   "consecutive_passes": 0,
+   "signals": {
+    "ndvi_recovered": false,
+    "bsi_normalized": true,
+    "thermal_gone": false
+   },
+   "note": "объект активен: признаков устранения нет",
+   "warnings": []
+  },
+  {
+   "candidate_id": "C00325",
+   "status": "active",
+   "confidence": 0.0,
+   "n_agreeing": 2,
+   "n_observations": 47,
+   "consecutive_passes": 0,
+   "signals": {
+    "ndvi_recovered": false,
+    "bsi_normalized": true,
+    "thermal_gone": true
+   },
+   "note": "объект активен: признаков устранения нет",
+   "warnings": [
+    "признаки устранения есть, но подтверждены только на 0 проходах подряд из 2 нужных"
+   ]
+  },
+  {
+   "candidate_id": "C00326",
+   "status": "active",
+   "confidence": 0.0,
+   "n_agreeing": 0,
+   "n_observations": 56,
+   "consecutive_passes": 0,
+   "signals": {
+    "ndvi_recovered": false,
+    "bsi_normalized": false,
+    "thermal_gone": false
+   },
+   "note": "объект активен: признаков устранения нет",
+   "warnings": []
+  },
+  {
+   "candidate_id": "C00327",
+   "status": "active",
+   "confidence": 0.0,
+   "n_agreeing": 0,
+   "n_observations": 56,
+   "consecutive_passes": 0,
+   "signals": {
+    "ndvi_recovered": false,
+    "bsi_normalized": false,
+    "thermal_gone": false
+   },
+   "note": "объект активен: признаков устранения нет",
+   "warnings": []
+  },
+  {
+   "candidate_id": "C00328",
+   "status": "active",
+   "confidence": 0.0,
+   "n_agreeing": 0,
+   "n_observations": 17,
+   "consecutive_passes": 0,
+   "signals": {
+    "ndvi_recovered": false,
+    "bsi_normalized": false,
+    "thermal_gone": false
+   },
+   "note": "объект активен: признаков устранения нет",
+   "warnings": []
+  },
+  {
+   "candidate_id": "C00331",
+   "status": "active",
+   "confidence": 0.0,
+   "n_agreeing": 0,
+   "n_observations": 50,
+   "consecutive_passes": 0,
+   "signals": {
+    "ndvi_recovered": false,
+    "bsi_normalized": false,
+    "thermal_gone": false
+   },
+   "note": "объект активен: признаков устранения нет",
+   "warnings": []
+  },
+  {
+   "candidate_id": "C00332",
+   "status": "active",
+   "confidence": 0.0,
+   "n_agreeing": 1,
+   "n_observations": 16,
+   "consecutive_passes": 0,
+   "signals": {
+    "ndvi_recovered": false,
+    "bsi_normalized": true,
+    "thermal_gone": false
+   },
+   "note": "объект активен: признаков устранения нет",
+   "warnings": []
+  },
+  {
+   "candidate_id": "C00333",
+   "status": "active",
+   "confidence": 0.0,
+   "n_agreeing": 1,
+   "n_observations": 52,
+   "consecutive_passes": 0,
+   "signals": {
+    "ndvi_recovered": false,
+    "bsi_normalized": true,
+    "thermal_gone": false
+   },
+   "note": "объект активен: признаков устранения нет",
+   "warnings": []
+  },
+  {
+   "candidate_id": "C00334",
+   "status": "active",
+   "confidence": 0.0,
+   "n_agreeing": 0,
+   "n_observations": 31,
+   "consecutive_passes": 0,
+   "signals": {
+    "ndvi_recovered": false,
+    "bsi_normalized": false,
+    "thermal_gone": false
    },
    "note": "объект активен: признаков устранения нет",
    "warnings": []

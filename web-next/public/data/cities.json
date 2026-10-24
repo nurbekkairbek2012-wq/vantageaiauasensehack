@@ -1,32 +1,42 @@
 [
  {
   "id": "astana",
-  "name": "Астана",
+  "name": "Астана · северная промзона",
   "center": [
    51.21,
    71.5
   ],
   "zoom": 11,
-  "count": 21
+  "count": 14
  },
  {
-  "id": "almaty",
-  "name": "Алматы",
+  "id": "astana_east",
+  "name": "Астана · восток",
   "center": [
-   43.45,
-   76.68
+   51.19,
+   71.8
   ],
-  "zoom": 12,
+  "zoom": 11,
   "count": 0
  },
  {
-  "id": "shymkent",
-  "name": "Шымкент",
+  "id": "astana_southeast",
+  "name": "Астана · юго-восток",
   "center": [
-   42.33,
-   69.8
+   51.1,
+   71.74
   ],
-  "zoom": 12,
+  "zoom": 11,
+  "count": 2
+ },
+ {
+  "id": "astana_west",
+  "name": "Астана · запад",
+  "center": [
+   51.16,
+   71.22
+  ],
+  "zoom": 11,
   "count": 0
  }
 ]
