@@ -293,3 +293,83 @@ class TestAgeEntersTheMethaneModel:
 
         a = assess(3000.0, self._economics(), age_years=40.0)
         assert a.co2e_preventable_t.p50 >= 0.0
+
+# --------------------------------------------------------------------------- #
+#  Интервал по списку объектов
+# --------------------------------------------------------------------------- #
+
+
+class TestPortfolio:
+    """Сумма интервалов и интервал суммы — разные величины.
+
+    Это единственное место в проекте, где ошибка не видна глазом: сложить
+    P10 всех объектов легко, выглядит правдоподобно и даёт заведомо
+    неверный ответ. Поэтому свойства проверяются, а не подразумеваются.
+    """
+
+    @staticmethod
+    def _economics():
+        return load_economics()
+
+    def test_matches_assess_on_single_object(self):
+        """На одном объекте портфель обязан совпасть с обычной оценкой.
+
+        Разойдись они — значит, розыгрыш общих допущений сдвинул
+        последовательность генератора, и все опубликованные числа тихо
+        поменялись бы при следующем прогоне.
+        """
+        from vantage.money import assess, portfolio
+
+        e = self._economics()
+        one = assess(3000.0, e, age_years=2.0)
+        whole = portfolio([(3000.0, 2.0)], e)
+        # Не побитовое равенство: общие допущения разыгрываются раньше
+        # объектных, и порядок обращений к генератору другой. Совпадать
+        # обязано распределение, а не конкретная выборка.
+        assert whole["net_damage_kzt"].p50 == pytest.approx(one.net_damage_kzt.p50, rel=0.03)
+        assert whole["mass_t"].p50 == pytest.approx(one.mass_t.p50, rel=0.03)
+
+    def test_interval_narrower_than_sum_of_intervals(self):
+        """Правильный интервал по пятнадцати объектам у́же наивной суммы."""
+        from vantage.money import assess, portfolio
+
+        e = self._economics()
+        items = [(500.0 * i, 1.0 + i * 0.3) for i in range(1, 16)]
+        whole = portfolio(items, e)
+        each = [assess(area, e, age_years=age) for area, age in items]
+        naive_low = sum(a.net_damage_kzt.p10 for a in each)
+        naive_high = sum(a.net_damage_kzt.p90 for a in each)
+
+        assert whole["net_damage_kzt"].p90 - whole["net_damage_kzt"].p10 < naive_high - naive_low
+
+    def test_prices_stay_correlated_across_objects(self):
+        """Общие допущения не дают интервалу схлопнуться до нуля.
+
+        Если бы тариф на вывоз разыгрывался по каждому объекту заново,
+        разброс по списку падал бы как корень из числа объектов, и на
+        пятнадцати объектах интервал стал бы неправдоподобно узким. Он
+        обязан остаться того же порядка, что относительный разброс по
+        одному объекту.
+        """
+        from vantage.money import assess, portfolio
+
+        e = self._economics()
+        items = [(2000.0, 2.0)] * 15
+        whole = portfolio(items, e)
+        one = assess(2000.0, e, age_years=2.0)
+
+        spread_one = (one.net_damage_kzt.p90 - one.net_damage_kzt.p10) / one.net_damage_kzt.p50
+        spread_all = (
+            whole["net_damage_kzt"].p90 - whole["net_damage_kzt"].p10
+        ) / whole["net_damage_kzt"].p50
+        # Половина относительного разброса одного объекта — граница с
+        # запасом: независимые допущения по кучам разброс всё же сужают,
+        # но не в четыре раза, как было бы при полной независимости.
+        assert spread_all > spread_one * 0.5
+
+    def test_empty_list_is_an_error(self):
+        """Пустой список — не ноль ущерба, а вопрос к вызывающему коду."""
+        from vantage.money import portfolio
+
+        with pytest.raises(ValueError):
+            portfolio([], self._economics())

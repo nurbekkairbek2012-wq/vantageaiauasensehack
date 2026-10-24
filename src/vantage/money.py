@@ -28,6 +28,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -144,15 +145,100 @@ def assess(
     rng = np.random.default_rng(seed if seed is not None else mc["seed"])
     percentiles = tuple(mc.get("report_percentiles", (10, 50, 90)))  # type: ignore[assignment]
 
+    draw = _draw(
+        area_m2,
+        economics,
+        rng,
+        n,
+        depth_class=depth_class,
+        distance_to_landfill_km=distance_to_landfill_km,
+        age_years=age_years,
+    )
+
+    # --- 6. Штраф (считается отдельно, не входит в ущерб) ----------------- #
+    penalty_mrp, penalty_article = _penalty_mrp(economics, violator, article)
+    mrp_value = economics.scalar("mrp_kzt", "value")
+
+    return DamageAssessment(
+        area_m2=area_m2,
+        depth_class=depth_class,
+        distance_to_landfill_km=distance_to_landfill_km,
+        violator=violator,
+        volume_m3=Percentiles.of(draw["volume_m3"], percentiles),
+        mass_t=Percentiles.of(draw["mass_t"], percentiles),
+        removal_cost_kzt=Percentiles.of(draw["removal_cost_kzt"], percentiles),
+        recyclable_value_kzt=Percentiles.of(draw["recyclable_value_kzt"], percentiles),
+        ch4_t=Percentiles.of(draw["ch4_t"], percentiles),
+        co2e_t=Percentiles.of(draw["co2e_t"], percentiles),
+        co2e_emitted_t=Percentiles.of(draw["co2e_emitted_t"], percentiles),
+        co2e_preventable_t=Percentiles.of(draw["co2e_preventable_t"], percentiles),
+        age_years=float(age_years),
+        climate_cost_kzt=Percentiles.of(draw["climate_cost_kzt"], percentiles),
+        net_damage_kzt=Percentiles.of(draw["net_damage_kzt"], percentiles),
+        penalty_mrp=penalty_mrp,
+        penalty_kzt=penalty_mrp * mrp_value,
+        penalty_article=penalty_article,
+        iterations=n,
+    )
+
+
+#: Допущения, общие для всех объектов одного города.
+#:
+#: Разделение принципиальное, и без него сумма по списку считается
+#: неправильно. Тариф на вывоз тонны, прайс приёмки вторсырья и цена
+#: углеродной единицы — величины рынка: если вывоз стоит дорого, он стоит
+#: дорого сразу для всех пятнадцати объектов. Разыгрывать их заново на
+#: каждый объект значит предполагать, что дорогой вывоз одной свалки
+#: компенсируется дешёвым вывозом соседней. Такая «диверсификация»
+#: существует только в арифметике: она сужает интервал по списку тем
+#: сильнее, чем больше объектов, и на пятнадцати даёт видимость точности,
+#: которой нет.
+#:
+#: Остальные допущения — глубина, плотность, доля органики, извлекаемость
+#: фракции — свойства конкретной кучи и разыгрываются по каждой отдельно.
+SHARED_ASSUMPTIONS: tuple[str, ...] = (
+    "base_cost", "surcharge", "carbon_price", "k",
+    *(f"price_{fraction}" for fraction in RECYCLABLE_FRACTIONS),
+)
+
+
+def _draw(
+    area_m2: float,
+    economics: Economics,
+    rng: np.random.Generator,
+    n: int,
+    *,
+    depth_class: DepthClass = "medium",
+    distance_to_landfill_km: float = 15.0,
+    age_years: float = 0.0,
+    shared: dict[str, np.ndarray] | None = None,
+) -> dict[str, np.ndarray]:
+    """Один розыгрыш Монте-Карло по одному объекту: массивы длины ``n``.
+
+    Вынесено из :func:`assess` не ради красоты, а потому что тот же
+    розыгрыш нужен :func:`portfolio` — там нельзя складывать готовые
+    процентили, там нужно складывать сами итерации.
+
+    ``shared`` — уже разыгранные общерыночные допущения (см.
+    :data:`SHARED_ASSUMPTIONS`). Если его нет, всё разыгрывается здесь, и
+    порядок обращений к ``rng`` в точности тот же, что был до выделения
+    функции: иначе при том же зерне поменялись бы все опубликованные числа.
+    """
+
+    def take(key: str, *path: str) -> np.ndarray:
+        if shared is not None and key in shared:
+            return shared[key]
+        return economics.triangular(*path).sample(rng, n)
+
     # --- 1. Геометрия: объём и масса ------------------------------------- #
-    depth = economics.triangular("depth_class_m", depth_class).sample(rng, n)
-    density = economics.triangular("waste_density_t_per_m3").sample(rng, n)
+    depth = take("depth", "depth_class_m", depth_class)
+    density = take("density", "waste_density_t_per_m3")
     volume = area_m2 * depth
     mass = volume * density
 
     # --- 2. Стоимость ликвидации ----------------------------------------- #
-    base_cost = economics.triangular("removal_cost_kzt_per_t").sample(rng, n)
-    surcharge = economics.triangular("transport_surcharge_per_km_kzt_per_t").sample(rng, n)
+    base_cost = take("base_cost", "removal_cost_kzt_per_t")
+    surcharge = take("surcharge", "transport_surcharge_per_km_kzt_per_t")
     base_radius = economics.scalar("transport_surcharge_per_km_kzt_per_t", "base_radius_km")
     extra_km = max(0.0, distance_to_landfill_km - base_radius)
     removal_cost = mass * (base_cost + surcharge * extra_km)
@@ -164,15 +250,15 @@ def assess(
         share = float(morphology.get(fraction, 0.0))
         if share <= 0:
             continue
-        price_per_kg = economics.triangular("recyclable_price_kzt_per_kg", fraction).sample(rng, n)
-        recovery = economics.triangular("recovery_rate", fraction).sample(rng, n)
+        price_per_kg = take(f"price_{fraction}", "recyclable_price_kzt_per_kg", fraction)
+        recovery = take(f"recovery_{fraction}", "recovery_rate", fraction)
         # масса фракции в тоннах -> килограммы -> тенге
         recyclable_value += mass * share * recovery * 1000.0 * price_per_kg
 
     # --- 4. Климатический ущерб ------------------------------------------ #
     methane_cfg = economics.section("methane")
-    doc = economics.triangular("methane", "doc_fraction").sample(rng, n)
-    k = economics.triangular("methane", "k_rate_per_year").sample(rng, n)
+    doc = take("doc", "methane", "doc_fraction")
+    k = take("k", "methane", "k_rate_per_year")
     organic_share = float(morphology.get("organic", 0.0))
 
     ch4_t = ch4_model.cumulative_ch4(
@@ -186,7 +272,7 @@ def assess(
         years=int(methane_cfg["horizon_years"]),
     )
     co2e_t = ch4_model.to_co2e(ch4_t, float(methane_cfg["gwp_ch4_20yr"]))
-    carbon_price = economics.triangular("carbon_price_kzt_per_t_co2e").sample(rng, n)
+    carbon_price = take("carbon_price", "carbon_price_kzt_per_t_co2e")
     # Климатический ущерб считается по ПОЛНОМУ горизонту, а не по остатку.
     #
     # Выбор осознанный, и на защите его спросят. Ущерб — это вред, который
@@ -231,31 +317,85 @@ def assess(
     # такую свалку выгодно разобрать, а не просто вывезти на полигон.
     net_damage = removal_cost - recyclable_value + climate_cost
 
-    # --- 6. Штраф (считается отдельно, не входит в ущерб) ----------------- #
-    penalty_mrp, penalty_article = _penalty_mrp(economics, violator, article)
-    mrp_value = economics.scalar("mrp_kzt", "value")
+    return {
+        "volume_m3": volume,
+        "mass_t": mass,
+        "removal_cost_kzt": removal_cost,
+        "recyclable_value_kzt": recyclable_value,
+        "ch4_t": ch4_t,
+        "co2e_t": co2e_t,
+        "co2e_emitted_t": co2e_emitted_t,
+        "co2e_preventable_t": co2e_preventable_t,
+        "climate_cost_kzt": climate_cost,
+        "net_damage_kzt": net_damage,
+    }
 
-    return DamageAssessment(
-        area_m2=area_m2,
-        depth_class=depth_class,
-        distance_to_landfill_km=distance_to_landfill_km,
-        violator=violator,
-        volume_m3=Percentiles.of(volume, percentiles),
-        mass_t=Percentiles.of(mass, percentiles),
-        removal_cost_kzt=Percentiles.of(removal_cost, percentiles),
-        recyclable_value_kzt=Percentiles.of(recyclable_value, percentiles),
-        ch4_t=Percentiles.of(ch4_t, percentiles),
-        co2e_t=Percentiles.of(co2e_t, percentiles),
-        co2e_emitted_t=Percentiles.of(co2e_emitted_t, percentiles),
-        co2e_preventable_t=Percentiles.of(co2e_preventable_t, percentiles),
-        age_years=float(age_years),
-        climate_cost_kzt=Percentiles.of(climate_cost, percentiles),
-        net_damage_kzt=Percentiles.of(net_damage, percentiles),
-        penalty_mrp=penalty_mrp,
-        penalty_kzt=penalty_mrp * mrp_value,
-        penalty_article=penalty_article,
-        iterations=n,
-    )
+
+def portfolio(
+    items: Sequence[tuple[float, float]],
+    economics: Economics,
+    *,
+    depth_class: DepthClass = "medium",
+    distance_to_landfill_km: float = 15.0,
+    iterations: int | None = None,
+    seed: int | None = None,
+) -> dict[str, Percentiles]:
+    """Интервал по СПИСКУ объектов, а не сумма интервалов по каждому.
+
+    ``items`` — пары «площадь в м², возраст в годах».
+
+    Зачем отдельно от :func:`assess`
+    --------------------------------
+    Сложить P10 всех объектов и назвать это нижней границей по списку —
+    ошибка, и на техническом Q&A её находят первой. Сумма десятых
+    процентилей отвечает на вопрос «сколько выйдет, если КАЖДЫЙ из
+    пятнадцати объектов одновременно окажется дешевле, чем в девяти
+    случаях из десяти» — событие куда менее вероятное, чем один шанс из
+    десяти, который обещает подпись «P10».
+
+    Здесь складываются итерации: на каждой из двадцати тысяч разыгрывается
+    весь список сразу, и процентили берутся уже от суммы. Общерыночные
+    допущения (:data:`SHARED_ASSUMPTIONS`) при этом разыгрываются один раз
+    на итерацию и применяются ко всем объектам — тариф на вывоз в городе
+    один.
+
+    Интервал выходит у́же наивной суммы, и это не подгонка: разброс сужают
+    независимые физические допущения по каждой куче, а зависимые — цены —
+    остаются общими и продолжают двигать итог целиком.
+    """
+    if not items:
+        raise ValueError("список объектов пуст")
+
+    mc = economics.section("monte_carlo")
+    n = int(iterations or mc["iterations"])
+    rng = np.random.default_rng(seed if seed is not None else mc["seed"])
+    percentiles = tuple(mc.get("report_percentiles", (10, 50, 90)))  # type: ignore[assignment]
+
+    shared = {
+        "base_cost": economics.triangular("removal_cost_kzt_per_t").sample(rng, n),
+        "surcharge": economics.triangular("transport_surcharge_per_km_kzt_per_t").sample(rng, n),
+        "carbon_price": economics.triangular("carbon_price_kzt_per_t_co2e").sample(rng, n),
+        "k": economics.triangular("methane", "k_rate_per_year").sample(rng, n),
+    }
+    for fraction in RECYCLABLE_FRACTIONS:
+        shared[f"price_{fraction}"] = economics.triangular(
+            "recyclable_price_kzt_per_kg", fraction).sample(rng, n)
+
+    total: dict[str, np.ndarray] = {}
+    for area_m2, age_years in items:
+        if area_m2 <= 0:
+            continue
+        draw = _draw(
+            area_m2, economics, rng, n,
+            depth_class=depth_class,
+            distance_to_landfill_km=distance_to_landfill_km,
+            age_years=age_years,
+            shared=shared,
+        )
+        for key, values in draw.items():
+            total[key] = total[key] + values if key in total else values.copy()
+
+    return {key: Percentiles.of(values, percentiles) for key, values in total.items()}
 
 
 def _penalty_mrp(
@@ -351,5 +491,6 @@ __all__ = [
     "DamageAssessment",
     "Percentiles",
     "assess",
+    "portfolio",
     "sensitivity",
 ]
