@@ -1,303 +1,38 @@
-00:21:26 Кольцо: 406 км²
-00:21:37 STAC sentinel-2-l2a: найдено 805 сцен для astana_north_x000y000 (2018-01-01..2026-08-01)
-00:22:05 Загружен куб S2: 442 дат, 468 x 515 пикселей
-00:22:15 Месячных композитов после отбраковки: 61
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-Exception ignored in: 'rasterio._env.log_error'
-Traceback (most recent call last):
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-Exception ignored in: 'rasterio._env.log_error'
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-Exception ignored in: 'rasterio._env.log_error'
-Traceback (most recent call last):
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-Traceback (most recent call last):
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-Exception ignored in: 'rasterio._env.log_error'
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-Traceback (most recent call last):
-Exception ignored in: 'rasterio._env.log_error'
-Traceback (most recent call last):
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-Exception ignored in: 'rasterio._env.log_error'
-Traceback (most recent call last):
-Exception ignored in: 'rasterio._env.log_error'
-Traceback (most recent call last):
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-Exception ignored in: 'rasterio._env.log_error'
-Traceback (most recent call last):
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-Exception ignored in: 'rasterio._env.log_error'
-Traceback (most recent call last):
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-Exception ignored in: 'rasterio._env.log_error'
-Traceback (most recent call last):
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-00:22:24 astana_north_x000y000: попытка 1 из 2 не удалась ('utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte), повтор через 20 с
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-Exception ignored in: 'rasterio._env.log_error'
-Traceback (most recent call last):
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-Exception ignored in: 'rasterio._env.log_error'
-Traceback (most recent call last):
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-00:22:52 STAC sentinel-2-l2a: найдено 805 сцен для astana_north_x000y000 (2018-01-01..2026-08-01)
-00:23:14 Загружен куб S2: 442 дат, 468 x 515 пикселей
-00:23:22 Месячных композитов после отбраковки: 61
-00:23:28 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/30/S2C_MSIL2A_20260730T062631_N0512_R077_T42UXB_20260730T095214.SAFE/GRANULE/L2A_T42UXB_A009914_20260730T063001/IMG_DATA/R10m/T42UXB_20260730T062631_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:23:28 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/30/S2C_MSIL2A_20260730T062631_N0512_R077_T42UXB_20260730T095214.SAFE/GRANULE/L2A_T42UXB_A009914_20260730T063001/IMG_DATA/R10m/T42UXB_20260730T062631_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:23:28 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/05/S2B_MSIL2A_20260705T062629_N0512_R077_T42UXB_20260705T085321.SAFE/GRANULE/L2A_T42UXB_A048723_20260705T063135/IMG_DATA/R20m/T42UXB_20260705T062629_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:23:28 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/12/S2B_MSIL2A_20260712T061629_N0512_R034_T42UXB_20260712T084310.SAFE/GRANULE/L2A_T42UXB_A048823_20260712T062302/IMG_DATA/R20m/T42UXB_20260712T061629_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:23:28 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/12/S2B_MSIL2A_20260712T061629_N0512_R034_T42UXB_20260712T084310.SAFE/GRANULE/L2A_T42UXB_A048823_20260712T062302/IMG_DATA/R10m/T42UXB_20260712T061629_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:23:28 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/30/S2C_MSIL2A_20260730T062631_N0512_R077_T42UXB_20260730T095214.SAFE/GRANULE/L2A_T42UXB_A009914_20260730T063001/IMG_DATA/R20m/T42UXB_20260730T062631_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:23:28 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/05/S2B_MSIL2A_20260705T062629_N0512_R077_T42UXB_20260705T085321.SAFE/GRANULE/L2A_T42UXB_A048723_20260705T063135/IMG_DATA/R20m/T42UXB_20260705T062629_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:23:28 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/10/S2C_MSIL2A_20260710T062631_N0512_R077_T42UXB_20260710T095556.SAFE/GRANULE/L2A_T42UXB_A009628_20260710T063043/IMG_DATA/R20m/T42UXB_20260710T062631_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:23:28 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/27/S2C_MSIL2A_20260727T061631_N0512_R034_T42UXB_20260727T094010.SAFE/GRANULE/L2A_T42UXB_A009871_20260727T062413/IMG_DATA/R10m/T42UXB_20260727T061631_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:23:28 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/05/S2B_MSIL2A_20260705T062629_N0512_R077_T42UXB_20260705T085321.SAFE/GRANULE/L2A_T42UXB_A048723_20260705T063135/IMG_DATA/R10m/T42UXB_20260705T062629_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:23:28 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/10/S2C_MSIL2A_20260710T062631_N0512_R077_T42UXB_20260710T095556.SAFE/GRANULE/L2A_T42UXB_A009628_20260710T063043/IMG_DATA/R10m/T42UXB_20260710T062631_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:23:28 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/12/S2B_MSIL2A_20260712T061629_N0512_R034_T42UXB_20260712T084310.SAFE/GRANULE/L2A_T42UXB_A048823_20260712T062302/IMG_DATA/R20m/T42UXB_20260712T061629_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:23:28 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/12/S2B_MSIL2A_20260712T061629_N0512_R034_T42UXB_20260712T084310.SAFE/GRANULE/L2A_T42UXB_A048823_20260712T062302/IMG_DATA/R10m/T42UXB_20260712T061629_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:23:28 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/25/S2B_MSIL2A_20260725T062629_N0512_R077_T42UXB_20260725T085340.SAFE/GRANULE/L2A_T42UXB_A049009_20260725T063329/IMG_DATA/R20m/T42UXB_20260725T062629_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:23:28 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/10/S2C_MSIL2A_20260710T062631_N0512_R077_T42UXB_20260710T095556.SAFE/GRANULE/L2A_T42UXB_A009628_20260710T063043/IMG_DATA/R10m/T42UXB_20260710T062631_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:23:28 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/05/S2B_MSIL2A_20260705T062629_N0512_R077_T42UXB_20260705T085321.SAFE/GRANULE/L2A_T42UXB_A048723_20260705T063135/IMG_DATA/R10m/T42UXB_20260705T062629_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:23:28 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/27/S2C_MSIL2A_20260727T061631_N0512_R034_T42UXB_20260727T094010.SAFE/GRANULE/L2A_T42UXB_A009871_20260727T062413/IMG_DATA/R10m/T42UXB_20260727T061631_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:23:28 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/10/S2C_MSIL2A_20260710T062631_N0512_R077_T42UXB_20260710T095556.SAFE/GRANULE/L2A_T42UXB_A009628_20260710T063043/IMG_DATA/R20m/T42UXB_20260710T062631_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:23:28 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/27/S2C_MSIL2A_20260727T061631_N0512_R034_T42UXB_20260727T094010.SAFE/GRANULE/L2A_T42UXB_A009871_20260727T062413/IMG_DATA/R20m/T42UXB_20260727T061631_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:23:28 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/30/S2C_MSIL2A_20260730T062631_N0512_R077_T42UXB_20260730T095214.SAFE/GRANULE/L2A_T42UXB_A009914_20260730T063001/IMG_DATA/R20m/T42UXB_20260730T062631_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:23:28 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/25/S2B_MSIL2A_20260725T062629_N0512_R077_T42UXB_20260725T085340.SAFE/GRANULE/L2A_T42UXB_A049009_20260725T063329/IMG_DATA/R10m/T42UXB_20260725T062629_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:23:28 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/25/S2B_MSIL2A_20260725T062629_N0512_R077_T42UXB_20260725T085340.SAFE/GRANULE/L2A_T42UXB_A049009_20260725T063329/IMG_DATA/R20m/T42UXB_20260725T062629_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:23:28 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/27/S2C_MSIL2A_20260727T061631_N0512_R034_T42UXB_20260727T094010.SAFE/GRANULE/L2A_T42UXB_A009871_20260727T062413/IMG_DATA/R20m/T42UXB_20260727T061631_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:23:28 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/25/S2B_MSIL2A_20260725T062629_N0512_R077_T42UXB_20260725T085340.SAFE/GRANULE/L2A_T42UXB_A049009_20260725T063329/IMG_DATA/R10m/T42UXB_20260725T062629_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-Exception ignored in: 'rasterio._env.log_error'
-Traceback (most recent call last):
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-Exception ignored in: 'rasterio._env.log_error'
-Traceback (most recent call last):
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-Exception ignored in: 'rasterio._env.log_error'
-Traceback (most recent call last):
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-Exception ignored in: 'rasterio._env.log_error'
-Traceback (most recent call last):
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-Exception ignored in: 'rasterio._env.log_error'
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-Exception ignored in: 'rasterio._env.log_error'
-Traceback (most recent call last):
-00:23:29 [1/25] astana_north_x000y000 — пропущена: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-Traceback (most recent call last):
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-Exception ignored in: 'rasterio._env.log_error'
-Traceback (most recent call last):
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-Exception ignored in: 'rasterio._env.log_error'
-Traceback (most recent call last):
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-Exception ignored in: 'rasterio._env.log_error'
-Traceback (most recent call last):
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-Exception ignored in: 'rasterio._env.log_error'
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-Traceback (most recent call last):
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-Exception ignored in: 'rasterio._env.log_error'
-Traceback (most recent call last):
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-Exception ignored in: 'rasterio._env.log_error'
-Traceback (most recent call last):
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-00:23:37 STAC sentinel-2-l2a: найдено 805 сцен для astana_north_x001y000 (2018-01-01..2026-08-01)
-00:24:02 Загружен куб S2: 442 дат, 533 x 505 пикселей
-00:24:10 Месячных композитов после отбраковки: 61
-00:24:16 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/12/S2B_MSIL2A_20260712T061629_N0512_R034_T42UXB_20260712T084310.SAFE/GRANULE/L2A_T42UXB_A048823_20260712T062302/IMG_DATA/R20m/T42UXB_20260712T061629_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:24:16 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/17/S2C_MSIL2A_20260717T061631_N0512_R034_T42UXB_20260717T093715.SAFE/GRANULE/L2A_T42UXB_A009728_20260717T061928/IMG_DATA/R20m/T42UXB_20260717T061631_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:24:16 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/15/S2B_MSIL2A_20260715T062629_N0512_R077_T42UXB_20260715T085348.SAFE/GRANULE/L2A_T42UXB_A048866_20260715T063340/IMG_DATA/R20m/T42UXB_20260715T062629_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:24:16 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/12/S2B_MSIL2A_20260712T061629_N0512_R034_T42UXB_20260712T084310.SAFE/GRANULE/L2A_T42UXB_A048823_20260712T062302/IMG_DATA/R20m/T42UXB_20260712T061629_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:24:16 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/12/S2B_MSIL2A_20260712T061629_N0512_R034_T42UXB_20260712T084310.SAFE/GRANULE/L2A_T42UXB_A048823_20260712T062302/IMG_DATA/R10m/T42UXB_20260712T061629_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:24:16 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/17/S2C_MSIL2A_20260717T061631_N0512_R034_T42UXB_20260717T093715.SAFE/GRANULE/L2A_T42UXB_A009728_20260717T061928/IMG_DATA/R10m/T42UXB_20260717T061631_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:24:16 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/25/S2B_MSIL2A_20260725T062629_N0512_R077_T42UXB_20260725T085340.SAFE/GRANULE/L2A_T42UXB_A049009_20260725T063329/IMG_DATA/R10m/T42UXB_20260725T062629_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:24:16 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/17/S2C_MSIL2A_20260717T061631_N0512_R034_T42UXB_20260717T093715.SAFE/GRANULE/L2A_T42UXB_A009728_20260717T061928/IMG_DATA/R20m/T42UXB_20260717T061631_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:24:16 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/25/S2B_MSIL2A_20260725T062629_N0512_R077_T42UXB_20260725T085340.SAFE/GRANULE/L2A_T42UXB_A049009_20260725T063329/IMG_DATA/R20m/T42UXB_20260725T062629_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:24:16 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/20/S2C_MSIL2A_20260720T062631_N0512_R077_T42UXB_20260720T100408.SAFE/GRANULE/L2A_T42UXB_A009771_20260720T063027/IMG_DATA/R10m/T42UXB_20260720T062631_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:24:16 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/20/S2C_MSIL2A_20260720T062631_N0512_R077_T42UXB_20260720T100408.SAFE/GRANULE/L2A_T42UXB_A009771_20260720T063027/IMG_DATA/R20m/T42UXB_20260720T062631_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:24:16 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/15/S2B_MSIL2A_20260715T062629_N0512_R077_T42UXB_20260715T085348.SAFE/GRANULE/L2A_T42UXB_A048866_20260715T063340/IMG_DATA/R10m/T42UXB_20260715T062629_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:24:16 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/20/S2C_MSIL2A_20260720T062631_N0512_R077_T42UXB_20260720T100408.SAFE/GRANULE/L2A_T42UXB_A009771_20260720T063027/IMG_DATA/R20m/T42UXB_20260720T062631_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:24:16 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/12/S2A_MSIL2A_20260712T063321_N0512_R077_T42UXB_20260712T094801.SAFE/GRANULE/L2A_T42UXB_A057732_20260712T063321/IMG_DATA/R20m/T42UXB_20260712T063321_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:24:16 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/17/S2C_MSIL2A_20260717T061631_N0512_R034_T42UXB_20260717T093715.SAFE/GRANULE/L2A_T42UXB_A009728_20260717T061928/IMG_DATA/R10m/T42UXB_20260717T061631_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:24:16 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/30/S2C_MSIL2A_20260730T062631_N0512_R077_T42UXB_20260730T095214.SAFE/GRANULE/L2A_T42UXB_A009914_20260730T063001/IMG_DATA/R20m/T42UXB_20260730T062631_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:24:16 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/25/S2B_MSIL2A_20260725T062629_N0512_R077_T42UXB_20260725T085340.SAFE/GRANULE/L2A_T42UXB_A049009_20260725T063329/IMG_DATA/R20m/T42UXB_20260725T062629_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:24:16 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/12/S2B_MSIL2A_20260712T061629_N0512_R034_T42UXB_20260712T084310.SAFE/GRANULE/L2A_T42UXB_A048823_20260712T062302/IMG_DATA/R10m/T42UXB_20260712T061629_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:24:16 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/15/S2B_MSIL2A_20260715T062629_N0512_R077_T42UXB_20260715T085348.SAFE/GRANULE/L2A_T42UXB_A048866_20260715T063340/IMG_DATA/R20m/T42UXB_20260715T062629_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:24:16 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/15/S2B_MSIL2A_20260715T062629_N0512_R077_T42UXB_20260715T085348.SAFE/GRANULE/L2A_T42UXB_A048866_20260715T063340/IMG_DATA/R10m/T42UXB_20260715T062629_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:24:16 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/25/S2B_MSIL2A_20260725T062629_N0512_R077_T42UXB_20260725T085340.SAFE/GRANULE/L2A_T42UXB_A049009_20260725T063329/IMG_DATA/R10m/T42UXB_20260725T062629_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:24:16 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/12/S2A_MSIL2A_20260712T063321_N0512_R077_T42UXB_20260712T094801.SAFE/GRANULE/L2A_T42UXB_A057732_20260712T063321/IMG_DATA/R20m/T42UXB_20260712T063321_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:24:16 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/20/S2C_MSIL2A_20260720T062631_N0512_R077_T42UXB_20260720T100408.SAFE/GRANULE/L2A_T42UXB_A009771_20260720T063027/IMG_DATA/R10m/T42UXB_20260720T062631_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:24:16 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/30/S2C_MSIL2A_20260730T062631_N0512_R077_T42UXB_20260730T095214.SAFE/GRANULE/L2A_T42UXB_A009914_20260730T063001/IMG_DATA/R10m/T42UXB_20260730T062631_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:24:16 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/12/S2A_MSIL2A_20260712T063321_N0512_R077_T42UXB_20260712T094801.SAFE/GRANULE/L2A_T42UXB_A057732_20260712T063321/IMG_DATA/R10m/T42UXB_20260712T063321_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:24:16 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/30/S2C_MSIL2A_20260730T062631_N0512_R077_T42UXB_20260730T095214.SAFE/GRANULE/L2A_T42UXB_A009914_20260730T063001/IMG_DATA/R20m/T42UXB_20260730T062631_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:24:16 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/09/S2A_MSIL2A_20260709T062311_N0512_R034_T42UXB_20260709T112509.SAFE/GRANULE/L2A_T42UXB_A057689_20260709T062314/IMG_DATA/R20m/T42UXB_20260709T062311_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:24:16 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/30/S2C_MSIL2A_20260730T062631_N0512_R077_T42UXB_20260730T095214.SAFE/GRANULE/L2A_T42UXB_A009914_20260730T063001/IMG_DATA/R10m/T42UXB_20260730T062631_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:24:16 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/12/S2A_MSIL2A_20260712T063321_N0512_R077_T42UXB_20260712T094801.SAFE/GRANULE/L2A_T42UXB_A057732_20260712T063321/IMG_DATA/R10m/T42UXB_20260712T063321_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:24:16 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/19/S2A_MSIL2A_20260719T062321_N0512_R034_T42UXB_20260719T112813.SAFE/GRANULE/L2A_T42UXB_A057832_20260719T062316/IMG_DATA/R20m/T42UXB_20260719T062321_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:24:16 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/09/S2A_MSIL2A_20260709T062311_N0512_R034_T42UXB_20260709T112509.SAFE/GRANULE/L2A_T42UXB_A057689_20260709T062314/IMG_DATA/R10m/T42UXB_20260709T062311_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:24:16 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/09/S2A_MSIL2A_20260709T062311_N0512_R034_T42UXB_20260709T112509.SAFE/GRANULE/L2A_T42UXB_A057689_20260709T062314/IMG_DATA/R20m/T42UXB_20260709T062311_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:24:16 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/19/S2A_MSIL2A_20260719T062321_N0512_R034_T42UXB_20260719T112813.SAFE/GRANULE/L2A_T42UXB_A057832_20260719T062316/IMG_DATA/R20m/T42UXB_20260719T062321_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:24:16 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/09/S2A_MSIL2A_20260709T062311_N0512_R034_T42UXB_20260709T112509.SAFE/GRANULE/L2A_T42UXB_A057689_20260709T062314/IMG_DATA/R10m/T42UXB_20260709T062311_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:24:16 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/19/S2A_MSIL2A_20260719T062321_N0512_R034_T42UXB_20260719T112813.SAFE/GRANULE/L2A_T42UXB_A057832_20260719T062316/IMG_DATA/R10m/T42UXB_20260719T062321_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:24:16 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/19/S2A_MSIL2A_20260719T062321_N0512_R034_T42UXB_20260719T112813.SAFE/GRANULE/L2A_T42UXB_A057832_20260719T062316/IMG_DATA/R10m/T42UXB_20260719T062321_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:24:16 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/10/S2C_MSIL2A_20260710T062631_N0512_R077_T42UXB_20260710T095556.SAFE/GRANULE/L2A_T42UXB_A009628_20260710T063043/IMG_DATA/R20m/T42UXB_20260710T062631_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:24:16 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/10/S2C_MSIL2A_20260710T062631_N0512_R077_T42UXB_20260710T095556.SAFE/GRANULE/L2A_T42UXB_A009628_20260710T063043/IMG_DATA/R20m/T42UXB_20260710T062631_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:24:16 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/05/S2B_MSIL2A_20260705T062629_N0512_R077_T42UXB_20260705T085321.SAFE/GRANULE/L2A_T42UXB_A048723_20260705T063135/IMG_DATA/R20m/T42UXB_20260705T062629_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:24:16 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/10/S2C_MSIL2A_20260710T062631_N0512_R077_T42UXB_20260710T095556.SAFE/GRANULE/L2A_T42UXB_A009628_20260710T063043/IMG_DATA/R10m/T42UXB_20260710T062631_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:24:16 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/05/S2B_MSIL2A_20260705T062629_N0512_R077_T42UXB_20260705T085321.SAFE/GRANULE/L2A_T42UXB_A048723_20260705T063135/IMG_DATA/R20m/T42UXB_20260705T062629_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:24:16 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/05/S2B_MSIL2A_20260705T062629_N0512_R077_T42UXB_20260705T085321.SAFE/GRANULE/L2A_T42UXB_A048723_20260705T063135/IMG_DATA/R10m/T42UXB_20260705T062629_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:24:16 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/10/S2C_MSIL2A_20260710T062631_N0512_R077_T42UXB_20260710T095556.SAFE/GRANULE/L2A_T42UXB_A009628_20260710T063043/IMG_DATA/R10m/T42UXB_20260710T062631_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:24:16 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/27/S2C_MSIL2A_20260727T061631_N0512_R034_T42UXB_20260727T094010.SAFE/GRANULE/L2A_T42UXB_A009871_20260727T062413/IMG_DATA/R20m/T42UXB_20260727T061631_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:24:16 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/05/S2B_MSIL2A_20260705T062629_N0512_R077_T42UXB_20260705T085321.SAFE/GRANULE/L2A_T42UXB_A048723_20260705T063135/IMG_DATA/R10m/T42UXB_20260705T062629_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:24:16 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/27/S2C_MSIL2A_20260727T061631_N0512_R034_T42UXB_20260727T094010.SAFE/GRANULE/L2A_T42UXB_A009871_20260727T062413/IMG_DATA/R20m/T42UXB_20260727T061631_SCL_20m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-00:24:16 GDAL signalled an error: err_no=4, msg="`/vsicurl/https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/27/S2C_MSIL2A_20260727T061631_N0512_R034_T42UXB_20260727T094010.SAFE/GRANULE/L2A_T42UXB_A009871_20260727T062413/IMG_DATA/R10m/T42UXB_20260727T061631_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D' does not exist in the file system, and is not recognized as a supported dataset name."
-00:24:16 Ignoring read failure while reading: https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/42/U/XB/2026/07/27/S2C_MSIL2A_20260727T061631_N0512_R034_T42UXB_20260727T094010.SAFE/GRANULE/L2A_T42UXB_A009871_20260727T062413/IMG_DATA/R10m/T42UXB_20260727T061631_B04_10m.tif?st=2026-08-19T19%3A21%3A35Z&se=2026-08-20T20%3A06%3A35Z&sp=rl&sv=2025-07-05&sr=c&skoid=9c8ff44a-6a2c-4dfb-b298-1c9212f64d9a&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2026-08-20T19%3A11%3A24Z&ske=2026-08-27T19%3A11%3A24Z&sks=b&skv=2025-07-05&sig=dJEAhX855AhwU0n2ldAsVTeeZ7NbzrkYC2DA1QXCKDs%3D:1
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-Exception ignored in: 'rasterio._env.log_error'
-Traceback (most recent call last):
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-Exception ignored in: 'rasterio._env.log_error'
-00:24:16 astana_north_x001y000: попытка 1 из 2 не удалась ('utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte), повтор через 20 с
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-Exception ignored in: 'rasterio._env.log_error'
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-Exception ignored in: 'rasterio._env.log_error'
-Traceback (most recent call last):
-Traceback (most recent call last):
-Traceback (most recent call last):
-Exception ignored in: 'rasterio._env.log_error'
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-Traceback (most recent call last):
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-Exception ignored in: 'rasterio._env.log_error'
-Traceback (most recent call last):
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-Exception ignored in: 'rasterio._env.log_error'
-Traceback (most recent call last):
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-Exception ignored in: 'rasterio._env.log_error'
-Traceback (most recent call last):
-Exception ignored in: 'rasterio._env.log_error'
-Traceback (most recent call last):
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-Exception ignored in: 'rasterio._env.log_error'
-Traceback (most recent call last):
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-Exception ignored in: 'rasterio._env.log_error'
-Traceback (most recent call last):
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-Exception ignored in: 'rasterio._env.log_error'
-Traceback (most recent call last):
-  File "C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\__init__.py", line 368, in open
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-    dataset = DatasetReader(path, driver=driver, sharing=sharing, **kwargs)
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 62: invalid start byte
-00:24:47 STAC sentinel-2-l2a: найдено 805 сцен для astana_north_x001y000 (2018-01-01..2026-08-01)
-00:25:19 Загружен куб S2: 442 дат, 533 x 505 пикселей
+08:44:42 Кольцо: 406 км²
+08:44:42 [1/25] astana_north_x000y000 — из кеша, кандидатов 145
+08:44:55 STAC sentinel-2-l2a: найдено 805 сцен для astana_north_x001y000 (2018-01-01..2026-08-01)
+08:45:45 Загружен куб S2: 442 дат, 533 x 505 пикселей
+08:45:48 Месячных композитов после отбраковки: 61
+08:55:00 Детекция изменений: {'pixels': 269165, 'detected': 2532, 'detected_pct': 0.941, 'rejected_recovered': 226991, 'insufficient_data': 0}
+08:55:00 Связных областей после чистки: 51
+08:55:01 Кандидатов собрано: 51, суммарная площадь 7.7 га
+08:55:45 Извлечено 51 пар чипов, 9 каналов
+08:55:46 Сохранено 51 пар чипов в data\chips\astana_north_x001y000.npz
+08:55:46 Created 51 records
+08:55:46 Записано 51 кандидатов в outputs_real\tiles\astana_north_x001y000.geojson
+08:55:46 [2/25] astana_north_x001y000 — кандидатов 51 (664 с от начала)
+08:55:53 STAC sentinel-2-l2a: найдено 803 сцен для astana_north_x002y000 (2018-01-01..2026-08-01)
+08:56:18 Загружен куб S2: 441 дат, 533 x 492 пикселей
+08:56:22 Месячных композитов после отбраковки: 61
+09:04:10 Детекция изменений: {'pixels': 262236, 'detected': 3302, 'detected_pct': 1.259, 'rejected_recovered': 212832, 'insufficient_data': 0}
+09:04:10 Связных областей после чистки: 60
+09:04:10 Кандидатов собрано: 60, суммарная площадь 12.3 га
+09:04:59 Извлечено 60 пар чипов, 9 каналов
+09:05:00 Сохранено 60 пар чипов в data\chips\astana_north_x002y000.npz
+09:05:00 Created 60 records
+09:05:00 Записано 60 кандидатов в outputs_real\tiles\astana_north_x002y000.geojson
+09:05:00 [3/25] astana_north_x002y000 — кандидатов 60 (1218 с от начала)
+09:05:07 STAC sentinel-2-l2a: найдено 802 сцен для astana_north_x003y000 (2018-01-01..2026-08-01)
+09:05:33 Загружен куб S2: 441 дат, 533 x 478 пикселей
+09:05:36 Месячных композитов после отбраковки: 61
+09:14:20 Детекция изменений: {'pixels': 254774, 'detected': 855, 'detected_pct': 0.336, 'rejected_recovered': 222896, 'insufficient_data': 0}
+09:14:20 Связных областей после чистки: 19
+09:14:20 Кандидатов собрано: 19, суммарная площадь 1.6 га
+09:14:47 Извлечено 19 пар чипов, 9 каналов
+09:14:47 Сохранено 19 пар чипов в data\chips\astana_north_x003y000.npz
+09:14:47 Created 19 records
+09:14:47 Записано 19 кандидатов в outputs_real\tiles\astana_north_x003y000.geojson
+09:14:47 [4/25] astana_north_x003y000 — кандидатов 19 (1805 с от начала)
+09:14:56 STAC sentinel-2-l2a: найдено 802 сцен для astana_north_x004y000 (2018-01-01..2026-08-01)
+09:15:25 Загружен куб S2: 441 дат, 431 x 461 пикселей
+09:15:28 Месячных композитов после отбраковки: 61

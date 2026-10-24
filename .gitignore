@@ -82,3 +82,10 @@ desktop.ini
 # --- Сборка фронтенда ---
 web-next/node_modules/
 web-next/dist/
+
+# Резервные копии прогона и логи диагностики: рабочие файлы одного вечера,
+# в истории им делать нечего.
+outputs_real_backup_*/
+data/chips_backup_*/
+ring_run.log
+diag.log

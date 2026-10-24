@@ -133,7 +133,7 @@ export function Logo({ size = 30, className = '' }: Props) {
           Без uppercase у основного слова: капслок с разрядкой читается как
           аббревиатура, у такого слова нет силуэта. В самом знаке надпись
           капслоком, но там она часть рисунка. */}
-      <span className="inline-flex items-baseline gap-[0.32em]">
+      <span className="inline-flex items-baseline gap-[0.26em]">
         <span
           className="font-display font-semibold leading-none text-line"
           style={{ fontSize: size * 0.82, letterSpacing: '0.01em' }}
@@ -141,8 +141,13 @@ export function Logo({ size = 30, className = '' }: Props) {
           Vantage
         </span>
         <span
+          /* Почти вровень с основным словом, а не подстрочником. Мелкий
+             суффикс читался как сноска; в паре «Vantage AI» это одно имя,
+             и обе части должны стоять на одной высоте. Чуть меньший кегль
+             оставлен намеренно: заглавные буквы при равном кегле выглядят
+             крупнее строчных и перетягивают на себя. */
           className="font-display font-semibold uppercase leading-none text-violet-lit"
-          style={{ fontSize: size * 0.5, letterSpacing: '0.08em' }}
+          style={{ fontSize: size * 0.74, letterSpacing: '0.03em' }}
         >
           AI
         </span>
