@@ -10,6 +10,7 @@
 каждая ветка падает независимо и оставляет свою колонку пустой.
 """
 
+import json
 import logging
 import sys
 from pathlib import Path
@@ -46,6 +47,22 @@ outcome = finish_run(
 
 logging.info("ИТОГ: %s", outcome.to_text())
 logging.info("Отсев: %s", outcome.rejection)
+
+# Воронка сохраняется, а не только пишется в лог.
+#
+# На лендинге стадии отсева были вписаны руками — 213, 124, 59, 3 при 429
+# кандидатах. После пересчёта по всему кольцу их стало 385, а объектов в
+# списке 21, и подпись под воронкой начала противоречить карте на том же
+# сайте. Расхождение чисел между страницами проверяющий находит за минуту,
+# и после этого не верит ни одному числу.
+(OUTPUTS / "funnel.json").write_text(
+    json.dumps(
+        {"raw": int(len(merged)), "rejected": outcome.rejection},
+        ensure_ascii=False, indent=1,
+    ),
+    encoding="utf-8",
+)
+logging.info("Воронка сохранена: %s", OUTPUTS / "funnel.json")
 logging.info("Метки: %s", outcome.labels)
 for name, path in outcome.artifacts.items():
     logging.info("  %s: %s", name, path)

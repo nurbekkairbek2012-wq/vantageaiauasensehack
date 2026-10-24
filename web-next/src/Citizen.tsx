@@ -13,6 +13,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { HowLong } from './components/HowLong';
 import { Nav } from './components/Nav';
 
 type Site = { telegram_bot?: string; telegram_link?: string; qr?: string };
@@ -39,6 +40,7 @@ const STEPS: [string, string][] = [
 export default function Citizen() {
   const [site, setSite] = useState<Site | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [features, setFeatures] = useState<GeoJSON.Feature[]>([]);
 
   useEffect(() => {
     fetch('./data/site.json')
@@ -46,6 +48,12 @@ export default function Citizen() {
       .then(setSite)
       .catch(() => setSite(null))
       .finally(() => setLoaded(true));
+    // Числа возраста берутся из того же файла, что и карта: вписанные
+    // руками разошлись бы с ней на первом же пересчёте.
+    fetch('./data/candidates.geojson')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setFeatures(d?.features ?? []))
+      .catch(() => setFeatures([]));
   }, []);
 
   const link = site?.telegram_link;
@@ -133,6 +141,8 @@ cd web-next && npm run build`}
             </li>
           ))}
         </ol>
+
+        <HowLong features={features as never} />
 
         <section className="mt-14 grid gap-x-14 gap-y-10 md:grid-cols-2">
           <div>

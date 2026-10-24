@@ -50,8 +50,8 @@ function signalLine(p: Record<string, unknown>): string {
 export function Rejected({ features }: { features: Feature[] }) {
   // Самые крупные из отвергнутых: мелкий объект на снимке неубедителен, а
   // весь смысл раздела в том, чтобы читатель увидел кровлю сам.
-  const shown = features
-    .filter((f) => f.properties?.visual_check === 'not_landfill')
+  const all = features.filter((f) => f.properties?.visual_check === 'not_landfill');
+  const shown = [...all]
     .sort((a, b) => (num(b.properties.area_m2) ?? 0) - (num(a.properties.area_m2) ?? 0))
     .slice(0, SHOWN);
 
@@ -59,8 +59,11 @@ export function Rejected({ features }: { features: Feature[] }) {
 
   return (
     <section className="border-t border-grid pt-14 pb-16">
+      {/* Число берётся из данных. Вписанное словом («восемнадцать») уже
+          разошлось с прогоном один раз: после пересчёта по всему кольцу
+          отвергнутых стало четырнадцать, а заголовок остался прежним. */}
       <h2 className="max-w-[26ch] text-[clamp(1.7rem,3.6vw,2.6rem)] text-line">
-        Мы отвергли восемнадцать собственных находок
+        Мы отвергли {all.length} собственных находок
       </h2>
       <p className="mt-4 max-w-[62ch] text-muted">
         Детектор ищет места, где растительность исчезла и не вернулась. Новый

@@ -3,9 +3,9 @@
   "signal_scales": {
     "ndvi_drop": 0.35,
     "bsi_rise": 0.25,
-    "pmli_response": 0.15,
-    "sar_incoherence": 3.0,
-    "thermal_anomaly": 3.0
+    "pmli_response": 0.04,
+    "sar_incoherence": 2.5,
+    "thermal_anomaly": 1.5
   },
   "scenes": [
     {
@@ -19,7 +19,7 @@
     {
       "id": "found",
       "title": "Что есть на самом деле",
-      "line": "Мы нашли 30 объектов.",
+      "line": "Мы нашли 21 объектов.",
       "layers": [
         "registry",
         "candidates"
@@ -33,10 +33,10 @@
         "candidates"
       ],
       "focus": {
-        "candidate_id": "C00005",
+        "candidate_id": "C00018",
         "center": [
-          71.47088314694493,
-          51.220842
+          71.52387967864044,
+          51.159395851700054
         ],
         "zoom": 14
       },
@@ -45,7 +45,7 @@
     {
       "id": "money",
       "title": "Оценка ущерба",
-      "line": "30 объектов = 59–458 млн ₸ ущерба.",
+      "line": "21 объектов = 35–271 млн ₸ ущерба.",
       "layers": [
         "candidates"
       ],
@@ -81,11 +81,11 @@
   ],
   "totals": {
     "registry_known": 27,
-    "objects": 30,
-    "damage_p10": 58838040.014774464,
-    "damage_p50": 229352639.63424835,
-    "damage_p90": 458462471.95118606,
-    "area_ha": 9.190673291148475,
-    "co2e_t": 5584.525011706589
+    "objects": 21,
+    "damage_p10": 34733734.3432865,
+    "damage_p50": 135393253.31005484,
+    "damage_p90": 270643170.6956983,
+    "area_ha": 5.425510510726236,
+    "co2e_t": 3296.700708272207
   }
 }

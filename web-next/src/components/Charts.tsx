@@ -18,7 +18,7 @@ const num = (v: number, d = 0) =>
  * четырнадцати. Ширина полосы показывает это без единого слова.
  */
 
-type Stage = { label: string; detail: string; count: number };
+export type Stage = { label: string; detail: string; count: number };
 
 export function Funnel({ stages, kept }: { stages: Stage[]; kept: number }) {
   const total = stages.reduce((s, x) => s + x.count, 0) + kept;

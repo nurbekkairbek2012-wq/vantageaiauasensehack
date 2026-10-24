@@ -51,6 +51,7 @@ PUBLISH = (
     "story.json",
     "metrics.json",
     "removal.json",
+    "funnel.json",
 )
 
 results: list[tuple[str, bool, str]] = []
@@ -142,6 +143,12 @@ def main() -> int:
     step("Маршрут на месяц", [python, "scripts/make_patrol.py", "20"])
     publish_to_site()
     step("Перенос разметки глазами", [python, "scripts/attach_visual.py"])
+    # Доверификация — тоже ПОСЛЕ выгрузки и по той же причине. Внутри
+    # finish_ring она выключается флагом --no-verify, и флаг работает не
+    # как «пропустить», а как «стереть»: пересчёт переписывает файл без
+    # колонок verify_*, и подтверждение двумя источниками исчезает молча.
+    # Здесь оно живёт в своём кэше и переживает любой пересчёт.
+    step("Доверификация по снимкам", [python, "scripts/attach_verify.py"])
     step("Чипы для разметки", [python, "scripts/export_chips.py"])
     step("Указатель для бота", [python, "scripts/make_bot_index.py"])
     build_cities()

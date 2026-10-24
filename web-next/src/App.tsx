@@ -16,7 +16,7 @@ import { Logo, Mark } from './components/Logo';
 import { Nav } from './components/Nav';
 import { Tape } from './components/Tape';
 import { Plates } from './components/Plates';
-import { Funnel, YearBars, DamageStrip } from './components/Charts';
+import { Funnel, YearBars, DamageStrip, type Stage } from './components/Charts';
 import { SiteView } from './components/SiteView';
 import { Rejected } from './components/Rejected';
 
@@ -25,12 +25,47 @@ type Feature = GeoJSON.Feature<GeoJSON.Geometry, Record<string, unknown>>;
 
 /* Отклонённые гипотезы показываются, а не прячутся. Причины отсева уже
    пишутся в rejected.geojson, и до сих пор их не видел никто. */
-const STAGES = [
-  { label: 'Площадь ниже разрешения', detail: 'меньше 900 м² — Sentinel-2 такое не разрешает', count: 213 },
-  { label: 'Совпал с объектом OSM', detail: 'карьер, стройка, застройка, вода', count: 124 },
-  { label: 'Слишком близко к жилью', detail: 'ближе 1500 м — такое замечают и без спутника', count: 59 },
-  { label: 'Нет подъезда', detail: 'дальше 300 м от проезжей дороги', count: 3 },
-];
+/* Стадии отсева и пояснение к каждой.
+ *
+ * Числа сюда НЕ вписываются. Раньше вписывались — 213, 124, 59, 3 при 429
+ * кандидатах, — и после пересчёта по всему кольцу их стало 385 при 21
+ * объекте в списке. Подпись под воронкой начала противоречить карте на
+ * том же сайте, а расхождение чисел между страницами проверяющий находит
+ * за минуту и после этого не верит ни одному.
+ *
+ * Теперь счётчики приходят из funnel.json, который пишет пайплайн, а
+ * здесь остаются только человеческие формулировки причин. Ключ — то, что
+ * пишет в reject_reason контекстный отсев. */
+const STAGE_TEXT: Record<string, { label: string; detail: string }> = {
+  'площадь ниже порога разрешения Sentinel-2':
+    { label: 'Площадь ниже разрешения', detail: 'меньше 900 м² — Sentinel-2 такое не разрешает' },
+  'площадь слишком велика — это полигон, а не стихийная свалка':
+    { label: 'Слишком большая площадь', detail: 'это полигон ТБО, а не стихийная свалка' },
+  'пересекается с известным объектом OSM (карьер, стройка, застройка, вода)':
+    { label: 'Совпал с объектом OSM', detail: 'карьер, стройка, застройка, вода' },
+  'нет подъезда: далеко от проезжей дороги':
+    { label: 'Нет подъезда', detail: 'дальше 300 м от проезжей дороги — самосвал не доедет' },
+  'слишком близко к жилью':
+    { label: 'Слишком близко к жилью', detail: 'ближе 1500 м — такое замечают и без спутника' },
+  'слишком далеко от жилья — невыгодно везти':
+    { label: 'Слишком далеко от жилья', detail: 'дальше 15 км — возить невыгодно' },
+};
+
+type Funnel = { raw: number; rejected: Record<string, number> };
+
+function stagesFrom(funnel: Funnel | null): Stage[] {
+  if (!funnel?.rejected) return [];
+  return Object.entries(funnel.rejected)
+    .filter(([reason]) => reason !== 'ПРОШЁЛ ОТСЕВ')
+    .sort((a, b) => b[1] - a[1])
+    .map(([reason, count]) => ({
+      // Незнакомая причина показывается как есть: молча пропавшая
+      // строка воронки — это несходящаяся сумма, которую заметят.
+      label: STAGE_TEXT[reason]?.label ?? reason,
+      detail: STAGE_TEXT[reason]?.detail ?? '',
+      count,
+    }));
+}
 
 const LIMITS: [string, string][] = [
   [
@@ -105,6 +140,14 @@ export default function App() {
   /* Суммы считаются без объектов, отвергнутых проверкой глазами.
      Складывать ущерб по складу под синей кровлей значит завышать итог, и
      первый же вопрос «а что вот это» обесценит всю цифру. */
+  const [funnel, setFunnel] = useState<Funnel | null>(null);
+  useEffect(() => {
+    fetch('./data/funnel.json')
+      .then((r) => (r.ok ? r.json() : null))
+      .then(setFunnel)
+      .catch(() => setFunnel(null));
+  }, []);
+
   const totals = useMemo(() => {
     /* Три числа, а не одно, и это принципиально.
 
@@ -314,16 +357,18 @@ export default function App() {
         </section>
 
         {/* ── Воронка ───────────────────────────────────────────────── */}
-        <section className="border-t border-grid pt-14 pb-16">
-          <h2 className="max-w-[24ch] text-[clamp(1.7rem,3.6vw,2.6rem)] text-line">
-            До списка дошёл один объект из четырнадцати
-          </h2>
-          <p className="mt-4 max-w-[62ch] text-muted">
-            Причина отсева хранится по каждому. На вопрос «а почему выкинули
-            вот это» отвечает файл, а не память выступающего.
-          </p>
-          <Funnel stages={STAGES} kept={totals.count || 30} />
-        </section>
+        {funnel && totals.count > 0 && (
+          <section className="border-t border-grid pt-14 pb-16">
+            <h2 className="max-w-[26ch] text-[clamp(1.7rem,3.6vw,2.6rem)] text-line">
+              До списка дошёл один кандидат из {Math.round(funnel.raw / totals.count)}
+            </h2>
+            <p className="mt-4 max-w-[62ch] text-muted">
+              Причина отсева хранится по каждому. На вопрос «а почему выкинули
+              вот это» отвечает файл, а не память выступающего.
+            </p>
+            <Funnel stages={stagesFrom(funnel)} kept={totals.count} />
+          </section>
+        )}
 
         <Rejected features={features as never} />
 

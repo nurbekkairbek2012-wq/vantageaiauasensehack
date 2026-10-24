@@ -1,6 +1,6 @@
 {
  "counts": {
-  "active": 29,
+  "active": 20,
   "possibly_removed": 1,
   "possibly_covered": 0,
   "insufficient_data": 0
@@ -8,39 +8,7 @@
  "needs_field_check": [],
  "objects": [
   {
-   "candidate_id": "C00005",
-   "status": "active",
-   "confidence": 0.0,
-   "n_agreeing": 2,
-   "n_observations": 54,
-   "consecutive_passes": 0,
-   "signals": {
-    "ndvi_recovered": false,
-    "bsi_normalized": true,
-    "thermal_gone": true
-   },
-   "note": "объект активен: признаков устранения нет",
-   "warnings": [
-    "признаки устранения есть, но подтверждены только на 0 проходах подряд из 2 нужных"
-   ]
-  },
-  {
-   "candidate_id": "C00019",
-   "status": "active",
-   "confidence": 0.0,
-   "n_agreeing": 1,
-   "n_observations": 15,
-   "consecutive_passes": 0,
-   "signals": {
-    "ndvi_recovered": false,
-    "bsi_normalized": false,
-    "thermal_gone": true
-   },
-   "note": "объект активен: признаков устранения нет",
-   "warnings": []
-  },
-  {
-   "candidate_id": "C00021",
+   "candidate_id": "C00018",
    "status": "active",
    "confidence": 0.0,
    "n_agreeing": 1,
@@ -55,7 +23,7 @@
    "warnings": []
   },
   {
-   "candidate_id": "C00034",
+   "candidate_id": "C00031",
    "status": "active",
    "confidence": 0.0,
    "n_agreeing": 1,
@@ -70,7 +38,7 @@
    "warnings": []
   },
   {
-   "candidate_id": "C00050",
+   "candidate_id": "C00034",
    "status": "active",
    "confidence": 0.0,
    "n_agreeing": 1,
@@ -85,7 +53,7 @@
    "warnings": []
   },
   {
-   "candidate_id": "C00060",
+   "candidate_id": "C00052",
    "status": "active",
    "confidence": 0.0,
    "n_agreeing": 2,
@@ -102,7 +70,7 @@
    ]
   },
   {
-   "candidate_id": "C00066",
+   "candidate_id": "C00059",
    "status": "active",
    "confidence": 0.0,
    "n_agreeing": 1,
@@ -117,11 +85,11 @@
    "warnings": []
   },
   {
-   "candidate_id": "C00070",
+   "candidate_id": "C00068",
    "status": "active",
    "confidence": 0.0,
    "n_agreeing": 1,
-   "n_observations": 14,
+   "n_observations": 13,
    "consecutive_passes": 0,
    "signals": {
     "ndvi_recovered": false,
@@ -132,7 +100,7 @@
    "warnings": []
   },
   {
-   "candidate_id": "C00078",
+   "candidate_id": "C00071",
    "status": "active",
    "confidence": 0.0,
    "n_agreeing": 2,
@@ -149,82 +117,7 @@
    ]
   },
   {
-   "candidate_id": "C00089",
-   "status": "possibly_removed",
-   "confidence": 0.87,
-   "n_agreeing": 2,
-   "n_observations": 48,
-   "consecutive_passes": 4,
-   "signals": {
-    "ndvi_recovered": false,
-    "bsi_normalized": true,
-    "thermal_gone": true
-   },
-   "note": "вероятно устранён (уверенность 87%, согласны признаков: 2 из 5, подтверждено проходов подряд: 4)",
-   "warnings": []
-  },
-  {
-   "candidate_id": "C00106",
-   "status": "active",
-   "confidence": 0.0,
-   "n_agreeing": 1,
-   "n_observations": 14,
-   "consecutive_passes": 0,
-   "signals": {
-    "ndvi_recovered": false,
-    "bsi_normalized": false,
-    "thermal_gone": true
-   },
-   "note": "объект активен: признаков устранения нет",
-   "warnings": []
-  },
-  {
-   "candidate_id": "C00111",
-   "status": "active",
-   "confidence": 0.0,
-   "n_agreeing": 1,
-   "n_observations": 39,
-   "consecutive_passes": 0,
-   "signals": {
-    "ndvi_recovered": false,
-    "bsi_normalized": false,
-    "thermal_gone": true
-   },
-   "note": "объект активен: признаков устранения нет",
-   "warnings": []
-  },
-  {
-   "candidate_id": "C00112",
-   "status": "active",
-   "confidence": 0.0,
-   "n_agreeing": 1,
-   "n_observations": 32,
-   "consecutive_passes": 0,
-   "signals": {
-    "ndvi_recovered": false,
-    "bsi_normalized": false,
-    "thermal_gone": true
-   },
-   "note": "объект активен: признаков устранения нет",
-   "warnings": []
-  },
-  {
-   "candidate_id": "C00114",
-   "status": "active",
-   "confidence": 0.0,
-   "n_agreeing": 1,
-   "n_observations": 13,
-   "consecutive_passes": 0,
-   "signals": {
-    "ndvi_recovered": false,
-    "bsi_normalized": false,
-    "thermal_gone": true
-   },
-   "note": "объект активен: признаков устранения нет",
-   "warnings": []
-  },
-  {
-   "candidate_id": "C00117",
+   "candidate_id": "C00077",
    "status": "active",
    "confidence": 0.0,
    "n_agreeing": 1,
@@ -239,7 +132,37 @@
    "warnings": []
   },
   {
-   "candidate_id": "C00125",
+   "candidate_id": "C00082",
+   "status": "possibly_removed",
+   "confidence": 0.87,
+   "n_agreeing": 2,
+   "n_observations": 48,
+   "consecutive_passes": 4,
+   "signals": {
+    "ndvi_recovered": false,
+    "bsi_normalized": true,
+    "thermal_gone": true
+   },
+   "note": "вероятно устранён (уверенность 87%, согласны признаков: 2 из 5, подтверждено проходов подряд: 4)",
+   "warnings": []
+  },
+  {
+   "candidate_id": "C00098",
+   "status": "active",
+   "confidence": 0.0,
+   "n_agreeing": 1,
+   "n_observations": 32,
+   "consecutive_passes": 0,
+   "signals": {
+    "ndvi_recovered": false,
+    "bsi_normalized": false,
+    "thermal_gone": true
+   },
+   "note": "объект активен: признаков устранения нет",
+   "warnings": []
+  },
+  {
+   "candidate_id": "C00102",
    "status": "active",
    "confidence": 0.0,
    "n_agreeing": 1,
@@ -254,22 +177,22 @@
    "warnings": []
   },
   {
-   "candidate_id": "C00128",
+   "candidate_id": "C00113",
    "status": "active",
    "confidence": 0.0,
-   "n_agreeing": 0,
-   "n_observations": 54,
+   "n_agreeing": 1,
+   "n_observations": 39,
    "consecutive_passes": 0,
    "signals": {
     "ndvi_recovered": false,
     "bsi_normalized": false,
-    "thermal_gone": false
+    "thermal_gone": true
    },
    "note": "объект активен: признаков устранения нет",
    "warnings": []
   },
   {
-   "candidate_id": "C00131",
+   "candidate_id": "C00115",
    "status": "active",
    "confidence": 0.0,
    "n_agreeing": 1,
@@ -284,7 +207,7 @@
    "warnings": []
   },
   {
-   "candidate_id": "C00136",
+   "candidate_id": "C00122",
    "status": "active",
    "confidence": 0.0,
    "n_agreeing": 2,
@@ -301,7 +224,22 @@
    ]
   },
   {
-   "candidate_id": "C00144",
+   "candidate_id": "C00125",
+   "status": "active",
+   "confidence": 0.0,
+   "n_agreeing": 1,
+   "n_observations": 13,
+   "consecutive_passes": 0,
+   "signals": {
+    "ndvi_recovered": false,
+    "bsi_normalized": false,
+    "thermal_gone": true
+   },
+   "note": "объект активен: признаков устранения нет",
+   "warnings": []
+  },
+  {
+   "candidate_id": "C00127",
    "status": "active",
    "confidence": 0.0,
    "n_agreeing": 1,
@@ -316,37 +254,7 @@
    "warnings": []
   },
   {
-   "candidate_id": "C00160",
-   "status": "active",
-   "confidence": 0.0,
-   "n_agreeing": 1,
-   "n_observations": 15,
-   "consecutive_passes": 0,
-   "signals": {
-    "ndvi_recovered": false,
-    "bsi_normalized": false,
-    "thermal_gone": true
-   },
-   "note": "объект активен: признаков устранения нет",
-   "warnings": []
-  },
-  {
-   "candidate_id": "C00163",
-   "status": "active",
-   "confidence": 0.0,
-   "n_agreeing": 0,
-   "n_observations": 12,
-   "consecutive_passes": 0,
-   "signals": {
-    "ndvi_recovered": false,
-    "bsi_normalized": false,
-    "thermal_gone": false
-   },
-   "note": "объект активен: признаков устранения нет",
-   "warnings": []
-  },
-  {
-   "candidate_id": "C00164",
+   "candidate_id": "C00151",
    "status": "active",
    "confidence": 0.0,
    "n_agreeing": 2,
@@ -363,28 +271,11 @@
    ]
   },
   {
-   "candidate_id": "C00168",
-   "status": "active",
-   "confidence": 0.0,
-   "n_agreeing": 2,
-   "n_observations": 13,
-   "consecutive_passes": 0,
-   "signals": {
-    "ndvi_recovered": false,
-    "bsi_normalized": true,
-    "thermal_gone": true
-   },
-   "note": "объект активен: признаков устранения нет",
-   "warnings": [
-    "признаки устранения есть, но подтверждены только на 0 проходах подряд из 2 нужных"
-   ]
-  },
-  {
-   "candidate_id": "C00176",
+   "candidate_id": "C00175",
    "status": "active",
    "confidence": 0.0,
    "n_agreeing": 1,
-   "n_observations": 12,
+   "n_observations": 31,
    "consecutive_passes": 0,
    "signals": {
     "ndvi_recovered": false,
@@ -395,7 +286,7 @@
    "warnings": []
   },
   {
-   "candidate_id": "C00192",
+   "candidate_id": "C00177",
    "status": "active",
    "confidence": 0.0,
    "n_agreeing": 2,
@@ -412,22 +303,7 @@
    ]
   },
   {
-   "candidate_id": "C00194",
-   "status": "active",
-   "confidence": 0.0,
-   "n_agreeing": 1,
-   "n_observations": 31,
-   "consecutive_passes": 0,
-   "signals": {
-    "ndvi_recovered": false,
-    "bsi_normalized": false,
-    "thermal_gone": true
-   },
-   "note": "объект активен: признаков устранения нет",
-   "warnings": []
-  },
-  {
-   "candidate_id": "C00196",
+   "candidate_id": "C00178",
    "status": "active",
    "confidence": 0.0,
    "n_agreeing": 2,
@@ -444,22 +320,7 @@
    ]
   },
   {
-   "candidate_id": "C00197",
-   "status": "active",
-   "confidence": 0.0,
-   "n_agreeing": 1,
-   "n_observations": 48,
-   "consecutive_passes": 1,
-   "signals": {
-    "ndvi_recovered": false,
-    "bsi_normalized": false,
-    "thermal_gone": true
-   },
-   "note": "объект активен: признаков устранения нет",
-   "warnings": []
-  },
-  {
-   "candidate_id": "C00203",
+   "candidate_id": "C00189",
    "status": "active",
    "confidence": 0.0,
    "n_agreeing": 1,
