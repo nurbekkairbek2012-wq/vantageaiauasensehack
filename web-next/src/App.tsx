@@ -182,9 +182,11 @@ function whenPhrase(v: unknown) {
 export default function App() {
   const [series, setSeries] = useState<Series | null>(null);
   const [features, setFeatures] = useState<Feature[]>([]);
+  const [live, setLive] = useState<{ objects: number; confirmed: number } | null>(null);
 
   useEffect(() => {
     fetch('./data/hero-series.json').then((r) => r.json()).then(setSeries).catch(() => setSeries(null));
+    fetch('/api/summary').then((r) => (r.ok ? r.json() : null)).then(setLive).catch(() => setLive(null));
     fetch('./data/candidates.geojson')
       .then((r) => r.json())
       .then((fc: GeoJSON.FeatureCollection) => setFeatures(fc.features as Feature[]))
@@ -440,6 +442,11 @@ export default function App() {
                 )}{' '}
                 Склады, промплощадки и болота в список не попали.
               </p>
+              {live && (
+                <p className="mt-3 text-xs text-muted-2">
+                  Live from API: {live.objects} objects · {live.confirmed} confirmed
+                </p>
+              )}
             </div>
           </div>
         </section>

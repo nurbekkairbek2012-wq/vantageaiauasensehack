@@ -1,5 +1,13 @@
 # Vantage AI
 
+## For AuaHack judges
+- **Live app:** https://hakathon-lyart.vercel.app · **API:** /api/summary
+- **Frontend:** React + Vite + Leaflet — `web-next/`
+- **Backend:** Python pipeline (`src/vantage/`), FastAPI (`src/vantage/api/`), Vercel serverless functions (`api/`)
+- **Connected:** frontend calls `/api/summary`; Telegram bot runs on `api/telegram.py`
+- **Data:** free open satellite imagery — ESA Sentinel-1/2, NASA/USGS Landsat via STAC
+- **Tests:** 48 test files in `tests/`
+
 **Находит потери ресурсов и денег на обращении с отходами, считает их в тенге и говорит, что с ними выгоднее сделать.**
 
 Future Minds Hackathon 2026 · трек EcoFin · Астана

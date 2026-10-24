@@ -50,6 +50,11 @@
       "memory": 256,
       "maxDuration": 10,
       "includeFiles": "api/*.json"
+    },
+    "api/summary.py": {
+      "memory": 128,
+      "maxDuration": 5,
+      "includeFiles": "api/candidates.json"
     }
   }
 }
