@@ -187,7 +187,7 @@ order.sort(key=lambda item: -item[0])
 
 index = []
 written = 0
-for area, d, i, cid in order[:LIMIT]:
+for _area, d, i, cid in order[:LIMIT]:
     dataset = datasets[d]
     slug = cid.replace(":", "__")
     before, after = to_png(dataset.before[i], dataset.after[i])

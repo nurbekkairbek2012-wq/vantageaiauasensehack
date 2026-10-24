@@ -292,6 +292,51 @@ def train_risk_model(
     )
 
 
+def mask_implausible(
+    risk_grid: gpd.GeoDataFrame, implausible: gpd.GeoDataFrame | None
+) -> gpd.GeoDataFrame:
+    """Обнулить риск там, где свалка не возникает.
+
+    Модель обучена на признаках «далеко от жилья, близко к дороге, рядом уже
+    свалили» и ничего не знает о том, кому принадлежит участок. Ботанический
+    сад Назарбаев Университета удовлетворяет первым двум признакам идеально
+    и на первом же прогоне получил высший класс риска. Ошибка не в весах:
+    признака, отличающего охраняемую территорию от пустыря, в модели нет.
+
+    Добавить такой признак и переобучить — заманчиво и неверно. Обучающих
+    примеров «свалка в парке» ноль по определению, дерево не научится на
+    отсутствии, и признак получит нулевой вес — ровно как расстояние до
+    легального полигона. Запрет должен быть жёстким правилом, а не весом:
+    это знание о мире, а не закономерность в данных.
+
+    Обнуление, а не удаление строк: сетка остаётся полной, и по ней видно,
+    что ячейка рассмотрена и отвергнута. Удалённая ячейка неотличима от
+    непосчитанной.
+    """
+    out = risk_grid.copy()
+    out["masked"] = False
+    if implausible is None or implausible.empty or out.empty:
+        return out
+
+    layer = implausible.to_crs(out.crs) if implausible.crs != out.crs else implausible
+    # Пересечение, а не «центр внутри»: ячейка 500 м, наполовину лежащая в
+    # парке, — это половина парка, и предсказывать там нечего.
+    hit = gpd.sjoin(
+        out[["geometry"]], layer[["geometry"]], predicate="intersects", how="inner"
+    )
+    touched = out.index.isin(hit.index.unique())
+    out.loc[touched, "masked"] = True
+    if "risk" in out.columns:
+        out.loc[touched, "risk"] = 0.0
+        out["risk_rank"] = out["risk"].rank(ascending=False, method="min").astype(int)
+
+    log.info(
+        "Прогноз: обнулено %d ячеек из %d — охраняемые и застроенные земли",
+        int(touched.sum()), len(out),
+    )
+    return out
+
+
 def predict_risk(model: RiskModel, features: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """Вероятность появления новой свалки в каждой ячейке.
 

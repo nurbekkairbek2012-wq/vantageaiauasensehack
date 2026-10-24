@@ -85,7 +85,7 @@ export function Act({ p, center }: { p: Props; center: [number, number] | null }
   return (
     <article id="act-print" aria-hidden="true">
       <p className="act-draft">
-        ЧЕРНОВИК. Документ сформирован автоматически системой VANTAGE на основе
+        ЧЕРНОВИК. Документ сформирован автоматически системой Vantage на основе
         вероятностной модели и НЕ является официальным. Требуется проверка и
         подтверждение уполномоченным лицом.
       </p>
@@ -121,7 +121,7 @@ export function Act({ p, center }: { p: Props; center: [number, number] | null }
         собой оценку вероятности, а не юридическое доказательство. Решение о
         статусе объекта, размере ущерба и применении санкций принимается
         уполномоченным лицом по итогам выездной проверки.
-        VANTAGE · Future Minds Hackathon 2026.
+        Vantage · Future Minds Hackathon 2026.
       </p>
     </article>
   );

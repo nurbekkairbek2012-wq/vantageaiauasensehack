@@ -36,6 +36,14 @@ const REMOVAL: Record<string, { label: string; tone: string; dot: string }> = {
   insufficient_data: { label: 'данных мало', tone: 'text-muted-2', dot: '#2f2450' },
 };
 
+/* Ниже этого значения модель фактически возражает детектору. Показать
+   голый ноль рядом с объектом, который система вывела на карту как свалку,
+   значит поставить два противоречащих утверждения без объяснения. Само
+   разногласие — полезная величина: детектор нашёл необратимое изменение,
+   а модель говорит, что такое изменение бывает законным. Это повод
+   посмотреть глазами, а не повод спрятать число. */
+const DISAGREEMENT = 0.2;
+
 const SIGNALS: [string, string, number][] = [
   ['ndvi_drop', 'Падение вегетации', 0.35],
   ['bsi_rise', 'Открытый грунт', 0.25],
@@ -89,10 +97,11 @@ function humanDate(v: unknown) {
   return Number.isNaN(d.getTime()) ? '—' : `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-type SortKey = 'evidence_score' | 'damage_p50' | 'area_m2' | 'break_date' | 'risk_of_cover';
+type SortKey = 'probability' | 'evidence_score' | 'damage_p50' | 'area_m2' | 'break_date' | 'risk_of_cover';
 
 const SORTS: [SortKey, string][] = [
   ['risk_of_cover', 'сначала подозрение на присыпку'],
+  ['probability', 'по вероятности модели'],
   ['evidence_score', 'по согласию признаков'],
   ['damage_p50', 'по ущербу'],
   ['area_m2', 'по площади'],
@@ -167,7 +176,11 @@ export default function MapApp() {
   }, [candidates]);
 
   return (
-    <div className="flex h-screen flex-col">
+    /* h-screen только на широком экране. На телефоне три колонки
+       складываются в одну, и жёсткая высота окна делила её между списком,
+       картой и карточкой — списку доставалось полторы строки. Там страница
+       должна прокручиваться, а не втискиваться. */
+    <div className="flex min-h-screen flex-col lg:h-screen">
       <Nav current="map">
         <dl className="flex min-w-0 flex-wrap items-baseline gap-x-6 gap-y-1 text-sm">
           <div className="flex items-baseline gap-2">
@@ -187,7 +200,7 @@ export default function MapApp() {
 
       <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[22rem_1fr_23rem]">
         {/* ── Реестр: таблица решения, а не список ────────────────────── */}
-        <aside className="flex min-h-0 flex-col border-r border-grid">
+        <aside className="flex max-h-[60vh] min-h-0 flex-col border-r border-grid lg:max-h-none">
           <div className="flex shrink-0 items-center gap-2 border-b border-grid px-4 py-2.5">
             <label htmlFor="sort" className="text-xs text-muted-2">Сортировка</label>
             <select
@@ -205,8 +218,8 @@ export default function MapApp() {
               стоит дешевле, чем объяснение на защите. */}
           <div className="flex shrink-0 items-baseline justify-between gap-3 border-b border-grid px-4 py-1.5 text-[11px] uppercase tracking-[0.1em] text-muted-2">
             <span>Объект</span>
-            <span title="Сколько из пяти физических признаков сработало за объект">
-              Согласие признаков
+            <span title="Вневыборочная вероятность модели: оценку дала модель, которая этот объект на обучении не видела">
+              Вероятность
             </span>
           </div>
 
@@ -216,6 +229,15 @@ export default function MapApp() {
               const id = String(p.candidate_id);
               const on = id === selected;
               const score = Number(p.evidence_score) || 0;
+              /* В строке стоит вероятность модели, а не согласие признаков.
+                 Раньше стояло согласие, и это была подмена: среднее по пяти
+                 физическим величинам — не уверенность, а сводка измерений.
+                 Читалось оно как уверенность и давало «34%» там, где модель
+                 говорит 0,97. Согласие никуда не делось — оно рядом, в виде
+                 «признаков n из 5», где его невозможно спутать с долей. */
+              const model = Number(p.probability);
+              const hasModel = Number.isFinite(model);
+              const agreeing = Number(p.n_agreeing) || 0;
               return (
                 <li
                   key={id}
@@ -234,12 +256,24 @@ export default function MapApp() {
                   >
                     <div className="flex items-baseline justify-between gap-3">
                       <span className="tabular font-display text-base text-line">{id}</span>
-                      <span className="tabular text-sm text-violet-lit">{Math.round(score * 100)}%</span>
+                      <span
+                        className={`tabular text-sm ${hasModel ? 'text-violet-lit' : 'text-muted-2'}`}
+                        title={hasModel ? 'вероятность модели' : 'модель по этому объекту не высказывалась'}
+                      >
+                        {hasModel ? `${Math.round(model * 100)}%` : '—'}
+                      </span>
                     </div>
+                    {/* Два ряда с постоянным составом, а не один плывущий.
+                        При переносе по месту «признаков 4 из 5» уезжало на
+                        первую строку у одних объектов и на вторую у других,
+                        и колонка переставала читаться сверху вниз. */}
                     <div className="mt-1 flex flex-wrap items-baseline gap-x-4 text-xs text-muted-2">
                       <span className="tabular">{num(p.area_m2)} м²</span>
                       <span className="tabular">{kzt(p.damage_p50)}</span>
                       <span>{humanDate(p.break_date)}</span>
+                    </div>
+                    <div className="mt-0.5 flex flex-wrap items-baseline gap-x-4 text-xs text-muted-2">
+                      <span className="tabular">признаков {agreeing} из 5</span>
                       {removalOf(p) && (
                         <span className="flex items-center gap-1.5">
                           <span
@@ -250,9 +284,17 @@ export default function MapApp() {
                           {removalOf(p)!.label}
                         </span>
                       )}
+                      {hasModel && model < DISAGREEMENT && (
+                        <span className="text-amber" title="модель считает изменение законным — карьером или стройкой">
+                          модель не согласна
+                        </span>
+                      )}
                     </div>
                     <div className="mt-2 h-[3px] w-full bg-grid">
-                      <div className="h-full bg-violet-lit" style={{ width: `${Math.min(100, score * 100)}%` }} />
+                      <div
+                        className={`h-full ${hasModel ? 'bg-violet-lit' : 'bg-violet-deep'}`}
+                        style={{ width: `${Math.min(100, (hasModel ? model : score) * 100)}%` }}
+                      />
                     </div>
                   </button>
                 </li>
@@ -267,7 +309,7 @@ export default function MapApp() {
         </aside>
 
         {/* ── Карта ───────────────────────────────────────────────────── */}
-        <div className="relative min-h-[22rem]">
+        <div className="relative h-[65vh] min-h-[22rem] lg:h-auto">
           <MapView
             candidates={candidates}
             registry={registry}
@@ -292,7 +334,10 @@ export default function MapApp() {
               </label>
             </div>
             {showRisk && (
-              <p className="pointer-events-none max-w-[15rem] text-xs leading-snug text-muted-2">
+              /* Подложка обязательна. Раньше подсказка лежала прямо на
+                 сетке и читалась; на снимке серый текст поверх пёстрого
+                 поля не читается вовсе. */
+              <p className="pointer-events-none max-w-[15rem] rounded-sm border border-grid bg-soot/90 px-2.5 py-1.5 text-xs leading-snug text-muted backdrop-blur-sm">
                 Тепло — вероятность появления новой свалки, а не найденный
                 объект. Границ у зоны нет: риск не обрывается на меже.
               </p>
@@ -351,7 +396,9 @@ function ObjectCard({ f }: { f: Feature }) {
           </span>
         </div>
         <p className="mt-1.5 text-xs leading-snug text-muted-2">
-          {hasModel
+          {hasModel && model < DISAGREEMENT
+            ? 'Модель возражает детектору: по паре снимков изменение похоже на законное — карьер, стройку или отвал грунта. Детектор нашёл здесь необратимое изменение, модель считает его объяснимым. Разногласие не разрешается автоматически: это первый объект, на который стоит съездить.'
+            : hasModel
             ? 'Вневыборочная: оценку дала модель, которая этот объект на обучении не видела. Разметка слабая — положительные примеры взяты из доверификации, отрицательные из карьеров и строек OSM. Сеть отличает подтверждённое изменение от законного, а не находит свалки с нуля.'
             : 'Этот объект не попал ни в положительную, ни в отрицательную часть слабой разметки, и модель по нему не высказывалась. Прочерк честнее подставленного числа.'}
         </p>

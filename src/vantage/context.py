@@ -84,6 +84,9 @@ class ContextLayers:
     roads: gpd.GeoDataFrame        # проезжие дороги
     settlements: gpd.GeoDataFrame  # населённые пункты
     crs: str
+    #: Земли, где свалка не возникает. Нужны прогнозу, а не детектору;
+    #: пустой слой означает «не запрашивали», а не «таких земель нет».
+    implausible: gpd.GeoDataFrame | None = None
 
     def is_empty(self) -> bool:
         return self.excluded.empty and self.roads.empty and self.settlements.empty
@@ -177,6 +180,54 @@ out geom;
 """.strip()
 
 
+#: Земли, на которых стихийная свалка не возникает — не потому, что там
+#: чисто, а потому, что за участком следят. Университетский кампус, парк,
+#: ботанический сад, кладбище, аэродром, воинская часть, водоём: у каждого
+#: есть хозяин, охрана или забор, и самосвал туда не заезжает.
+#:
+#: Список НЕ совпадает со списком исключений для находок, и это не
+#: небрежность. Карьер и промзона из находок вычитаются — там законное
+#: изменение поверхности, которое детектор путает со свалкой. Но
+#: предсказывать свалку в карьере как раз осмысленно: заброшенный карьер —
+#: одно из самых частых мест сброса. Прогноз и детекция отвечают на разные
+#: вопросы, и запретные зоны у них разные.
+IMPLAUSIBLE_FOR_DUMPING = {
+    "leisure": ["park", "garden", "nature_reserve", "pitch", "stadium", "golf_course"],
+    "landuse": ["forest", "recreation_ground", "cemetery", "military", "education"],
+    "amenity": ["university", "college", "school", "hospital", "kindergarten"],
+    "natural": ["water", "wetland"],
+    "boundary": ["protected_area", "national_park"],
+    "aeroway": ["aerodrome", "runway", "apron"],
+    "waterway": ["riverbank"],
+}
+
+
+def build_implausible_query(aoi: AOI) -> str:
+    """Overpass QL для земель, где стихийная свалка не возникает.
+
+    Нужен прогнозу, а не детектору. Модель риска обучена на признаках вида
+    «далеко от жилья, близко к дороге» и ничего не знает о том, кому
+    принадлежит участок. Ботанический сад Назарбаев Университета
+    удовлетворяет обоим признакам идеально — и получил высший класс риска
+    на первом же прогоне. Ошибка не в весах: признака, который отличал бы
+    охраняемую территорию от пустыря, в модели просто нет.
+    """
+    bbox = _bbox_clause(aoi)
+    clauses = []
+    for key, values in IMPLAUSIBLE_FOR_DUMPING.items():
+        pattern = "|".join(values)
+        for kind in ("way", "relation"):
+            clauses.append(f'  {kind}["{key}"~"^({pattern})$"]({bbox});')
+    body = chr(10).join(clauses)
+    return f"""
+[out:json][timeout:180];
+(
+{body}
+);
+out geom;
+""".strip()
+
+
 def build_roads_query(aoi: AOI) -> str:
     bbox = _bbox_clause(aoi)
     highways = "|".join(DRIVABLE_HIGHWAYS)
@@ -263,11 +314,22 @@ def fetch_context(
         client.query(build_settlements_query(aoi), use_cache=use_cache), target_crs=crs
     )
 
-    log.info(
-        "Контекст загружен: %d исключаемых объектов, %d дорог, %d населённых пунктов",
-        len(excluded), len(roads), len(settlements),
+    implausible = overpass_to_gdf(
+        client.query(build_implausible_query(aoi), use_cache=use_cache), target_crs=crs
     )
-    return ContextLayers(excluded=excluded, roads=roads, settlements=settlements, crs=crs)
+
+    log.info(
+        "Контекст загружен: %d исключаемых, %d дорог, %d населённых пунктов, "
+        "%d охраняемых участков",
+        len(excluded), len(roads), len(settlements), len(implausible),
+    )
+    return ContextLayers(
+        excluded=excluded,
+        roads=roads,
+        settlements=settlements,
+        crs=crs,
+        implausible=implausible,
+    )
 
 
 # --------------------------------------------------------------------------- #

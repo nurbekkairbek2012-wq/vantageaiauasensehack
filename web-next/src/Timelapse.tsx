@@ -229,7 +229,9 @@ export default function Timelapse() {
         </div>
 
         {forecastMix > 0.35 && (
-          <div className="pointer-events-none absolute bottom-6 left-6 z-[500] max-w-[22rem] rounded-sm border border-grid bg-soot/90 px-4 py-3 backdrop-blur-sm">
+          /* right-16 на телефоне: без него блок доходил до кнопок зума и
+             последняя строка обрезалась ими же. */
+          <div className="pointer-events-none absolute bottom-6 left-4 right-16 z-[500] max-w-[22rem] rounded-sm border border-grid bg-soot/90 px-4 py-3 backdrop-blur-sm sm:left-6 sm:right-auto">
             <p className="text-sm text-line">Тепло без объектов — где свалок ещё нет</p>
             <p className="mt-1 text-xs leading-snug text-muted">
               Модель обучена на объектах до сентября 2023 и проверена на

@@ -397,6 +397,7 @@ class Pipeline:
         from .risk import (
             aggregate_public,
             build_grid,
+            mask_implausible,
             predict_risk,
             spatial_features,
             temporal_labels,
@@ -417,6 +418,10 @@ class Pipeline:
 
         model = train_risk_model(features, y_train, y_future, self.settings.risk, cutoff=cutoff)
         private = predict_risk(model, features)
+        # Маска идёт ПОСЛЕ предсказания, а не вместо признака. Обучающих
+        # примеров «свалка в парке» ноль по определению, и признак получил бы
+        # нулевой вес; запрет — знание о мире, а не закономерность в данных.
+        private = mask_implausible(private, None if layers is None else layers.implausible)
         public = aggregate_public(private, self.settings.risk)
         return model, private, public
 

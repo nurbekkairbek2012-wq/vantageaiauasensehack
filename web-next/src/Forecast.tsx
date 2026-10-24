@@ -148,8 +148,8 @@ export default function Forecast() {
           реестра растягивали карту на полторы тысячи пикселей, и она
           уезжала из поля зрения вместе с ответом, ради которого страница
           и существует. Реестр прокручивается внутри себя. */}
-      <div className="grid h-[min(72vh,46rem)] grid-cols-1 lg:grid-cols-[26rem_1fr]">
-        <aside className="flex min-h-0 flex-col border-r border-grid">
+      <div className="grid grid-cols-1 lg:h-[min(72vh,46rem)] lg:grid-cols-[26rem_1fr]">
+        <aside className="flex max-h-[55vh] min-h-0 flex-col border-r border-grid lg:max-h-none">
           <div className="border-b border-grid px-5 py-4">
             <h1 className="text-xl text-line">Маршрут на ближайший месяц</h1>
             <p className="mt-2 text-sm text-muted">
@@ -199,7 +199,7 @@ export default function Forecast() {
           </ol>
         </aside>
 
-        <div className="relative min-h-[20rem]">
+        <div className="relative h-[60vh] min-h-[20rem] lg:h-auto">
           <div className="absolute inset-0 bg-soot" />
           <div ref={host} className="absolute inset-0" />
           <BasemapSwitch

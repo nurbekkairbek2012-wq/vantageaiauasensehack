@@ -303,30 +303,80 @@ def attach_signals(
 
 
 def pmli_response_from_chips(dataset, *, centre_px: int = 16) -> dict[str, float]:
-    """Отклик полимеров как прирост PMLI между эпохами «до» и «после».
+    """Отклик полимеров — ОСТАТОК прироста PMLI после вычета смены покрова.
 
-    Считается по центральной части чипа: край окна почти всегда захватывает
-    фон вокруг объекта, и включать его в оценку — значит систематически
-    занижать признак у мелких объектов.
+    ── Почему не разность «после минус до» ─────────────────────────────
 
-    Отдельная функция, а не шаг пайплайна: чипы уже нарезаны основным
-    прогоном, и признак достаётся из них бесплатно, без единого запроса.
+    Так было сделано сначала, и признак оказался мёртвым: на всех тридцати
+    опубликованных объектах он выходил отрицательным, то есть ни разу не
+    голосовал. Причина не в данных.
+
+    PMLI = (B11 − B04) / (B11 + B04). У растительности красный канал низкий,
+    и индекс высокий; у голой земли красный высокий, и индекс падает. Любой
+    переход «трава → грунт» роняет PMLI сам по себе, независимо от того,
+    лежит там плёнка или нет. Проверка на 607 кусках: корреляция с падением
+    NDVI равна −0,90, и переход объясняет 89% дисперсии.
+
+    То есть признак был не пятым независимым голосом, а четвёртым — NDVI со
+    знаком минус, посчитанным заново. Ансамбль «пяти независимых признаков»
+    на деле опирался на четыре, и один из них учитывался дважды.
+
+    ── Что считается теперь ────────────────────────────────────────────
+
+    Вклад смены покрова снимается линейной моделью по приросту BSI и падению
+    NDVI, а признаком служит остаток. Смысл прямой: две площадки одинаково
+    перешли из травы в грунт, но у одной PMLI упал меньше ожидаемого —
+    значит, в SWIR есть что-то, чего нет у чистого грунта.
+
+    Коэффициенты подбираются по самому набору, а не берутся константами:
+    соотношение каналов зависит от типа почвы и сезона, и число, подходящее
+    для Астаны, было бы неверным для юга. Внутрипрогонная нормировка честнее
+    зашитой константы.
+
+    Признак остаётся самым слабым из пяти, и это видно по данным: остаток
+    почти симметричен относительно нуля. Он не доказывает наличие пластика —
+    он один из пяти голосов, и теперь хотя бы независимый.
     """
-    if "pmli" not in dataset.channels:
-        raise KeyError("в чипах нет канала pmli")
+    for name in ("pmli", "bsi", "ndvi"):
+        if name not in dataset.channels:
+            raise KeyError(f"в чипах нет канала {name}")
 
-    channel = dataset.channels.index("pmli")
     size = dataset.before.shape[-1]
     half = min(centre_px, size) // 2
     lo, hi = size // 2 - half, size // 2 + half
     if hi <= lo:
         lo, hi = 0, size
 
-    before = dataset.before[:, channel, lo:hi, lo:hi]
-    after = dataset.after[:, channel, lo:hi, lo:hi]
-    with np.errstate(invalid="ignore"):
-        delta = np.nanmedian(after, axis=(1, 2)) - np.nanmedian(before, axis=(1, 2))
-    return {cid: float(value) for cid, value in zip(dataset.candidate_ids, delta, strict=True)}
+    def delta(name: str) -> np.ndarray:
+        channel = dataset.channels.index(name)
+        before = dataset.before[:, channel, lo:hi, lo:hi]
+        after = dataset.after[:, channel, lo:hi, lo:hi]
+        with np.errstate(invalid="ignore"):
+            return np.nanmedian(after, axis=(1, 2)) - np.nanmedian(before, axis=(1, 2))
+
+    pmli_delta = delta("pmli")
+    bsi_delta = delta("bsi")
+    ndvi_delta = delta("ndvi")
+
+    usable = np.isfinite(pmli_delta) & np.isfinite(bsi_delta) & np.isfinite(ndvi_delta)
+    residual = np.full(pmli_delta.shape, np.nan, dtype="float64")
+
+    # Меньше десятка кусков — подгонять не на чем; отдаём сырую разность,
+    # чтобы поведение осталось определённым, а не молча нулевым.
+    if usable.sum() >= 10:
+        design = np.column_stack(
+            [np.ones(int(usable.sum())), bsi_delta[usable], ndvi_delta[usable]]
+        )
+        coefficients, *_ = np.linalg.lstsq(design, pmli_delta[usable], rcond=None)
+        residual[usable] = pmli_delta[usable] - design @ coefficients
+        log.info(
+            "Полимеры: вклад смены покрова снят, коэффициенты %s",
+            np.round(coefficients, 3).tolist(),
+        )
+    else:
+        residual = pmli_delta
+
+    return {cid: float(value) for cid, value in zip(dataset.candidate_ids, residual, strict=True)}
 
 
 # --------------------------------------------------------------------------- #

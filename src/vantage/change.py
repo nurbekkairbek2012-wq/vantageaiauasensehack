@@ -250,6 +250,7 @@ def find_breakpoint(
     min_segment: int,
     *,
     max_index: int | None = None,
+    edge_guard: bool = True,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Найти наиболее вероятную точку разрыва в остатках.
 
@@ -267,12 +268,31 @@ def find_breakpoint(
     разрыва 2021 года окажется конкурент на хвосте ряда, максимум уйдёт
     туда. Отбраковка постфактум выбросила бы такой пиксель целиком вместе
     с настоящей находкой; сужение области поиска — оставляет её.
+
+    ── Стенка ──────────────────────────────────────────────────────────
+
+    У сужения есть своя цена, и она обнаружилась на распределении дат.
+    Ограничение не убирает пиксели, у которых настоящее изменение
+    произошло ПОЗЖЕ предела наблюдаемости, — оно переименовывает их. Лучшая
+    доступная точка для такого пикселя всегда лежит вплотную к границе, и
+    он получает дату границы.
+
+    На кольцевом прогоне это дало 21 объект ровно на последнем допустимом
+    индексе и подъём частот на подходе к нему: 43 → 17, 44 → 9, 45 → 7,
+    46 → 12, 47 → 15, 48 → 21. В календаре это выглядело как всплеск свалок
+    в 2024 году после провала в 2022–2023. Всплеска не было — была стенка.
+
+    ``edge_guard`` отличает находку от упора в стенку: если лучшая точка
+    без ограничения лежит ЗА пределом, а лучшая внутри — вплотную к нему,
+    у пикселя нет наблюдаемого разрыва, и честный ответ -1. Разрыв в
+    середине ряда при этом уцелеет: там лучшая внутренняя точка не у стенки.
     """
     n_t, n_pix = residuals.shape
     if n_t < 2 * min_segment + 1:
         return np.full(n_pix, -1, dtype="int32"), np.zeros(n_pix, dtype="float32")
 
-    stop = n_t - min_segment
+    stop_full = n_t - min_segment
+    stop = stop_full
     if max_index is not None:
         stop = min(stop, int(max_index) + 1)
     if stop <= min_segment:
@@ -295,8 +315,12 @@ def find_breakpoint(
 
     best_z = np.zeros(n_pix, dtype="float64")
     best_k = np.full(n_pix, -1, dtype="int32")
+    # Лучшая точка БЕЗ ограничения — нужна, чтобы отличить находку у
+    # границы от пикселя, чьё изменение произошло за ней.
+    best_z_free = np.zeros(n_pix, dtype="float64")
+    best_k_free = np.full(n_pix, -1, dtype="int32")
 
-    for k in range(min_segment, stop):
+    for k in range(min_segment, stop_full):
         n1 = count[k - 1].astype("float64")
         n2 = (total_n - count[k - 1]).astype("float64")
         with np.errstate(invalid="ignore", divide="ignore"):
@@ -306,9 +330,21 @@ def find_breakpoint(
             z = np.abs(mean2 - mean1) / se
         z = np.where(np.isfinite(z) & (n1 >= min_segment) & (n2 >= min_segment), z, 0.0)
 
-        better = z > best_z
-        best_z = np.where(better, z, best_z)
-        best_k = np.where(better, k, best_k)
+        better_free = z > best_z_free
+        best_z_free = np.where(better_free, z, best_z_free)
+        best_k_free = np.where(better_free, k, best_k_free)
+
+        if k < stop:
+            better = z > best_z
+            best_z = np.where(better, z, best_z)
+            best_k = np.where(better, k, best_k)
+
+    if edge_guard and max_index is not None and stop < stop_full:
+        wall = stop - 1
+        margin = max(1, min_segment // 2)
+        propped = (best_k >= wall - margin) & (best_k_free > int(max_index))
+        best_k = np.where(propped, -1, best_k)
+        best_z = np.where(propped, 0.0, best_z)
 
     return best_k, best_z.astype("float32")
 

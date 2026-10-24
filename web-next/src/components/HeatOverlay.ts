@@ -100,6 +100,13 @@ export class HeatOverlay extends L.Layer {
   private spriteRadius = -1;
   private frame = 0;
 
+  /* Состояние на момент последней отрисовки. Без него холст невозможно
+     удержать на месте во время зума: смещение считается ОТ того вида, в
+     котором пиксели были нарисованы, а не от текущего. */
+  private origin: L.Point | null = null;
+  private drawnCenter: L.LatLng | null = null;
+  private drawnZoom = 0;
+
   constructor(points: HeatPoint[] = [], options: Options = {}) {
     super();
     this.points = points;
@@ -119,6 +126,10 @@ export class HeatOverlay extends L.Layer {
     map.getPanes().overlayPane.appendChild(canvas);
 
     map.on('moveend zoomend resize', this.reset, this);
+    // Событие zoom идёт непрерывно и при колесе, и при щипке. Без него
+    // холст оставался на старом месте до конца жеста — это и выглядело
+    // как «тепловая карта отстаёт и уезжает».
+    map.on('zoom', this.onZoom, this);
     if (map.options.zoomAnimation && L.Browser.any3d) {
       map.on('zoomanim', this.onZoomAnim, this);
     }
@@ -129,6 +140,7 @@ export class HeatOverlay extends L.Layer {
   onRemove(map: L.Map): this {
     if (this.frame) { cancelAnimationFrame(this.frame); this.frame = 0; }
     map.off('moveend zoomend resize', this.reset, this);
+    map.off('zoom', this.onZoom, this);
     map.off('zoomanim', this.onZoomAnim, this);
     this.canvas?.remove();
     this.canvas = null;
@@ -166,22 +178,40 @@ export class HeatOverlay extends L.Layer {
     });
   }
 
-  private onZoomAnim(event: L.ZoomAnimEvent) {
+  /* Первая версия считала смещение через _getCenterOffset и уезжала: эта
+     величина отсчитывается от ТЕКУЩЕГО вида карты, а пиксели на холсте
+     нарисованы в предыдущем. При каждом шаге зума пятна прыгали на новое
+     место и возвращались только по окончании жеста.
+  
+     Формула ниже — та же, которой пользуется собственный canvas-рендерер
+     Leaflet: смещение считается от запомненных центра и зума отрисовки.
+     Приватным остаётся один метод вместо двух. */
+  private updateTransform(center: L.LatLng, zoom: number) {
     const map = this._map;
-    if (!map || !this.canvas) return;
-    /* Оба метода приватные. Публичного способа удержать холст на месте
-       во время анимации зума у Leaflet нет — собственные слои библиотеки
-       пользуются этими же двумя. Один явный тип честнее россыпи as any. */
+    if (!map || !this.canvas || !this.drawnCenter) return;
+
     const inner = map as unknown as {
-      _getCenterOffset(center: L.LatLng): L.Point;
-      _getMapPanePos(): L.Point;
+      _getNewPixelOrigin(center: L.LatLng, zoom: number): L.Point;
     };
-    const scale = map.getZoomScale(event.zoom, map.getZoom());
-    const offset = inner
-      ._getCenterOffset(event.center)
+    const scale = map.getZoomScale(zoom, this.drawnZoom);
+    const viewHalf = map.getSize().multiplyBy(0.5 + PAD);
+    const drawnCenterNow = map.project(this.drawnCenter, zoom);
+    const offset = viewHalf
       .multiplyBy(-scale)
-      .subtract(inner._getMapPanePos());
+      .add(drawnCenterNow)
+      .subtract(inner._getNewPixelOrigin(center, zoom));
+
     L.DomUtil.setTransform(this.canvas, offset, scale);
+  }
+
+  private onZoomAnim(event: L.ZoomAnimEvent) {
+    this.updateTransform(event.center, event.zoom);
+  }
+
+  private onZoom() {
+    const map = this._map;
+    if (!map) return;
+    this.updateTransform(map.getCenter(), map.getZoom());
   }
 
   private reset() {
@@ -190,10 +220,8 @@ export class HeatOverlay extends L.Layer {
     if (!map || !canvas) return;
 
     const size = map.getSize();
-    const padX = Math.round(size.x * PAD);
-    const padY = Math.round(size.y * PAD);
-    const width = size.x + padX * 2;
-    const height = size.y + padY * 2;
+    const width = Math.round(size.x * (1 + PAD * 2));
+    const height = Math.round(size.y * (1 + PAD * 2));
 
     if (canvas.width !== width || canvas.height !== height) {
       canvas.width = width;
@@ -202,8 +230,13 @@ export class HeatOverlay extends L.Layer {
       canvas.style.height = `${height}px`;
     }
 
-    const corner = map.containerPointToLayerPoint([-padX, -padY]);
-    L.DomUtil.setTransform(canvas, corner, 1);
+    // Левый верхний угол холста в координатах слоя. Он же начало отсчёта
+    // при рисовании — иначе позиция пятен и позиция холста разъезжаются.
+    this.origin = map.containerPointToLayerPoint(size.multiplyBy(-PAD)).round();
+    this.drawnCenter = map.getCenter();
+    this.drawnZoom = map.getZoom();
+
+    L.DomUtil.setTransform(canvas, this.origin, 1);
     this.draw();
   }
 
@@ -235,12 +268,9 @@ export class HeatOverlay extends L.Layer {
     if (!map || !canvas || !ctx) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (!this.points.length) return;
+    if (!this.points.length || !this.origin) return;
 
-    const size = map.getSize();
-    const padX = Math.round(size.x * PAD);
-    const padY = Math.round(size.y * PAD);
-
+    const origin = this.origin;
     const zoom = map.getZoom();
     const mpp = metersPerPixel(zoom, map.getCenter().lat);
     const radius = Math.round(
@@ -264,9 +294,12 @@ export class HeatOverlay extends L.Layer {
       if (strength <= 0.001) continue;
       if (!bounds.contains([point.lat, point.lon])) continue;
 
-      const pixel = map.latLngToContainerPoint([point.lat, point.lon]);
+      // Координаты слоя, а не контейнера: контейнерные отсчитываются от
+      // текущего вида, и при панорамировании пятна разъезжались с холстом,
+      // который двигается вместе со слоем.
+      const pixel = map.latLngToLayerPoint([point.lat, point.lon]).subtract(origin);
       ctx.globalAlpha = Math.min(1, 0.12 + 0.55 * strength);
-      ctx.drawImage(sprite, pixel.x + padX - radius, pixel.y + padY - radius);
+      ctx.drawImage(sprite, pixel.x - radius, pixel.y - radius);
       painted++;
     }
 

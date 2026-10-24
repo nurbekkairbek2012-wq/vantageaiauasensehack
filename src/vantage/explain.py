@@ -51,7 +51,11 @@ PHYSICAL_SIGNALS = ("ndvi_drop", "bsi_rise", "pmli_response", "sar_incoherence",
 SIGNAL_FULL_SCALE = {
     "ndvi_drop": 0.35,        # падение NDVI на 0.35 — полное исчезновение растительности
     "bsi_rise": 0.25,         # рост BSI на 0.25 — переход к полностью открытой поверхности
-    "pmli_response": 0.15,    # отклик полимеров в SWIR
+    # Остаток PMLI после вычета смены покрова, а не сама разность: см.
+    # signals.pmli_response_from_chips. Шкала на порядок меньше прежней,
+    # потому что и величина другая — из разности убран вклад, который её
+    # и составлял. На 607 кусках девяностый процентиль остатка 0,030.
+    "pmli_response": 0.04,
     "sar_incoherence": FULL_SCALE_INCOHERENCE_DB,
     "thermal_anomaly": FULL_SCALE_ANOMALY_K,
 }

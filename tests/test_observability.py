@@ -85,6 +85,18 @@ class TestSearchWindow:
         assert last_observable_index(short, 18) == -1
 
     def test_search_respects_max_index(self):
+        """Область поиска сужается, и упор в стенку не выдаётся за находку.
+
+        Раньше здесь проверялось обратное: что ограниченный поиск вернёт
+        какую-нибудь точку внутри разрешённой области. Проверка закрепляла
+        поломку. Ограничение не убирает пиксель, чьё изменение произошло
+        позже предела, — оно переименовывает его, приписывая дату границы.
+        На настоящем прогоне это дало 21 объект ровно на последнем
+        допустимом индексе и всплеск свалок в календаре, которого не было.
+
+        Разрыв на 50-м отсчёте при пределе 40 наблюдать нечем. Честный
+        ответ — -1, а не «разрыв на сороковом».
+        """
         rng = np.random.default_rng(3)
         residuals = rng.normal(0, 0.02, (61, 1)).astype("float32")
         residuals[50:, 0] -= 0.4  # сильный разрыв на хвосте
@@ -93,7 +105,33 @@ class TestSearchWindow:
         limited, _ = find_breakpoint(residuals, 4, max_index=40)
 
         assert free[0] >= 45
-        assert 0 <= limited[0] <= 40
+        assert limited[0] == -1
+
+    def test_real_break_survives_a_later_competitor(self):
+        """Находка в середине ряда не приносится в жертву защите от стенки.
+
+        Ради этого сужение области поиска и делалось: у пикселя с настоящим
+        разрывом в середине может оказаться конкурент на хвосте, и отбраковка
+        постфактум выбросила бы пиксель целиком. Защита от стенки срабатывает
+        только когда лучшая внутренняя точка стоит вплотную к границе.
+        """
+        rng = np.random.default_rng(7)
+        residuals = rng.normal(0, 0.02, (61, 1)).astype("float32")
+        residuals[20:, 0] -= 0.5   # настоящий разрыв в середине
+        residuals[52:, 0] -= 0.2   # конкурент за пределом наблюдаемости
+
+        limited, z = find_breakpoint(residuals, 4, max_index=40)
+        assert 15 <= limited[0] <= 25, "разрыв середины ряда обязан уцелеть"
+        assert z[0] > 0
+
+    def test_guard_can_be_switched_off(self):
+        """Отключаемо: поведение до исправления нужно для сравнения."""
+        rng = np.random.default_rng(3)
+        residuals = rng.normal(0, 0.02, (61, 1)).astype("float32")
+        residuals[50:, 0] -= 0.4
+
+        without, _ = find_breakpoint(residuals, 4, max_index=40, edge_guard=False)
+        assert 0 <= without[0] <= 40
 
 
 class TestTailBreaksAreRejected:

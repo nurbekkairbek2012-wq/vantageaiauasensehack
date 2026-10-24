@@ -12,7 +12,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { Mark } from './components/Logo';
+import { Logo, Mark } from './components/Logo';
 import { Nav } from './components/Nav';
 import { Tape } from './components/Tape';
 import { Plates } from './components/Plates';
@@ -139,6 +139,17 @@ export default function App() {
             </div>
 
             <div className="lg:pt-2">
+              {/* Имя продукта на первом экране, а не только в шапке.
+                  В шапке оно стоит в ряду с пунктами меню и читается как
+                  ещё один пункт: глаз проходит мимо. Здесь оно занимает
+                  собственную строку над заголовком и подписано тем, что
+                  продукт делает — двух слов достаточно, третье уже
+                  описание, а описание ниже. */}
+              <Logo size={46} className="mb-1.5" />
+              <p className="mb-5 text-sm tracking-[0.02em] text-muted-2">
+                свалки из космоса · дата, площадь, сумма
+              </p>
+
               <h1 className="max-w-[15ch] text-[clamp(2.3rem,5.5vw,4rem)] leading-[1.02] text-line">
                 {hero && whenPhrase(hero.properties?.break_date)
                   ? `Свалка возникла ${whenPhrase(hero.properties?.break_date)}`
@@ -320,7 +331,10 @@ export default function App() {
       <footer className="border-t border-grid">
         <div className="mx-auto flex max-w-[1240px] flex-wrap items-center justify-between gap-6 px-6 py-9">
           <div className="flex items-center gap-3">
-            <Mark size={26} />
+            {/* 34, а не 26: ниже 32 знак переходит на мелкую
+                отрисовку без орбиты, и подвал переставал совпадать
+                с шапкой. */}
+            <Mark size={34} />
             <span className="text-sm text-muted-2">
               Future Minds Hackathon 2026 · трек EcoFin · Астана
             </span>
