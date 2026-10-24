@@ -64,7 +64,7 @@ Sentinel-2 · Sentinel-1 · Landsat 8/9
 | Документы | ReportLab, черновик с обязательным подтверждением |
 | Сервис | FastAPI, ролевой доступ, журнал обращений |
 | Бот | `python-telegram-bot`, двусторонний контур |
-| Карта | собственный canvas-рендерер, service worker, ноль внешних ресурсов |
+| Карта | Leaflet (локально, без CDN), растровые тайлы, service worker |
 
 ---
 
@@ -101,7 +101,7 @@ vantage scenes --collection s2        # сколько снимков досту
 vantage money 5000 --sensitivity      # ущерб от объекта 5000 м²
 
 vantage sample                        # синтетика для отладки интерфейса
-vantage web                           # карта на http://127.0.0.1:8080
+vantage web                           # лендинг и карта на http://127.0.0.1:8080
 ```
 
 Сервис:

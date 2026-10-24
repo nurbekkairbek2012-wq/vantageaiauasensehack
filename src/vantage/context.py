@@ -40,10 +40,29 @@ from .config import ContextCfg, Settings
 
 log = logging.getLogger(__name__)
 
+#: Зеркала Overpass в порядке обхода.
+#:
+#: Список длинный не от избытка осторожности: публичные зеркала Overpass
+#: регулярно уходят в перегрузку и отвечают 504 или обрывают соединение,
+#: причём все сразу. Контекстный отсев без них не работает вообще, поэтому
+#: запас нужен, а результат обязательно кешируется на диск.
+#:
+#: Внимание: региональные инстансы (overpass.osm.ch и подобные) содержат
+#: данные только своей страны и на запрос по Казахстану молча возвращают
+#: пустой ответ — не ошибку. Такие зеркала сюда добавлять нельзя.
 OVERPASS_ENDPOINTS = (
     "https://overpass-api.de/api/interpreter",
     "https://overpass.kumi.systems/api/interpreter",
+    "https://overpass.private.coffee/api/interpreter",
+    "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
 )
+
+#: Сколько раз обойти весь список зеркал, прежде чем сдаться.
+OVERPASS_ROUNDS = 2
+
+#: Пауза между кругами, секунды. Перегрузка Overpass обычно
+#: рассасывается за десятки секунд.
+OVERPASS_BACKOFF_S = 8
 
 #: Типы дорог, по которым реально может проехать самосвал.
 #: Тропинки и велодорожки исключены намеренно — по ним отходы не вывозят.
@@ -92,22 +111,41 @@ class OverpassClient:
             return json.loads(cache_file.read_text(encoding="utf-8"))
 
         last_error: Exception | None = None
-        for endpoint in OVERPASS_ENDPOINTS:
-            try:
-                log.info("Overpass: запрос к %s", endpoint)
-                response = requests.post(
-                    endpoint, data={"data": ql}, timeout=self.timeout
-                )
-                response.raise_for_status()
-                payload = response.json()
-                cache_file.write_text(json.dumps(payload), encoding="utf-8")
-                return payload
-            except Exception as exc:
-                log.warning("Overpass %s недоступен: %s", endpoint, exc)
-                last_error = exc
-                time.sleep(2)
+        for attempt in range(OVERPASS_ROUNDS):
+            for endpoint in OVERPASS_ENDPOINTS:
+                try:
+                    log.info("Overpass: запрос к %s", endpoint)
+                    response = requests.post(
+                        endpoint,
+                        data={"data": ql},
+                        timeout=self.timeout,
+                        headers={"User-Agent": "VANTAGE/0.1 (hackathon research)"},
+                    )
+                    response.raise_for_status()
+                    payload = response.json()
 
-        raise RuntimeError(f"все зеркала Overpass недоступны: {last_error}")
+                    # Пустой ответ — не обязательно правда. Региональное
+                    # зеркало на чужой регион отвечает 200 и пустым списком,
+                    # и принять это за «объектов нет» значит тихо испортить
+                    # весь контекстный отсев.
+                    if not payload.get("elements"):
+                        log.warning("Overpass %s вернул пустой ответ, пробуем следующее", endpoint)
+                        last_error = RuntimeError("пустой ответ")
+                        continue
+
+                    cache_file.write_text(json.dumps(payload), encoding="utf-8")
+                    return payload
+                except Exception as exc:
+                    log.warning("Overpass %s недоступен: %s", endpoint, exc)
+                    last_error = exc
+
+            if attempt + 1 < OVERPASS_ROUNDS:
+                log.info("Все зеркала не ответили, ждём %d с и пробуем снова", OVERPASS_BACKOFF_S)
+                time.sleep(OVERPASS_BACKOFF_S)
+
+        raise RuntimeError(
+            f"все зеркала Overpass недоступны после {OVERPASS_ROUNDS} кругов: {last_error}"
+        )
 
 
 def _bbox_clause(aoi: AOI) -> str:

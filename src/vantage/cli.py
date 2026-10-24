@@ -354,7 +354,7 @@ def web(
 #: Список намеренно короткий и живёт в коде, а не в скрипте деплоя:
 #: расширить его должно быть заметным действием, а не правкой одной
 #: строки в YAML, которую никто не проверит.
-PUBLIC_WHITELIST = ("candidates.geojson", "risk_public.geojson", "story.json")
+PUBLIC_WHITELIST = ("candidates.geojson", "risk_public.geojson", "registry.geojson", "story.json")
 
 #: Файлы, попадание которых в публикацию — утечка адресных данных.
 PUBLIC_DENYLIST = ("risk_private.geojson", "access.log", "citizen_reports.jsonl")

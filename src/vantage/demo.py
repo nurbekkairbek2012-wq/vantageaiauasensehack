@@ -127,7 +127,42 @@ def generate_risk(aoi: AOI, settings: Settings, candidates, *, seed: int = 42):
     return private, gpd.GeoDataFrame(public, crs=private.crs)
 
 
-def build_story(candidates, *, top_n: int = 3) -> dict:
+def fetch_official_registry(aoi: AOI, settings: Settings, *, use_cache: bool = True):
+    """Настоящий официальный реестр: полигоны ТБО из OpenStreetMap.
+
+    Первая сцена демонстрации строится на противопоставлении «что знает
+    государство» и «что есть на самом деле». Если слева показывать не
+    настоящий реестр, а несколько собственных находок, перекрашенных
+    в синий, то на вопрос «откуда данные реестра» ответить нечем —
+    и вся сцена рассыпается.
+
+    OSM — не государственный реестр, и это надо говорить прямо. Но это
+    открытые данные о том, какие объекты обращения с отходами известны
+    публично, и как нижняя оценка «что знают» они работают честно.
+    """
+    import geopandas as gpd
+
+    from .labels import POSITIVE_TAGS, fetch_reference_objects
+
+    try:
+        registry = fetch_reference_objects(aoi, settings, POSITIVE_TAGS, use_cache=use_cache)
+    except Exception as exc:
+        log.warning("Не удалось загрузить реестр из OSM: %s", exc)
+        return gpd.GeoDataFrame({"geometry": []}, geometry="geometry", crs=aoi.crs_working)
+
+    if registry.empty:
+        log.warning("В OSM не нашлось объектов обращения с отходами по этой области")
+        return registry
+
+    keep = [c for c in ("name", "landuse", "amenity", "man_made", "geometry") if c in registry.columns]
+    registry = registry[keep].copy()
+    registry["source"] = "OpenStreetMap"
+    registry["area_m2"] = registry.geometry.area
+    log.info("Официальный реестр из OSM: %d объектов", len(registry))
+    return registry
+
+
+def build_story(candidates, *, top_n: int = 3, registry_count: int = 0) -> dict:
     """Сценарий демонстрации: последовательность сцен вместо свободной карты.
 
     Улучшение 10 из версии 3.0. Смысл в том, что под стрессом на сцене
@@ -155,8 +190,12 @@ def build_story(candidates, *, top_n: int = 3) -> dict:
         "scenes": [
             {
                 "id": "registry",
-                "title": "Официальный реестр",
-                "line": "Это то, что государство знает.",
+                "title": "Что известно публично",
+                "line": (
+                    f"Объектов обращения с отходами в открытых данных: {registry_count}."
+                    if registry_count
+                    else "Открытые данные знают о единицах объектов."
+                ),
                 "layers": ["registry"],
             },
             {
@@ -205,6 +244,7 @@ def build_story(candidates, *, top_n: int = 3) -> dict:
             },
         ],
         "totals": {
+            "registry_known": int(registry_count),
             "objects": len(candidates),
             "damage_p10": total_low,
             "damage_p50": total_damage,
@@ -232,7 +272,8 @@ def generate_all(
 
     candidates = generate_candidates(aoi, economics, n=n, seed=seed)
     private, public = generate_risk(aoi, settings, candidates, seed=seed)
-    story = build_story(candidates)
+    registry = fetch_official_registry(aoi, settings)
+    story = build_story(candidates, registry_count=len(registry))
 
     from .candidates import simplify_for_web, to_geojson
     from .risk import dissolve_public
@@ -253,6 +294,13 @@ def generate_all(
         export = simplify_for_web(export)
         export.to_file(path, driver="GeoJSON")
         written[name] = path
+
+    if not registry.empty:
+        registry_path = target / "registry.geojson"
+        simplify_for_web(registry.to_crs(settings.project.crs_output)).to_file(
+            registry_path, driver="GeoJSON"
+        )
+        written["registry"] = registry_path
 
     story_path = target / "story.json"
     story_path.write_text(json.dumps(story, ensure_ascii=False, indent=2), encoding="utf-8")

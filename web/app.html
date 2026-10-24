@@ -37,13 +37,15 @@
 
   <div class="tabs" role="tablist">
     <button class="tab active" id="tab-map" role="tab" type="button">Карта</button>
-    <button class="tab" id="tab-story" role="tab" type="button">Сценарий защиты</button>
-    <button class="tab" id="tab-method" role="tab" type="button">Как это работает</button>
+    <button class="tab accent" id="tab-forecast" role="tab" type="button">Прогноз</button>
+    <button class="tab" id="tab-story" role="tab" type="button">Сценарий</button>
+    <button class="tab" id="tab-method" role="tab" type="button">Метод</button>
   </div>
 
   <div class="bar-right">
     <span id="demo-flag" class="flag hidden">демо-данные</span>
     <span id="net-flag" class="flag net">онлайн</span>
+    <button id="btn-present" class="btn ghost sm" type="button" title="Режим презентации (P)">Презентация</button>
     <button id="btn-offline" class="btn ghost sm" type="button" title="Скачать карту в кеш">Офлайн</button>
     <button id="btn-tour" class="btn ghost sm" type="button">Тур</button>
   </div>
@@ -64,9 +66,30 @@
           <option value="area_m2">по площади</option>
           <option value="break_date">по дате</option>
         </select>
-        <button id="btn-fit" class="btn ghost sm" type="button" title="Показать все">Все</button>
+        <button id="btn-filters" class="btn ghost sm" type="button">Фильтры</button>
+      </div>
+
+      <div id="filters" class="filters hidden">
+        <label class="frow">
+          <span>Уверенность от <b id="f-prob-v">0%</b></span>
+          <input id="f-prob" type="range" min="0" max="95" step="5" value="0">
+        </label>
+        <label class="frow">
+          <span>Ущерб от <b id="f-dmg-v">0 ₸</b></span>
+          <input id="f-dmg" type="range" min="0" max="100" step="5" value="0">
+        </label>
+        <label class="frow">
+          <span>Площадь от <b id="f-area-v">0 м²</b></span>
+          <input id="f-area" type="range" min="0" max="100" step="5" value="0">
+        </label>
+        <label class="fcheck">
+          <input id="f-verified" type="checkbox">
+          <span>только подтверждённые двумя источниками</span>
+        </label>
+        <button id="f-reset" class="btn ghost sm wide">Сбросить</button>
       </div>
     </div>
+
     <div id="list" class="list"></div>
     <div id="list-foot" class="panel-foot">—</div>
   </aside>
@@ -74,7 +97,24 @@
   <!-- ЦЕНТР -->
   <section class="mapwrap">
     <div id="map"></div>
+
     <div id="map-legend" class="maplegend"></div>
+
+    <!-- Таймлайн -->
+    <div id="timeline" class="timeline hidden">
+      <button id="tl-play" class="tl-btn" type="button" title="Проиграть">▶</button>
+      <div class="tl-body">
+        <div class="tl-head">
+          <span>Объекты по году возникновения</span>
+          <b id="tl-year">все</b>
+        </div>
+        <input id="tl-range" type="range" min="0" max="10" step="1" value="10">
+        <div class="tl-marks" id="tl-marks"></div>
+      </div>
+      <div class="tl-count"><b id="tl-count">0</b><span>видно</span></div>
+    </div>
+    <button id="tl-toggle" class="tl-toggle" type="button" title="Таймлайн">Таймлайн</button>
+
     <div id="loading" class="loading"><span class="sp"></span>Загрузка данных</div>
   </section>
 
@@ -87,8 +127,9 @@
       <h2>Карта объектов</h2>
       <p class="muted">
         Слева — список найденных объектов. Нажмите любой, чтобы увидеть
-        доказательную цепочку, расчёт ущерба и применимую статью.
+        снимок местности, доказательную цепочку, расчёт ущерба и статью.
       </p>
+      <div id="welcome-compare" class="compare"></div>
       <div id="welcome-stats" class="stats"></div>
       <button id="btn-tour-2" class="btn solid wide" type="button">Пройти тур за 5 минут</button>
     </section>
@@ -103,6 +144,22 @@
       <div id="obj-facts" class="facts"></div>
 
       <div class="block">
+        <div class="block-title">
+          Снимок: было и стало
+          <button id="ba-swap" class="link" type="button">поменять годы</button>
+        </div>
+        <div id="obj-ba-img" class="baimg">
+          <div class="baimg-layer before" id="ba-before"></div>
+          <div class="baimg-clip" id="ba-clip"><div class="baimg-layer after" id="ba-after"></div></div>
+          <div class="baimg-handle" id="ba-handle"><span></span></div>
+          <div class="baimg-tag left" id="ba-tag-l">—</div>
+          <div class="baimg-tag right" id="ba-tag-r">—</div>
+        </div>
+        <div class="baimg-src">Esri World Imagery Wayback · перетащите разделитель</div>
+        <div id="obj-links" class="shotlinks"></div>
+      </div>
+
+      <div class="block">
         <div class="block-title">Доказательная цепочка <span id="obj-agree" class="pill">—</span></div>
         <div id="obj-signals"></div>
         <p class="muted sm">
@@ -112,7 +169,7 @@
       </div>
 
       <div class="block">
-        <div class="block-title">Изменение поверхности</div>
+        <div class="block-title">Изменение индексов</div>
         <div id="obj-ba" class="ba"></div>
       </div>
 
@@ -126,7 +183,10 @@
         <div id="obj-legal" class="legal"></div>
       </div>
 
-      <button id="obj-act" class="btn solid wide" type="button">Сформировать черновик акта</button>
+      <div class="row gap">
+        <button id="obj-act" class="btn solid grow" type="button">Черновик акта</button>
+        <button id="obj-share" class="btn ghost" type="button" title="Скопировать ссылку">Ссылка</button>
+      </div>
       <p class="muted sm mt">
         Оценка вероятности, а не юридическое доказательство. Решение принимает
         уполномоченное лицо по итогам выездной проверки.
@@ -139,13 +199,71 @@
       <div class="kicker">сцена <b id="story-n">1</b> из <span id="story-total">7</span></div>
       <h2 id="story-title">—</h2>
       <blockquote id="story-line" class="quote">—</blockquote>
-      <div class="row">
+      <div class="row gap">
         <button id="story-prev" class="btn ghost" type="button">Назад</button>
         <button id="story-next" class="btn solid grow" type="button">Дальше →</button>
       </div>
       <p class="muted sm mt"><kbd>Space</kbd> дальше · <kbd>←</kbd> <kbd>→</kbd> навигация</p>
       <div id="story-stats" class="stats"></div>
       <div id="story-rejects" class="hidden"></div>
+    </section>
+
+    <!-- Прогноз -->
+    <section id="pane-forecast" class="pane hidden">
+      <div class="kicker">превентивная экономика</div>
+      <h2>Где свалка появится<br>в следующие 12 месяцев</h2>
+
+      <div class="bigclaim">
+        Убрать свалку стоит миллионы.<br>
+        Не дать ей появиться — стоит знака и фотоловушки.
+      </div>
+
+      <p class="muted">
+        Детектор выдаёт не только факт объекта, но и <b>дату его возникновения</b>.
+        Значит, есть готовая история: где и когда появлялись свалки с 2018 года.
+        Это и есть обучающая выборка — её не надо собирать, она получается
+        побочным продуктом.
+      </p>
+
+      <div class="block">
+        <div class="block-title">Признаки модели</div>
+        <div id="fc-features"></div>
+        <p class="muted sm">
+          Только объяснимые. Каждый защищается фразой «водитель самосвала
+          рассуждает именно так»: доехать легко, увидеть некому, рядом уже свалено.
+        </p>
+      </div>
+
+      <div class="block">
+        <div class="block-title">Как проверялось качество</div>
+        <div class="valid">
+          <div class="valid-bad">
+            <b>Случайное разбиение</b>
+            <span>даёт красивую и неправдивую цифру: соседние ячейки
+            скоррелированы, модель угадывает соседа, ничего не выучив</span>
+          </div>
+          <div class="valid-ok">
+            <b>Валидация по времени</b>
+            <span>обучаемся на объектах до отсечки, проверяемся на возникших
+            после. Ячейки с уже существующими свалками из проверки исключены</span>
+          </div>
+        </div>
+        <div id="fc-metrics"></div>
+      </div>
+
+      <div class="block">
+        <div class="block-title">Зоны риска на карте</div>
+        <div id="fc-classes"></div>
+        <p class="muted sm">
+          Публичная карта показывает <b>класс зоны на укрупнённой сетке</b>,
+          а не точную вероятность по конкретному двору. Причина не техническая:
+          адресная карта риска работала бы как обвинение людей в том, чего они
+          ещё не сделали. Точные координаты и рекомендации по расстановке —
+          в закрытом контуре для службы.
+        </p>
+      </div>
+
+      <button id="fc-show" class="btn solid wide" type="button">Показать зоны риска на карте</button>
     </section>
 
     <!-- Метод -->
@@ -161,11 +279,22 @@
         <div class="mstep"><b>6. Деньги</b><span>Монте-Карло по восьми допущениям. P10–P90, не точка.</span></div>
         <div class="mstep"><b>7. Действие</b><span>Черновик акта, контроль устранения, прогноз на 12 месяцев.</span></div>
       </div>
+
+      <div class="block">
+        <div class="block-title">Качество модели</div>
+        <div id="mt-metrics"></div>
+      </div>
+
       <a class="btn ghost wide" href="https://github.com/k41270075-stack/hakathon" target="_blank" rel="noopener">Исходный код</a>
     </section>
 
   </aside>
 </main>
+
+<button id="sheet-toggle" class="sheet-toggle" type="button">Список объектов</button>
+
+<!-- Печатная форма акта: видна только при печати -->
+<div id="act-print" class="act-print" aria-hidden="true"></div>
 
 <script src="vendor/leaflet.js"></script>
 <script src="app.js"></script>
