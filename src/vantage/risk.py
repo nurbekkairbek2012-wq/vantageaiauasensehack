@@ -349,6 +349,35 @@ def aggregate_public(
     return public[["risk_class", "geometry"]]
 
 
+def dissolve_public(public: gpd.GeoDataFrame, *, drop_lowest: bool = True) -> gpd.GeoDataFrame:
+    """Слить смежные ячейки одного класса в единые зоны.
+
+    Две причины, и обе существенные.
+
+    **Картографическая.** Зона риска — это область, а не мозаика из
+    квадратов. Растворение убирает внутренние границы и даёт то, что
+    человек и ожидает увидеть на карте риска.
+
+    **Практическая.** Публичная карта должна открываться без сети на
+    телефоне. Сетка из тысяч ячеек весит под мегабайт, а после
+    растворения — десятки килобайт: общие границы соседних ячеек
+    перестают храниться дважды.
+
+    ``drop_lowest`` убирает класс минимального риска: он занимает
+    большую часть площади, неотличим от фона и нужен только для
+    раздувания файла.
+    """
+    if public.empty or "risk_class" not in public.columns:
+        return public
+
+    data = public[public["risk_class"] > 1] if drop_lowest else public
+    if data.empty:
+        return data
+
+    dissolved = data.dissolve(by="risk_class").reset_index()
+    return dissolved[["risk_class", "geometry"]]
+
+
 def recommend_placements(risk_grid: gpd.GeoDataFrame, budget: int) -> gpd.GeoDataFrame:
     """Куда поставить знаки и фотоловушки при ограниченном бюджете.
 
@@ -368,6 +397,7 @@ __all__ = [
     "RiskModel",
     "aggregate_public",
     "build_grid",
+    "dissolve_public",
     "predict_risk",
     "recommend_placements",
     "spatial_features",

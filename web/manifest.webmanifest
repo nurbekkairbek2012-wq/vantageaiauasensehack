@@ -1,0 +1,20 @@
+{
+  "name": "VANTAGE — несанкционированные свалки",
+  "short_name": "VANTAGE",
+  "description": "Обнаружение несанкционированных свалок по спутниковым данным, оценка ущерба и прогноз риска",
+  "lang": "ru",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0e1116",
+  "theme_color": "#12161c",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxOTIgMTkyIj48cmVjdCB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgZmlsbD0iIzBlMTExNiIvPjxjaXJjbGUgY3g9Ijk2IiBjeT0iOTYiIHI9IjU0IiBmaWxsPSJub25lIiBzdHJva2U9IiNjOWEyMjciIHN0cm9rZS13aWR0aD0iOCIvPjxjaXJjbGUgY3g9Ijk2IiBjeT0iOTYiIHI9IjE4IiBmaWxsPSIjZTA1YTRmIi8+PC9zdmc+",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

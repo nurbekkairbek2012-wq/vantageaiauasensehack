@@ -261,5 +261,136 @@ def money(
         )
 
 
+@app.command()
+def sample(
+    n: int = typer.Option(24, "--count", "-n", help="Сколько объектов сгенерировать"),
+    seed: int = typer.Option(42, "--seed"),
+    output: str | None = typer.Option(None, "--output", "-o"),
+) -> None:
+    """Сгенерировать СИНТЕТИЧЕСКИЕ артефакты для отладки интерфейса.
+
+    Нужно, чтобы разрабатывать карту и репетировать выступление, не
+    дожидаясь полного прогона. Каждый файл помечен флагом is_demo,
+    и карта показывает красную полосу, когда его видит.
+    """
+    from .demo import generate_all
+
+    written = generate_all(output, n=n, seed=seed)
+    console.print("[bold red]Это синтетические данные для отладки интерфейса.[/bold red]")
+    console.print("На защите показывайте результат настоящего прогона.\n")
+    for name, path in written.items():
+        console.print(f"  [green]{name}[/green]: {path}")
+
+
+@app.command()
+def web(
+    port: int = typer.Option(8080, "--port", "-p"),
+    outputs: str | None = typer.Option(None, "--outputs", help="Каталог с артефактами"),
+    open_browser: bool = typer.Option(True, "--open/--no-open"),
+) -> None:
+    """Поднять карту локально.
+
+    Артефакты копируются в web/data/ — фронтенд читает только оттуда и
+    ничего не знает про пайплайн. Это же делает демонстрацию переносимой:
+    каталог web/ целиком работает на любой машине без Python.
+    """
+    import http.server
+    import shutil
+    import socketserver
+    import threading
+    import webbrowser
+
+    from .config import REPO_ROOT
+
+    settings = load_settings()
+    source = Path(outputs) if outputs else settings.paths.resolve("outputs")
+    web_root = REPO_ROOT / "web"
+    data_dir = web_root / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+
+    copied = 0
+    for name in ("candidates.geojson", "risk_public.geojson", "risk_private.geojson", "story.json"):
+        src = source / name
+        if src.exists():
+            shutil.copy2(src, data_dir / name)
+            copied += 1
+
+    if copied == 0:
+        console.print(
+            "[yellow]Артефактов не найдено.[/yellow] "
+            "Запустите [bold]vantage sample[/bold] для отладочных данных "
+            "или [bold]vantage run[/bold] для настоящего прогона."
+        )
+    else:
+        console.print(f"Скопировано артефактов: [green]{copied}[/green] → {data_dir}")
+
+    class Handler(http.server.SimpleHTTPRequestHandler):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, directory=str(web_root), **kwargs)
+
+        def end_headers(self):
+            # Оболочка не кешируется браузером: во время отладки это
+            # экономит часы на «почему не обновилось».
+            self.send_header("Cache-Control", "no-store")
+            super().end_headers()
+
+        def log_message(self, *args):  # тише в консоли
+            pass
+
+    url = f"http://127.0.0.1:{port}/index.html"
+    console.print(f"Карта: [bold cyan]{url}[/bold cyan]  (Ctrl+C — остановить)")
+    if open_browser:
+        threading.Timer(0.8, lambda: webbrowser.open(url)).start()
+
+    socketserver.TCPServer.allow_reuse_address = True
+    with socketserver.TCPServer(("127.0.0.1", port), Handler) as httpd:
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            console.print("\nОстановлено.")
+
+
+@app.command()
+def run(
+    config: str | None = typer.Option(None, "--config", "-c"),
+    force: bool = typer.Option(False, "--force", help="Пересчитать даже готовые шаги"),
+    skip_risk: bool = typer.Option(False, "--skip-risk", help="Пропустить модель прогноза"),
+) -> None:
+    """Сквозной прогон пайплайна по области из конфигурации.
+
+    Каждый шаг пишет артефакт в outputs/ и пропускается, если результат
+    уже есть. Полный прогон по области идёт часами, и падение на седьмом
+    шаге не должно означать повтор первых шести.
+    """
+    from .pipeline import Pipeline, timed
+
+    settings = load_settings(config)
+    pipeline = Pipeline(settings, force=force)
+
+    console.rule(f"[bold]Прогон {pipeline.aoi.name}")
+    console.print(f"Область: {pipeline.aoi.area_km2:,.0f} км²".replace(",", " "))
+    console.print(f"Период: {settings.time.start} .. {settings.time.end}\n")
+
+    with console.status("Поиск сцен в STAC…"):
+        stats, seconds = timed(pipeline.step_scenes)
+    found = stats.get("sentinel2", {}).get("count", 0)
+    pipeline.report.record("scenes", seconds=seconds, sentinel2=found)
+    console.print(f"[green]✓[/green] Сцен Sentinel-2: {found}")
+
+    if not found:
+        console.print("[red]Сцен не найдено — дальнейшие шаги не имеют смысла.[/red]")
+        raise typer.Exit(code=1)
+
+    console.print(
+        "\n[yellow]Загрузка растров и детекция изменений по всей области "
+        "занимают часы и требуют устойчивой сети.[/yellow]\n"
+        "Запускайте их потайлово через Python API:\n"
+        "  [dim]from vantage.pipeline import Pipeline[/dim]\n"
+        "  [dim]for tile in aoi.tiles(20_000): ...[/dim]\n"
+    )
+    report_path = pipeline.finish()
+    console.print(f"Отчёт о прогоне: [green]{report_path}[/green]")
+
+
 if __name__ == "__main__":  # pragma: no cover
     app()

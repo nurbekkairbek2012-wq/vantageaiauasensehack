@@ -227,7 +227,45 @@ def build_candidates(
     return gdf
 
 
-def to_geojson(gdf: gpd.GeoDataFrame, path, *, crs_output: str = "EPSG:4326") -> None:
+#: Знаков после запятой в выгружаемых координатах.
+#: Шесть знаков — это примерно 10 см на широте Астаны, что на порядки
+#: точнее исходных 10 метров Sentinel-2. Хранить больше — значит раздувать
+#: файл нулями, которые ничего не означают: карта грузится дольше, а
+#: офлайн-режим на площадке страдает первым.
+GEOJSON_PRECISION = 6
+
+
+def simplify_for_web(
+    gdf: gpd.GeoDataFrame,
+    *,
+    precision: int = GEOJSON_PRECISION,
+    tolerance_deg: float | None = None,
+) -> gpd.GeoDataFrame:
+    """Подготовить слой к выгрузке на карту: округлить координаты.
+
+    Округление делается через кодирование геометрии в WKT с заданной
+    точностью — это единственный способ реально уменьшить файл, потому
+    что GeoJSON-драйвер пишет столько знаков, сколько есть в координатах.
+    """
+    from shapely import wkt
+
+    out = gdf.copy()
+    if tolerance_deg:
+        out["geometry"] = out.geometry.simplify(tolerance_deg, preserve_topology=True)
+    out["geometry"] = [
+        wkt.loads(wkt.dumps(geom, rounding_precision=precision)) if geom is not None else None
+        for geom in out.geometry
+    ]
+    return out
+
+
+def to_geojson(
+    gdf: gpd.GeoDataFrame,
+    path,
+    *,
+    crs_output: str = "EPSG:4326",
+    precision: int = GEOJSON_PRECISION,
+) -> None:
     """Выгрузить кандидатов в GeoJSON для карты.
 
     Даты приводятся к строкам: GeoJSON не знает типа datetime, и молчаливая
@@ -235,7 +273,7 @@ def to_geojson(gdf: gpd.GeoDataFrame, path, *, crs_output: str = "EPSG:4326") ->
     """
     from pathlib import Path
 
-    out = gdf.to_crs(crs_output).copy()
+    out = simplify_for_web(gdf.to_crs(crs_output), precision=precision)
     for column in out.columns:
         if column == "geometry":
             continue
@@ -252,9 +290,11 @@ def to_geojson(gdf: gpd.GeoDataFrame, path, *, crs_output: str = "EPSG:4326") ->
 
 
 __all__ = [
+    "GEOJSON_PRECISION",
     "RasterGrid",
     "build_candidates",
     "clean_mask",
     "polygonize",
+    "simplify_for_web",
     "to_geojson",
 ]

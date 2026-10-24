@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>VANTAGE — карта объектов</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#12161c">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="demo-banner" class="banner hidden" role="alert">
+  Синтетические данные для отладки интерфейса. Это не результаты прогона.
+</div>
+
+<div id="offline-banner" class="banner offline hidden" role="status">
+  Нет сети — карта работает из локального кеша.
+</div>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="mark">VANTAGE</span>
+    <span class="sub">несанкционированные свалки · Астана</span>
+  </div>
+  <nav class="modes">
+    <button id="mode-story" class="mode active" type="button">Сценарий</button>
+    <button id="mode-free" class="mode" type="button">Свободный режим</button>
+  </nav>
+  <div class="status">
+    <span id="net-status" class="dot" title="состояние сети"></span>
+    <span id="object-count">—</span>
+  </div>
+</header>
+
+<main class="layout">
+
+  <section class="map-wrap">
+    <canvas id="map" aria-label="Карта объектов"></canvas>
+
+    <div class="map-controls">
+      <button id="zoom-in" type="button" title="Приблизить">+</button>
+      <button id="zoom-out" type="button" title="Отдалить">−</button>
+      <button id="reset-view" type="button" title="Показать всю область">⤢</button>
+    </div>
+
+    <div class="legend" id="legend"></div>
+
+    <div class="scale" id="scale"><span class="bar"></span><span id="scale-label">—</span></div>
+  </section>
+
+  <aside class="panel" id="panel">
+
+    <div id="story" class="story">
+      <div class="story-head">
+        <span class="step" id="story-step">1 / 7</span>
+        <h2 id="story-title">Официальный реестр</h2>
+      </div>
+      <p class="line" id="story-line">Это то, что государство знает.</p>
+      <div class="story-nav">
+        <button id="story-prev" type="button">Назад</button>
+        <button id="story-next" type="button" class="primary">Дальше</button>
+      </div>
+      <div class="story-hint">Пробел — следующая сцена, стрелки — навигация</div>
+    </div>
+
+    <div id="totals" class="totals hidden"></div>
+
+    <div id="details" class="details hidden">
+      <button class="close" id="details-close" type="button" aria-label="Закрыть">×</button>
+      <h3 id="det-id">—</h3>
+      <div class="det-meta" id="det-meta"></div>
+
+      <h4>Доказательная цепочка</h4>
+      <div class="signals" id="det-signals"></div>
+      <p class="note" id="det-evidence"></p>
+
+      <h4>До и после</h4>
+      <div class="beforeafter" id="det-beforeafter"></div>
+
+      <h4>Оценка ущерба</h4>
+      <div class="money" id="det-money"></div>
+
+      <h4>Правовая норма</h4>
+      <div class="legal" id="det-legal"></div>
+
+      <button id="det-act" class="primary wide" type="button">Сформировать черновик акта</button>
+      <p class="disclaimer">
+        Оценка вероятности, а не юридическое доказательство. Решение принимает
+        уполномоченное лицо по итогам выездной проверки.
+      </p>
+    </div>
+
+    <div id="mistakes" class="mistakes hidden">
+      <h3>Где мы ошиблись</h3>
+      <p class="note">
+        Кандидаты, отсеянные контекстным фильтром. Показываем их намеренно:
+        явно названная граница модели убедительнее заявленной идеальной точности.
+      </p>
+      <div id="mistakes-list"></div>
+    </div>
+
+  </aside>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
