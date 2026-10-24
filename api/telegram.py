@@ -46,6 +46,7 @@ Telegram сам присылает обновление на адрес, и ме
 
 import contextlib
 import hashlib
+import hmac
 import json
 import math
 import os
@@ -475,8 +476,10 @@ class handler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         # Секрет проверяется до разбора тела: адрес функции публичный, и
         # без проверки любой мог бы прислать поддельное обновление.
+        # Сравнение за постоянное время: по времени ответа секрет не подобрать.
         secret = webhook_secret()
-        if secret and self.headers.get("X-Telegram-Bot-Api-Secret-Token") != secret:
+        given = self.headers.get("X-Telegram-Bot-Api-Secret-Token") or ""
+        if secret and not hmac.compare_digest(given.encode(), secret.encode()):
             self.send_response(403)
             self.end_headers()
             return

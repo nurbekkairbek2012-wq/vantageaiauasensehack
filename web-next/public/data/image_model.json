@@ -1,0 +1,11 @@
+{
+ "model": "dinov2_chip_open.joblib",
+ "roc_auc": 0.794,
+ "low": 0.676,
+ "high": 0.9,
+ "objects": 51,
+ "dumps": 7,
+ "dumps_below_035": 2,
+ "median_dump": 0.405,
+ "median_not": 0.138
+}

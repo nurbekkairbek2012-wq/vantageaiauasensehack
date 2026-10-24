@@ -20,9 +20,11 @@
 добавляет доказательство. Нужна хотя бы одна фотография такого объекта:
 без неё на защите нечего показать рядом со снимком со спутника.
 
-**Внутри группы — по близости друг к другу.** За одну поездку успеваешь
-объехать несколько точек, если они рядом; разбросанные по всему кольцу
-съедят день на дорогу.
+**Внутри группы — от крупных к мелким**, а для дороги отдельно считаются
+поездки: точки ближе TRIP_GAP_M друг к другу объединяются в одну поездку,
+внутри неё порядок объезда — «к ближайшей ещё не посещённой», и на каждую
+поездку готова ссылка на маршрут в Google Maps. Разбросанные по всему
+кольцу точки без этого съедают день на дорогу.
 
     python scripts/field_list.py [--top 8]
 """
@@ -36,9 +38,69 @@ if hasattr(sys.stdout, "reconfigure"):
 
 PUBLISHED = Path("web-next/public/data/candidates.geojson")
 
+#: Точки ближе этого расстояния друг к другу — одна поездка.
+TRIP_GAP_M = 2000.0
+
+#: Откуда начинается объезд: центр Астаны (Байтерек).
+START = (51.1283, 71.4305)
+
 #: Ценность поездки по вердикту. «Не разобрать» выше, потому что там
 #: поездка добавляет знание, а не подтверждение.
 WORTH = {"unclear": 2, "landfill": 1}
+
+
+def trips(xy, gap_m: float = TRIP_GAP_M, start=None) -> list[list[int]]:
+    """Разбить точки на поездки и упорядочить объезд внутри каждой.
+
+    xy — координаты в метрах. Точки, между которыми цепочка шагов короче
+    gap_m, попадают в одну поездку (связные компоненты). Внутри поездки:
+    первая — ближайшая к start, дальше — к ближайшей ещё не посещённой.
+    Поездки — от самой длинной по числу точек к короткой.
+    """
+    import numpy as np
+
+    xy = np.asarray(xy, dtype=float).reshape(-1, 2)
+    n = len(xy)
+    parent = list(range(n))
+
+    def root(i: int) -> int:
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            if np.hypot(*(xy[i] - xy[j])) < gap_m:
+                parent[root(i)] = root(j)
+    groups: dict[int, list[int]] = {}
+    for i in range(n):
+        groups.setdefault(root(i), []).append(i)
+
+    origin = np.asarray(start, dtype=float) if start is not None else xy.mean(axis=0)
+    out = []
+    for members in groups.values():
+        left = list(members)
+        here = origin
+        route = []
+        while left:
+            nxt = min(left, key=lambda k: (np.hypot(*(xy[k] - here)), k))
+            route.append(nxt)
+            left.remove(nxt)
+            here = xy[nxt]
+        out.append(route)
+    return sorted(out, key=lambda r: (-len(r), r[0]))
+
+
+def route_link(points: list[tuple[float, float]]) -> str:
+    """Ссылка на маршрут Google Maps: последняя точка — цель, прочие — остановки."""
+    from urllib.parse import quote
+
+    *stops, last = [f"{lat:.5f},{lon:.5f}" for lat, lon in points]
+    url = f"https://www.google.com/maps/dir/?api=1&destination={last}&travelmode=driving"
+    if stops:
+        url += "&waypoints=" + quote("|".join(stops), safe=",")
+    return url
 
 
 def main() -> int:
@@ -122,14 +184,29 @@ def main() -> int:
             f"{area} м² | {str(row.break_date)[:7]} | `{coords}` | {link} |"
         )
 
+    # Поездки: считаются в метрах, в той же проекции, что прогон.
+    metric = top.to_crs(32642)
+    xy = [(p.x, p.y) for p in metric.geometry.centroid]
+    origin = gpd.GeoSeries(gpd.points_from_xy([START[1]], [START[0]]), crs=4326).to_crs(32642)
+    plan = trips(xy, start=(origin.x.iloc[0], origin.y.iloc[0]))
+    rows = list(top.itertuples())
     lines += [
         "",
-        "## Ехать лучше кучно",
+        "## Поездки",
         "",
-        "Точки в списке стоят не поодиночке. Два скопления покрывают",
-        "большую часть списка за одну поездку каждое — смотрите на",
-        "координаты: у объектов в одном скоплении совпадают первые три знака",
-        "после запятой, то есть между ними сотни метров, а не километры.",
+        f"Точки ближе {TRIP_GAP_M / 1000:.0f} км друг к другу собраны в одну поездку, объезд — от",
+        "центра города к ближайшей ещё не посещённой точке. Ссылка открывает",
+        "маршрут в Google Maps на телефоне; номера — из списка выше.",
+        "",
+        "| Поездка | Объекты по порядку объезда | «Не разобрать» | Маршрут |",
+        "|---:|---|---:|---|",
+    ]
+    for k, route in enumerate(plan, 1):
+        order = " → ".join(f"{i + 1} `{rows[i].candidate_id}`" for i in route)
+        unsure = sum(rows[i].visual_check == "unclear" for i in route)
+        stops = [(rows[i].geometry.centroid.y, rows[i].geometry.centroid.x) for i in route]
+        lines.append(f"| {k} | {order} | {unsure} | [открыть маршрут]({route_link(stops)}) |")
+    lines += [
         "",
         "## Что снимать на месте",
         "",

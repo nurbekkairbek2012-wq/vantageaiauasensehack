@@ -1,0 +1,42 @@
+{
+ "break_spread_months": {
+  "class_auc": 0.524,
+  "direction": "lower",
+  "low": 0.391,
+  "high": 0.622,
+  "place_auc": 0.549
+ },
+ "growth_share": {
+  "class_auc": 0.511,
+  "direction": "lower",
+  "low": 0.5,
+  "high": 0.534,
+  "place_auc": 0.489
+ },
+ "after_amplitude": {
+  "class_auc": 0.5,
+  "direction": "higher",
+  "low": 0.351,
+  "high": 0.649,
+  "place_auc": 0.144
+ },
+ "ndbi_after": {
+  "class_auc": 0.558,
+  "direction": "higher",
+  "low": 0.386,
+  "high": 0.733,
+  "place_auc": 0.432
+ },
+ "ndbi_rise": {
+  "class_auc": 0.584,
+  "direction": "higher",
+  "low": 0.429,
+  "high": 0.741,
+  "place_auc": 0.152
+ },
+ "_objects": {
+  "north": 51,
+  "dumps": 7,
+  "all": 54
+ }
+}

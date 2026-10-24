@@ -133,3 +133,39 @@ class TestFormatting:
         assert bot.when("") == ""
         assert bot.when("2024") == ""
         assert bot.when("2024-13-01") == ""
+
+
+def _post(bot, headers: dict, body: bytes = b'{"message": {}}'):
+    """Вызов do_POST без сокета: только то, что обработчик трогает."""
+    import io
+
+    handled, codes = [], []
+    bot.on_update = handled.append
+    request = object.__new__(bot.handler)
+    request.headers = {"Content-Length": str(len(body)), **headers}
+    request.rfile, request.wfile = io.BytesIO(body), io.BytesIO()
+    request.send_response = codes.append
+    request.end_headers = lambda: None
+    request.do_POST()
+    return codes[0], handled
+
+
+@pytest.mark.parametrize("given", [None, "", "wrong-secret", "right-secret"])
+def test_webhook_rejects_forged_updates(bot, monkeypatch, given):
+    """Адрес функции публичный: без верного отпечатка обновление не разбирается.
+
+    Сам секрет вместо отпечатка — тоже отказ: сверяется только отпечаток.
+    """
+    monkeypatch.setenv("VANTAGE_BOT_SECRET", "right-secret")
+    headers = {} if given is None else {"X-Telegram-Bot-Api-Secret-Token": given}
+    code, handled = _post(bot, headers)
+    assert code == 403
+    assert handled == []
+
+
+def test_webhook_accepts_the_right_secret(bot, monkeypatch):
+    monkeypatch.setenv("VANTAGE_BOT_SECRET", "right-secret")
+    # В Telegram уходит отпечаток секрета (webhook_secret), он и приходит обратно.
+    code, handled = _post(bot, {"X-Telegram-Bot-Api-Secret-Token": bot.webhook_secret()})
+    assert code == 200
+    assert handled == [{"message": {}}]

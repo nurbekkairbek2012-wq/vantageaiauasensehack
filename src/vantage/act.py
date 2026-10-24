@@ -359,7 +359,10 @@ def render_pdf(act: ActDraft, path: str | Path, *, allow_draft: bool = True,
         for chunk in _wrap(act.evidence_text, 95):
             line(chunk, size=9, gap=4.5 * mm)
     if act.model_probability is not None:
-        field_row("Оценка модели", f"{act.model_probability:.0%}")
+        # Не проценты: оценка не откалибрована, и «37%» читается как
+        # вероятность, которой она не является (AI_RESULTS.md, 1с).
+        score = f"{act.model_probability:.2f}".replace(".", ",")
+        field_row("Оценка модели", f"{score} из 1 — подсказка, не вероятность")
     if act.verification_providers:
         field_row(
             "Доверификация",

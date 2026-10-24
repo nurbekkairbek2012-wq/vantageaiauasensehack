@@ -76,6 +76,9 @@ if hasattr(sys.stdout, "reconfigure"):
 CANDIDATES = Path("outputs_real/candidates.geojson")
 WEB = Path("web-next/public/data/candidates.geojson")
 MODEL = Path("models/dinov2_chip_open.joblib")
+#: Точность модели на объектах с вердиктом человека — для страницы чисел
+#: (scripts/key_numbers.py). Считается при каждой оценке, а не вписывается.
+QUALITY = Path("web-next/public/data/image_model.json")
 
 # Папка прогона и модель выбираются ключами: областей стало четыре, а
 # моделей несколько, и оценивать их прибитыми путями значит держать по
@@ -223,6 +226,7 @@ def run_dinov2() -> int:
         lambda c: verdict(scores[c]) if c in scores else None)
     log.info("оценено %d объектов моделью %s", len(scores), MODEL.name)
     working.to_file(CANDIDATES, driver="GeoJSON")
+    write_quality(working)
     if WEB.parent.exists() and WEB.name != "nowhere":
         # На сайт — только опубликованные объекты: переносим оценку по номеру.
         site = gpd.read_file(WEB)
@@ -233,6 +237,35 @@ def run_dinov2() -> int:
         site.to_file(WEB, driver="GeoJSON")
     log.info("записано в %s и %s", CANDIDATES, WEB)
     return 0
+
+
+def write_quality(frame) -> None:
+    """ROC-AUC оценки на объектах, где человек сказал «свалка» или «не свалка»."""
+    import json
+
+    import numpy as np
+    from sklearn.metrics import roc_auc_score
+    from train_dinov2 import interval
+
+    d = frame[frame["visual_check"].isin(["landfill", "not_landfill"])
+              & frame["highres_score"].notna()]
+    y = (d["visual_check"] == "landfill").to_numpy().astype(int)
+    if not 0 < y.sum() < len(y):
+        return
+    score = d["highres_score"].to_numpy(dtype="float64")
+    low, high = interval(y, score)
+    payload = {
+        "model": MODEL.name,
+        "roc_auc": round(float(roc_auc_score(y, score)), 3),
+        "low": round(low, 3), "high": round(high, 3),
+        "objects": len(d), "dumps": int(y.sum()),
+        "dumps_below_035": int((score[y == 1] < 0.35).sum()),
+        "median_dump": round(float(np.median(score[y == 1])), 3),
+        "median_not": round(float(np.median(score[y == 0])), 3),
+    }
+    QUALITY.write_text(json.dumps(payload, indent=1) + "\n", encoding="utf-8")
+    log.info("ROC-AUC %.3f (%.2f–%.2f) на %d объектах → %s",
+             payload["roc_auc"], low, high, len(d), QUALITY)
 
 
 if __name__ == "__main__":

@@ -25,6 +25,10 @@
 объект кэшируется в data/eval/objects_ts/, и повторный запуск продолжает
 с места остановки.
 
+Итог 27 сентября (51 объект северного кольца, scripts/check_object_ts.py):
+ни один признак не различает свалку и не-свалку — ROC-AUC 0,50–0,58,
+все интервалы задевают 0,5 (AI_RESULTS.md, 1р).
+
     python scripts/object_timeseries.py [--target eval|site] [--limit N]
 """
 

@@ -202,10 +202,12 @@ def passport(pdf, row, econ: dict | None, gemini: dict | None, fonts, page_no: i
     for key, name in SIGNALS:
         value = row.get(key)
         if value is not None and value == value:
-            evidence.append((name, f"{float(value):.3f}"))
+            evidence.append((name, f"{float(value):.3f}".replace(".", ",")))
     score = row.get("highres_score")
-    evidence.append(("Модель по снимку (DINOv2)",
-                     f"{float(score):.0%}" if score is not None and score == score else "—"))
+    # Не проценты: оценка не откалибрована, «37%» читалось бы как вероятность.
+    evidence.append(("Модель по снимку, подсказка 0–1",
+                     f"{float(score):.2f}".replace(".", ",")
+                     if score is not None and score == score else "—"))
     checks = [("Человек по снимку", {"landfill": "свалка", "unclear": "не разобрать",
                                      "not_landfill": "не свалка"}.get(
                                          str(row.get("visual_check")), "—"))]

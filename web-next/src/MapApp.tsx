@@ -749,9 +749,9 @@ export default function MapApp() {
                       ) : (
                         <span
                           className={`tabular text-sm ${hasModel ? 'text-violet-lit' : 'text-muted-2'}`}
-                          title="вероятность модели"
+                          title="оценка модели по снимку: подсказка, не вероятность"
                         >
-                          {hasModel ? `${Math.round(model * 100)}%` : '—'}
+                          {hasModel ? modelScore(model) : '—'}
                         </span>
                       )}
                     </div>
@@ -771,7 +771,7 @@ export default function MapApp() {
                             : model >= 0.45 ? 'text-muted' : 'text-amber'}`}
                           title="оценка модели по снимку 0,4–0,8 м: не вероятность, а место в очереди на проверку"
                         >
-                          модель {Math.round(model * 100)}%
+                          модель {modelScore(model)}
                         </span>
                       )}
                       <span className="tabular">{num(p.area_m2)} м²</span>
@@ -1150,6 +1150,13 @@ function Coordinates({ center }: { center: [number, number] | null }) {
   );
 }
 
+/* Оценка модели по снимку — числом 0–1, а не процентом. «37%» читается как
+   вероятность, а оценка не откалибрована: при семи свалках калибровать
+   не на чем (docs/AI_RESULTS.md, 1с). Так же она написана в паспорте и акте. */
+function modelScore(model: number): string {
+  return model.toFixed(2).replace('.', ',');
+}
+
 function ObjectCard({ f, split }: { f: Feature; split?: Split }) {
   const p = f.properties;
   /* Оценка модели — та же, что в строке списка: highres_score, посчитанная
@@ -1170,7 +1177,7 @@ function ObjectCard({ f, split }: { f: Feature; split?: Split }) {
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="tabular font-display text-2xl text-line">{String(p.candidate_id)}</h2>
         <span className={`tabular text-sm ${hasModel ? 'text-violet-lit' : 'text-muted-2'}`}>
-          {hasModel ? `${Math.round(model * 100)}%` : 'модель молчит'}
+          {hasModel ? modelScore(model) : 'модель молчит'}
         </span>
       </div>
 
