@@ -31,10 +31,10 @@ type Feature = GeoJSON.Feature<GeoJSON.Geometry, Props>;
  * месте. Поэтому он и красный, и в списке выезда стоит первым.
  */
 const REMOVAL: Record<string, { label: string; tone: string; dot: string }> = {
-  active: { label: 'активна', tone: 'text-muted', dot: '#a78bfa' },
-  possibly_removed: { label: 'вероятно устранена', tone: 'text-muted-2', dot: '#4c1d95' },
-  possibly_covered: { label: 'возможно засыпана', tone: 'text-line', dot: '#ede9fe' },
-  insufficient_data: { label: 'данных мало', tone: 'text-muted-2', dot: '#2f2450' },
+  active: { label: 'активна', tone: 'text-muted', dot: 'var(--color-violet-lit)' },
+  possibly_removed: { label: 'вероятно устранена', tone: 'text-muted-2', dot: 'var(--color-violet-deep)' },
+  possibly_covered: { label: 'возможно засыпана', tone: 'text-line', dot: 'var(--color-line)' },
+  insufficient_data: { label: 'данных мало', tone: 'text-muted-2', dot: 'var(--color-grid)' },
 };
 
 /* Ниже этого значения модель фактически возражает детектору. Показать
@@ -60,19 +60,19 @@ const VISUAL: Record<string, { short: string; full: string; tone: string; dot: s
     short: 'свалка',
     full: 'На снимке 0,4–0,8 м на пиксель видны признаки ссыпки: гребни от самосвалов, россыпь мусора, подъездные колеи.',
     tone: 'text-line',
-    dot: '#a78bfa',
+    dot: 'var(--color-violet-lit)',
   },
   not_landfill: {
     short: 'не свалка',
     full: 'На снимке это не свалка — постройка, промплощадка, стройка или водоём. Детектор нашёл здесь необратимое исчезновение растительности, и это правда: именно так выглядит любая застройка. Отсечь такое должен был контекстный фильтр по OpenStreetMap, но новая застройка вокруг Астаны в него не нанесена.',
     tone: 'text-amber',
-    dot: '#e3b341',
+    dot: 'var(--color-amber)',
   },
   unclear: {
     short: 'не разобрать',
     full: 'Снимка недостаточно: похоже на нарушенный грунт, но отличить свалку от отвала или заброшенной площадки по одному снимку нельзя. Нужен выезд.',
     tone: 'text-muted',
-    dot: '#8578ad',
+    dot: 'var(--color-muted-2)',
   },
 };
 
@@ -89,7 +89,7 @@ const GROUND = {
     + 'разметку по снимку: там, где съёмка показывает только нарушенный грунт, '
     + 'человек рядом видит, что именно лежит и возят ли туда до сих пор.',
   tone: 'text-emerald',
-  dot: '#3fb950',
+  dot: 'var(--color-emerald)',
 };
 
 const visualOf = (p: Props) => {
@@ -166,6 +166,13 @@ const num = (v: unknown, d = 0) => {
 const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
   'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
 
+/** «23 августа 2026» — для даты выезда: она про день, а не про месяц. */
+function humanDay(v: unknown) {
+  const d = new Date(String(v));
+  if (Number.isNaN(d.getTime())) return typeof v === 'string' ? v.slice(0, 10) : '';
+  return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+}
+
 function humanDate(v: unknown) {
   const d = new Date(String(v));
   return Number.isNaN(d.getTime()) ? '—' : `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
@@ -173,14 +180,18 @@ function humanDate(v: unknown) {
 
 type SortKey = 'visual' | 'probability' | 'evidence_score' | 'damage_p50' | 'area_m2' | 'break_date' | 'risk_of_cover';
 
+/* Подписи короткие намеренно. Список стоит в колонке шириной 22rem, и
+   «сначала опознанные как свалка» обрезалось на «как свал» — выбранный
+   пункт переставал читаться, то есть переключатель не показывал своё
+   же состояние. */
 const SORTS: [SortKey, string][] = [
-  ['visual', 'сначала опознанные как свалка'],
-  ['risk_of_cover', 'сначала подозрение на присыпку'],
-  ['probability', 'по вероятности модели'],
+  ['visual', 'сначала свалки'],
+  ['risk_of_cover', 'сначала присыпка'],
+  ['probability', 'по оценке модели'],
   ['evidence_score', 'по согласию признаков'],
   ['damage_p50', 'по ущербу'],
   ['area_m2', 'по площади'],
-  ['break_date', 'по дате возникновения'],
+  ['break_date', 'по дате'],
 ];
 
 export default function MapApp() {
@@ -730,6 +741,17 @@ function ObjectCard({ f }: { f: Feature }) {
           ['Площадь', `${num(p.area_m2)} м²`],
           ['Масса', `${num(p.mass_t)} т`],
           ['Метан за 20 лет', `${num(p.co2e_t)} т CO₂-экв.`],
+          /* Уже ушедшее — отдельной строкой от прогнозного.
+             Разложение по IPCC идёт от даты возникновения, и у объекта
+             2019 года половина метана уже в атмосфере. Показывать только
+             полный горизонт значит утверждать, что всё ещё впереди. */
+          ...(Number(p.co2e_emitted_t) > 0 && Number(p.co2e_t) > 0
+            ? ([[
+                'Из них уже выброшено',
+                `${num(p.co2e_emitted_t)} т — `
+                + `${Math.round((Number(p.co2e_emitted_t) / Number(p.co2e_t)) * 100)}%`,
+              ]] as [string, string][])
+            : []),
         ].map(([k, v]) => (
           <div key={k}>
             <dt className="text-xs text-muted-2">{k}</dt>
@@ -768,6 +790,28 @@ function ObjectCard({ f }: { f: Feature }) {
       <p className="tabular mt-1 text-xs text-muted-2">
         P10 {kzt(p.damage_p10)} · P90 {kzt(p.damage_p90)}
       </p>
+
+      {/* Кто был на месте и когда. Раньше это жило только в подсказке к
+          подписи — то есть пропадало и на печати акта, и на скриншоте, а
+          именно этим объект и отличается от находки по снимку. */}
+      {p.check_source === 'ground' && (p.ground_by || p.ground_date) ? (
+        <>
+          <h3 className="mt-6 text-sm text-muted-2">Проверено на месте</h3>
+          <p className="mt-1 flex items-baseline gap-2 text-line">
+            <span
+              aria-hidden="true"
+              className="inline-block h-2 w-2 shrink-0 translate-y-[-1px] rounded-full"
+              style={{ background: 'var(--color-emerald)' }}
+            />
+            <span>
+              {/* Дата приходит из GeoJSON меткой времени: «2026-08-23T00:00:00»
+                  в карточке читается как ошибка выгрузки. */}
+              {[p.ground_by, humanDay(p.ground_date)].filter(Boolean).join(', ')}
+              {p.ground_evidence ? ` — ${p.ground_evidence}` : ''}
+            </span>
+          </p>
+        </>
+      ) : null}
 
       {removalOf(p) && (
         <>

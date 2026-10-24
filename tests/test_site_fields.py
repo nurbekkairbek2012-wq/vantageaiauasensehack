@@ -172,3 +172,61 @@ class TestServiceAgreesWithTheSite:
             assert abs(a[column].sum() - b[column].sum()) < 1.0, (
                 f"{column}: сервис {a[column].sum():.0f}, сайт {b[column].sum():.0f}"
             )
+
+
+class TestNoPrivateLayerLeaks:
+    """Закрытые слои не должны попадать в публикацию.
+
+    Граница продукта проходит здесь: житель видит зону риска, служба —
+    точку. Опубликовать risk_private значит отдать точные координаты
+    предсказанных мест всем, включая тех, кто ищет, где свалить
+    незаметно.
+
+    Проверка была только в workflow публикации, а он запускается вручную —
+    то есть не запускается. Перенесена в тесты: они идут на каждый пуш.
+
+    Белый список расширяется одной строкой, и без падающего теста этого
+    никто не заметит до момента, когда координаты уже в сети.
+    """
+
+    #: Файлы, которых в публикации быть не должно, и чем это грозит.
+    FORBIDDEN = {
+        "risk_private.geojson": "точные вероятности по каждой ячейке сетки",
+        "access.log": "журнал обращений к закрытым данным",
+        "citizen_reports.jsonl": "сообщения жителей с их геопозицией",
+        "rejected.geojson": "отвергнутые находки с причинами отсева",
+    }
+
+    def test_no_forbidden_files(self):
+        data = ROOT / "web-next/public/data"
+        if not data.exists():
+            pytest.skip("нет каталога публикации")
+
+        leaked = [f"{name} — {why}" for name, why in self.FORBIDDEN.items()
+                  if (data / name).exists()]
+        assert not leaked, "в публикации закрытые слои:" + chr(10) + chr(10).join(leaked)
+
+    def test_no_exact_probability_field(self):
+        """Поле risk — это точная вероятность модели по ячейке.
+
+        Публичная сетка несёт risk_class (четыре класса), и этого хватает
+        для карты. По точному значению восстанавливается сама модель.
+        """
+        import json
+
+        data = ROOT / "web-next/public/data"
+        if not data.exists():
+            pytest.skip("нет каталога публикации")
+
+        offenders = []
+        for path in sorted(data.glob("*.geojson")) + sorted(data.glob("*.json")):
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except Exception:
+                continue
+            features = payload.get("features") if isinstance(payload, dict) else None
+            for feature in (features or [])[:200]:
+                if "risk" in (feature.get("properties") or {}):
+                    offenders.append(path.name)
+                    break
+        assert not offenders, f"точная вероятность в публикации: {offenders}"

@@ -262,9 +262,17 @@ export default function App() {
                 className="rounded-md border border-grid p-3 md:p-6"
                 style={{
                   background:
-                    'linear-gradient(180deg, #1a1330 0%, #150f26 45%, #110c20 100%)',
+                    /* Через переменные темы, а не тремя вписанными оттенками:
+                       на лазури вписанный фиолетовый градиент оставался
+                       фиолетовым, и карточка выпадала из страницы. */
+                    'linear-gradient(180deg, var(--color-soot-3) 0%, var(--color-soot-2) 45%, var(--color-soot) 100%)',
+                  /* Тень тоже от темы: вписанный фиолетовый отблеск на
+                     лазури читался как чужой слой поверх карточки.
+                     color-mix даёт прозрачность из переменной, которой
+                     нельзя задать альфу напрямую. */
                   boxShadow:
-                    '0 1px 0 rgba(167,139,250,.14) inset, 0 24px 60px -30px rgba(76,29,149,.75)',
+                    '0 1px 0 color-mix(in srgb, var(--color-violet-lit) 14%, transparent) inset,'
+                    + ' 0 24px 60px -30px color-mix(in srgb, var(--color-violet-deep) 75%, transparent)',
                 }}
               >
                 <div className="mb-3 flex items-center justify-between">
@@ -283,6 +291,36 @@ export default function App() {
                 Провал не сезонный — после него сигнал не вернулся. Именно
                 это отличает свалку от пашни и от гари.
               </p>
+
+              {/* Числа стоят под графиком, а не под заголовком.
+                  Причин две. По смыслу: цифры — итог того, что показывает
+                  график, и читаются как его подпись, а не как обещание
+                  рядом с крупным заголовком.
+                  По вёрстке: правая колонка вдвое выше левой, и под
+                  графиком оставалась пустая полоса высотой почти в экран.
+                  Заполнять её декором было бы нечестно — здесь стоит то,
+                  ради чего страница написана. */}
+              <dl className="mt-7 grid grid-cols-3 border-t border-grid pt-6">
+                {[
+                  ['Объектов в списке', String(totals.real), false],
+                  ['Опознаны как свалка', String(totals.confirmed), true],
+                  ['Ущерб по списку', kzt(totals.damage), false],
+                ].map(([k, v, accent], i) => (
+                  <div
+                    key={String(k)}
+                    className={i > 0 ? 'border-l border-grid pl-4' : 'pr-4'}
+                  >
+                    <dt className="text-xs leading-snug text-muted-2">{k}</dt>
+                    <dd
+                      className={`tabular mt-1.5 font-display text-[clamp(1.5rem,2.8vw,2.2rem)] leading-none ${
+                        accent ? 'text-violet-lit' : 'text-line'
+                      }`}
+                    >
+                      {v}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
             </div>
 
             <div className="lg:pt-2">
@@ -316,28 +354,6 @@ export default function App() {
                   ? `. Самая крупная из найденных возникла ${whenPhrase(hero.properties?.break_date)} — и её нет ни в одном открытом реестре.`
                   : '.'}
               </p>
-
-              <dl className="mt-8 grid grid-cols-3 border-t border-grid pt-6">
-                {[
-                  ['Объектов в списке', String(totals.real), false],
-                  ['Опознаны как свалка', String(totals.confirmed), true],
-                  ['Ущерб по списку', kzt(totals.damage), false],
-                ].map(([k, v, accent], i) => (
-                  <div
-                    key={String(k)}
-                    className={i > 0 ? 'border-l border-grid pl-4' : 'pr-4'}
-                  >
-                    <dt className="text-xs leading-snug text-muted-2">{k}</dt>
-                    <dd
-                      className={`tabular mt-1.5 font-display text-[clamp(1.5rem,2.8vw,2.2rem)] leading-none ${
-                        accent ? 'text-violet-lit' : 'text-line'
-                      }`}
-                    >
-                      {v}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
 
               {/* Отбраковки названы на первом экране намеренно. Тот же факт,
                   найденный жюри самостоятельно, ломает доверие; названный

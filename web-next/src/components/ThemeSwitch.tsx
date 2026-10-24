@@ -63,26 +63,62 @@ export function ThemeSwitch({ className = '' }: { className?: string }) {
 
   const next: Theme = theme === 'violet' ? 'azure' : 'violet';
 
+  const azure = theme === 'azure';
+
+  /* Тумблер, а не кнопка с подписью.
+   *
+   * У кнопки «лазурь» есть неустранимая двусмысленность: она называет либо
+   * текущее состояние, либо то, что произойдёт при нажатии, и читается
+   * наоборот примерно половиной людей. Тумблер снимает вопрос формой: видно
+   * положение, а не название.
+   *
+   * Обе подписи стоят по краям и видны одновременно — подсвечена та, что
+   * сейчас. Ползунок ездит между ними; ему же отдана роль образца цвета,
+   * поэтому переключение показывает не только «сдвинулось», но и «во что».
+   */
   return (
     <button
       type="button"
+      role="switch"
+      aria-checked={azure}
       onClick={() => {
         applyTheme(next);
         setTheme(next);
       }}
-      // Подпись говорит, что произойдёт, а не что сейчас: кнопка, которая
-      // называет текущее состояние, читается наоборот примерно половиной
-      // людей.
-      title={next === 'azure' ? 'Переключить на лазурь' : 'Вернуть фиалковую'}
-      aria-label={next === 'azure' ? 'Переключить на лазурь' : 'Вернуть фиалковую'}
-      className={`flex shrink-0 cursor-pointer items-center gap-2 rounded-sm border border-grid px-2.5 py-1.5 text-xs text-muted transition-colors duration-150 hover:border-violet hover:text-line ${className}`}
+      title={azure ? 'Вернуть фиалковую тему' : 'Переключить на лазурь'}
+      aria-label={azure ? 'Вернуть фиалковую тему' : 'Переключить на лазурь'}
+      className={`group relative flex h-8 shrink-0 cursor-pointer items-center gap-1 rounded-full border border-grid bg-soot-2 p-1 transition-colors duration-300 hover:border-violet ${className}`}
     >
+      {/* Ползунок. Абсолютный, чтобы ехать поверх подписей, а не толкать их:
+          при перестроении потоком соседние элементы дёргаются. */}
       <span
         aria-hidden="true"
-        className="inline-block h-3 w-3 rounded-full border border-grid"
-        style={{ background: next === 'azure' ? '#0a7ea4' : '#7c3aed' }}
+        className="absolute top-1 bottom-1 left-1 rounded-full transition-transform duration-300 ease-out"
+        style={{
+          width: 'calc(50% - 0.25rem)',
+          background: azure
+            ? 'linear-gradient(140deg, #0a7ea4, #5fd0f5)'
+            : 'linear-gradient(140deg, #4c1d95, #a78bfa)',
+          // Тень того же тона: без неё ползунок читается наклейкой.
+          boxShadow: azure
+            ? '0 2px 10px -2px rgba(10,126,164,.65)'
+            : '0 2px 10px -2px rgba(124,58,237,.65)',
+          transform: azure ? 'translateX(100%)' : 'translateX(0)',
+        }}
       />
-      <span className="hidden sm:inline">{next === 'azure' ? 'лазурь' : 'фиалка'}</span>
+      {(['фиалка', 'лазурь'] as const).map((label, i) => {
+        const on = (i === 1) === azure;
+        return (
+          <span
+            key={label}
+            className={`relative z-10 w-[4.2rem] text-center text-[11px] leading-none transition-colors duration-300 ${
+              on ? 'text-paper' : 'text-muted-2 group-hover:text-muted'
+            }`}
+          >
+            {label}
+          </span>
+        );
+      })}
     </button>
   );
 }
