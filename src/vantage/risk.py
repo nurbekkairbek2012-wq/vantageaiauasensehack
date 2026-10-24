@@ -39,6 +39,7 @@ from dataclasses import dataclass, field
 
 import geopandas as gpd
 import numpy as np
+import pandas as pd
 from shapely.geometry import box
 
 from .aoi import AOI
@@ -387,11 +388,61 @@ def aggregate_public(
         values.append(float(part["risk"].max()))
 
     public = gpd.GeoDataFrame({"risk": values, "geometry": cells}, crs=risk_grid.crs)
-    # Класс вместо числа: «высокий риск» понятнее и менее адресно, чем 0.734
-    public["risk_class"] = (
-        public["risk"].rank(pct=True).mul(quantiles).apply(np.ceil).clip(1, quantiles).astype(int)
-    )
+    public["risk_class"] = _classify_top(public["risk"], quantiles=quantiles)
     return public[["risk_class", "geometry"]]
+
+
+#: Какая доля ячеек попадает в показываемые зоны риска.
+#:
+#: Число маленькое намеренно. Прежняя версия делила ВСЕ ячейки на квартили,
+#: и «высший класс риска» доставался верхней четверти области — три с
+#: лишним тысячи квадратных километров. Это не прогноз: инспектора туда не
+#: пошлёшь, а карта, где три четверти региона закрашены тревожным цветом,
+#: не выделяет ничего и вызывает справедливое «у вас свалки и в ботаническом
+#: саду».
+#:
+#: Пять процентов ячеек по 2 км — порядка двухсот квадратных километров,
+#: то есть объём, который патруль реально объезжает за месяц.
+PUBLIC_TOP_SHARE = 0.05
+
+
+def _classify_top(risk: pd.Series, *, quantiles: int = 4) -> pd.Series:
+    """Классы риска только для верхушки списка, остальным — класс 1.
+
+    Модель риска хорошо ранжирует и плохо калибрована: она уверенно
+    отвечает, какое место опаснее другого, и неуверенно — какова там
+    вероятность. Публиковать поэтому надо порядок, а не уровень.
+
+    Ячейки с нулевым риском исключены до отбора: это земли, снятые маской
+    невозможного (парки, кампусы, вода). Без явного исключения они попадали
+    бы в верхушку на прогонах, где риск везде близок к нулю.
+    """
+    out = pd.Series(1, index=risk.index, dtype=int)
+    live = risk[risk > 0]
+    if live.empty:
+        return out
+
+    take = max(1, int(round(len(risk) * PUBLIC_TOP_SHARE)))
+    # method="first" вместо среднего: при одинаковом риске у сотни ячеек
+    # средний ранг даёт им общее место, и отбор берёт либо все сто, либо
+    # ни одной.
+    order = live.rank(ascending=False, method="first")
+    chosen = live[order <= take]
+    if chosen.empty:
+        return out
+
+    # Верхушка делится на классы по своему рангу, а не по риску: между
+    # первым и двухсотым местом разница вероятностей может быть в третьем
+    # знаке, и деление по значению собрало бы всех в один класс.
+    inner = chosen.rank(ascending=False, method="first")
+    count = len(chosen)
+    hot = max(1, round(count * 0.1))            # первая десятая — «ехать сейчас»
+    warm = max(hot + 1, round(count * 0.4))     # следующая треть — «в этом месяце»
+
+    out.loc[inner[inner <= hot].index] = quantiles
+    out.loc[inner[(inner > hot) & (inner <= warm)].index] = quantiles - 1
+    out.loc[inner[inner > warm].index] = quantiles - 2
+    return out
 
 
 def dissolve_public(public: gpd.GeoDataFrame, *, drop_lowest: bool = True) -> gpd.GeoDataFrame:

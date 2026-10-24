@@ -18,6 +18,7 @@ import { Tape } from './components/Tape';
 import { Plates } from './components/Plates';
 import { Funnel, YearBars, DamageStrip } from './components/Charts';
 import { SiteView } from './components/SiteView';
+import { Rejected } from './components/Rejected';
 
 type Series = Parameters<typeof Tape>[0]['data'];
 type Feature = GeoJSON.Feature<GeoJSON.Geometry, Record<string, unknown>>;
@@ -105,9 +106,22 @@ export default function App() {
      Складывать ущерб по складу под синей кровлей значит завышать итог, и
      первый же вопрос «а что вот это» обесценит всю цифру. */
   const totals = useMemo(() => {
+    /* Три числа, а не одно, и это принципиально.
+
+       «Найдено 30» — то, что программа вынесла на проверку. Свалок среди
+       них четыре, а восемнадцать оказались складами, промплощадками и
+       болотами. Показывать 30 как список свалок значит выдавать работу
+       детектора за результат, и первый же, кто ткнёт в объект и увидит
+       кровлю склада, перестанет верить всему остальному.
+
+       Поэтому в заголовке стоит число, пережившее проверку, а отвергнутые
+       названы отдельно и не спрятаны: команда, показывающая свои
+       отбраковки, очевидно проверяла. */
     const real = features.filter((f) => f.properties?.visual_check !== 'not_landfill');
     return {
       count: features.length,
+      real: real.length,
+      rejected: features.length - real.length,
       confirmed: features.filter((f) => f.properties?.visual_check === 'landfill').length,
       damage: real.reduce((s, f) => s + (Number(f.properties?.damage_p50) || 0), 0),
       area: real.reduce((s, f) => s + (Number(f.properties?.area_m2) || 0), 0),
@@ -212,9 +226,9 @@ export default function App() {
 
               <dl className="mt-8 grid grid-cols-3 border-t border-grid pt-6">
                 {[
-                  ['Найдено', String(totals.count), false],
-                  ['Подтверждено глазами', String(totals.confirmed), true],
-                  ['Ущерб', kzt(totals.damage), false],
+                  ['Объектов в списке', String(totals.real), false],
+                  ['Из них подтверждены глазами', String(totals.confirmed), true],
+                  ['Ущерб по списку', kzt(totals.damage), false],
                 ].map(([k, v, accent], i) => (
                   <div
                     key={String(k)}
@@ -231,6 +245,18 @@ export default function App() {
                   </div>
                 ))}
               </dl>
+
+              {/* Отбраковки названы на первом экране намеренно. Тот же факт,
+                  найденный жюри самостоятельно, ломает доверие; названный
+                  нами — доказывает, что проверка была. */}
+              {totals.rejected > 0 && (
+                <p className="mt-4 max-w-[48ch] text-sm leading-relaxed text-muted-2">
+                  Ещё {totals.rejected} кандидата детектор нашёл, а проверка по
+                  снимку 0,6 м на пиксель отвергла — склады, промплощадки и
+                  болота. Они остались на карте помеченными: удалённая ошибка
+                  неотличима от её отсутствия.
+                </p>
+              )}
             </div>
           </div>
         </section>
@@ -267,7 +293,7 @@ export default function App() {
                 href="./map.html"
                 className="mt-6 inline-block text-sm text-violet-lit underline decoration-grid transition-colors duration-200 hover:decoration-violet-lit"
               >
-                Все {totals.count} объектов на карте →
+                Все {totals.real} объектов на карте →
               </a>
             </div>
             <SiteView feature={hero} className="aspect-[4/3] w-full" />
@@ -298,6 +324,8 @@ export default function App() {
           </p>
           <Funnel stages={STAGES} kept={totals.count || 30} />
         </section>
+
+        <Rejected features={features as never} />
 
         {/* ── Когда и почём ─────────────────────────────────────────── */}
         <section className="border-t border-grid pt-14 pb-16">

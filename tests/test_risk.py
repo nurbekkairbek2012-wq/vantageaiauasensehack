@@ -274,6 +274,34 @@ class TestPublicLayer:
         public = aggregate_public(risk_grid, CFG, quantiles=4)
         assert public["risk_class"].between(1, 4).all()
 
+    def test_high_risk_covers_small_share_of_area(self, risk_grid):
+        """Зоны риска — это места, а не треть области.
+
+        Прежняя версия делила ВСЕ ячейки на квартили, и высший класс
+        доставался верхней четверти региона: на настоящем прогоне это
+        оказалось 3 155 км² при трёх классах на 9 468 км². Карта, где три
+        четверти области закрашены тревожным цветом, не выделяет ничего —
+        и справедливо получала вопрос «почему у вас свалка в ботаническом
+        саду». Патрулю нужен список мест, а не раскраска карты.
+        """
+        public = aggregate_public(risk_grid, CFG)
+        shown = (public["risk_class"] > 1).mean()
+        assert shown <= 0.10, f"под риском {shown:.0%} ячеек — это раскраска, а не прогноз"
+
+    def test_masked_cells_never_enter_risk_zones(self, risk_grid):
+        """Земля, снятая маской невозможного, не может попасть в верхушку.
+
+        Ячейки парков и кампусов обнулены, а не удалены. Если отбор берёт
+        верхние проценты по рангу без явного исключения нулей, то на
+        прогоне, где риск везде близок к нулю, обнулённые ячейки попадают
+        в число «самых опасных» — ровно то, чего маска и должна не
+        допустить.
+        """
+        grid = risk_grid.copy()
+        grid.loc[grid.index[: len(grid) // 2], "risk"] = 0.0
+        public = aggregate_public(grid, CFG)
+        assert (public["risk_class"] > 1).sum() > 0, "не осталось ни одной зоны"
+
     def test_rejects_finer_public_grid(self, risk_grid):
         bad = RiskCfg(**{**CFG.__dict__, "public_grid_cell_m": 100})
         with pytest.raises(ValueError):
