@@ -4966,3 +4966,27 @@ C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\v
 19:57:58 STAC sentinel-2-l2a: найдено 799 сцен для astana_north_x002y002 (2018-01-01..2026-08-01)
 19:58:05 Загружен куб S2: 438 дат, 536 x 536 пикселей
 19:58:14 Месячных композитов после отбраковки: 61
+C:\Users\Админ\OneDrive\Жұмыс үстелі\Новая папка (3)\vantage\.venv\lib\site-packages\rasterio\warp.py:387: NotGeoreferencedWarning: Dataset has no geotransform, gcps, or rpcs. The identity matrix will be returned.
+  dest = _reproject(
+20:17:13 Детекция изменений: {'pixels': 287296, 'detected': 517, 'detected_pct': 0.18, 'rejected_recovered': 267919, 'insufficient_data': 0}
+20:17:13 Связных областей после чистки: 9
+20:17:14 Кандидатов собрано: 9, суммарная площадь 1.0 га
+20:18:12 Извлечено 9 пар чипов, 9 каналов
+20:18:12 Сохранено 9 пар чипов в data\chips\astana_north_x002y002.npz
+20:18:13 Created 9 records
+20:18:13 Записано 9 кандидатов в outputs_real\tiles\astana_north_x002y002.geojson
+20:18:13 [13/25] astana_north_x002y002 — кандидатов 9 (7014 с от начала)
+20:18:30 STAC sentinel-2-l2a: найдено 797 сцен для astana_north_x003y002 (2018-01-01..2026-08-01)
+20:18:33 Загружен куб S2: 438 дат, 536 x 536 пикселей
+20:18:37 Месячных композитов после отбраковки: 61
+20:34:42 Детекция изменений: {'pixels': 287296, 'detected': 51, 'detected_pct': 0.018, 'rejected_recovered': 282311, 'insufficient_data': 0}
+20:34:42 Связных областей после чистки: 1
+20:34:43 Кандидатов собрано: 1, суммарная площадь 0.2 га
+20:34:47 Извлечено 1 пар чипов, 9 каналов
+20:34:47 Сохранено 1 пар чипов в data\chips\astana_north_x003y002.npz
+20:34:47 Created 1 records
+20:34:47 Записано 1 кандидатов в outputs_real\tiles\astana_north_x003y002.geojson
+20:34:47 [14/25] astana_north_x003y002 — кандидатов 1 (8008 с от начала)
+20:34:59 STAC sentinel-2-l2a: найдено 796 сцен для astana_north_x004y002 (2018-01-01..2026-08-01)
+20:35:01 Загружен куб S2: 438 дат, 405 x 528 пикселей
+20:35:04 Месячных композитов после отбраковки: 61

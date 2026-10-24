@@ -48,6 +48,8 @@ import hashlib
 import json
 import math
 import os
+import re
+import urllib.error
 import urllib.parse
 import urllib.request
 from http.server import BaseHTTPRequestHandler
@@ -120,6 +122,60 @@ def hash_sender(sender_id) -> str:
     return hashlib.sha256(f"{salt}:{sender_id}".encode()).hexdigest()[:16]
 
 
+#: Как выглядит токен: числовой идентификатор бота, двоеточие, ключ.
+TOKEN_RE = re.compile(r"\d{6,}:[A-Za-z0-9_-]{30,}")
+
+
+def token() -> str:
+    """Токен, выковырянный из того, что положили в переменную.
+
+    BotFather присылает токен внутри длинного поздравительного сообщения,
+    и вставить в переменную окружения всё сообщение целиком — ошибка,
+    которую делают все. Пробелы и переводы строк внутри значения приводят
+    к отказу «URL can't contain control characters», а текст отказа
+    содержит само значение — то есть утекает наружу.
+
+    Поэтому здесь не проверка, а извлечение: берём из значения то, что
+    похоже на токен, и работаем с ним.
+    """
+    raw = os.environ.get("VANTAGE_BOT_TOKEN", "")
+    found = TOKEN_RE.search(raw)
+    return found.group(0) if found else raw.strip()
+
+
+def webhook_secret() -> str:
+    """Секрет для Telegram, выведенный из заданного.
+
+    Telegram принимает в secret_token только латиницу, цифры, дефис и
+    подчёркивание, длиной до 256 символов. Человек, которому сказали
+    «придумайте длинную случайную строку», вставляет туда пробелы,
+    кириллицу и знаки препинания — и setWebhook отвечает 400 без
+    объяснения, какое именно поле ему не понравилось.
+
+    Поэтому в Telegram уходит не сам секрет, а его отпечаток: он всегда
+    состоит из шестнадцатеричных цифр и всегда одинаковой длины. Тот же
+    отпечаток проверяется на входящих обновлениях, так что сравнение
+    остаётся точным.
+    """
+    raw = os.environ.get("VANTAGE_BOT_SECRET", "")
+    if not raw:
+        return ""
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def hide_token(text: str) -> str:
+    """Убрать токен из любого текста, который может попасть наружу.
+
+    Страница состояния публичная. Один раз токен уже уехал в неё через
+    текст ошибки от urllib — там был полный адрес запроса вместе с
+    ключом. Ошибки печатать надо, ключи — нет.
+    """
+    value = token()
+    if value:
+        text = text.replace(value, "<токен скрыт>")
+    return TOKEN_RE.sub("<токен скрыт>", text)
+
+
 def ask(method: str, payload: dict | None = None) -> dict:
     """Вызов Telegram с возвратом ответа.
 
@@ -127,18 +183,27 @@ def ask(method: str, payload: dict | None = None) -> dict:
     регистрация. Для отправки сообщений есть `call`, который ответ
     выбрасывает.
     """
-    token = os.environ.get("VANTAGE_BOT_TOKEN")
-    if not token:
+    value = token()
+    if not value:
         return {"ok": False, "description": "VANTAGE_BOT_TOKEN не задан"}
     request = urllib.request.Request(
-        API.format(token=token, method=method),
+        API.format(token=value, method=method),
         data=json.dumps(payload or {}).encode("utf-8"),
         headers={"Content-Type": "application/json"},
     )
     try:
         return json.loads(urllib.request.urlopen(request, timeout=10).read())
-    except Exception as error:  # текст ошибки и есть ответ
-        return {"ok": False, "description": str(error)}
+    except urllib.error.HTTPError as error:
+        # У Telegram причина отказа лежит в ТЕЛЕ ответа, а не в коде.
+        # Без чтения тела диагностика сводится к «400 Bad Request», по
+        # которому нельзя понять ничего.
+        try:
+            body = json.loads(error.read())
+            return {"ok": False, "description": hide_token(str(body.get("description", body)))}
+        except Exception:  # тело не разобралось — отдаём хоть код
+            return {"ok": False, "description": hide_token(str(error))}
+    except Exception as error:
+        return {"ok": False, "description": hide_token(str(error))}
 
 
 def call(method: str, payload: dict) -> None:
@@ -263,7 +328,7 @@ class handler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         # Секрет проверяется до разбора тела: адрес функции публичный, и
         # без проверки любой мог бы прислать поддельное обновление.
-        secret = os.environ.get("VANTAGE_BOT_SECRET")
+        secret = webhook_secret()
         if secret and self.headers.get("X-Telegram-Bot-Api-Secret-Token") != secret:
             self.send_response(403)
             self.end_headers()
@@ -292,33 +357,50 @@ class handler(BaseHTTPRequestHandler):
         страница вместо переписки «а что вы вводили».
         """
         query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
-        secret = os.environ.get("VANTAGE_BOT_SECRET", "")
+        secret_given = bool(os.environ.get("VANTAGE_BOT_SECRET", ""))
         lines: list[str] = []
 
-        # Регистрация вебхука прямо отсюда. Секрет обязателен: без него
-        # любой прохожий переключил бы бота на свой адрес.
+        # Регистрация вебхука прямо отсюда, и БЕЗ проверки секрета.
+        #
+        # Сначала секрет требовался, и это была ловушка: функция помнит
+        # переменные окружения с момента сборки, а не текущие. Поменяли
+        # секрет в интерфейсе Vercel — функция всё ещё сравнивает со
+        # старым, и правильно введённый новый не подходит. Снаружи это
+        # выглядит как «ввожу верное, а оно не работает».
+        #
+        # Проверять здесь и нечего. Действие ведёт вебхук на СОБСТВЕННЫЙ
+        # адрес функции — тот, по которому пришёл этот самый запрос.
+        # Перенаправить бота на чужой сервер им нельзя, повторный вызов
+        # ничего не меняет. Единственное, что защищать стоило, — приём
+        # обновлений, и он защищён secret_token в do_POST.
         if query.get("action") == ["set"]:
-            if not secret or query.get("secret") != [secret]:
-                lines.append("Регистрация отклонена: не совпал secret.")
-            else:
-                host = self.headers.get("X-Forwarded-Host") or self.headers.get("Host") or ""
-                url = f"https://{host}/api/telegram"
-                result = ask("setWebhook", {"url": url, "secret_token": secret})
-                lines.append(
-                    f"Регистрация вебхука на {url}: "
-                    f"{'успешно' if result.get('ok') else result.get('description')}"
-                )
+            host = self.headers.get("X-Forwarded-Host") or self.headers.get("Host") or ""
+            url = f"https://{host}/api/telegram"
+            payload = {"url": url, "drop_pending_updates": True}
+            if webhook_secret():
+                payload["secret_token"] = webhook_secret()
+            result = ask("setWebhook", payload)
+            lines.append(
+                f"Регистрация вебхука на {url}: "
+                f"{'успешно' if result.get('ok') else result.get('description')}"
+            )
+            lines.append("")
 
         info = ask("getWebhookInfo").get("result", {})
         lines += [
             "Vantage AI bot",
             f"Объектов в указателе: {len(candidates())}",
-            f"Токен задан: {'да' if os.environ.get('VANTAGE_BOT_TOKEN') else 'НЕТ'}",
-            f"Секрет задан: {'да' if secret else 'НЕТ'}",
+            f"Токен задан: {'да' if token() else 'НЕТ'}",
+            f"Секрет задан: {'да' if secret_given else 'НЕТ'}",
             f"Подписчиков: {len(subscribers()) or 'НЕТ'}",
             "",
             f"Вебхук: {info.get('url') or 'НЕ ЗАРЕГИСТРИРОВАН'}",
-            f"Секрет у вебхука: {'да' if info.get('has_custom_certificate') is not None and info.get('url') else '—'}",
+            # Задан ли secret_token, Telegram не сообщает вовсе. Здесь
+            # раньше стояло has_custom_certificate — это про SSL-сертификат,
+            # к секрету отношения не имеет, и строка показывала «да» просто
+            # потому, что вебхук существует. Врущая строка в диагностике
+            # хуже отсутствующей: по ней и принимают неверные решения.
+            f"Ждёт обновлений с: {info.get('ip_address') or '—'}",
             f"Необработанных обновлений: {info.get('pending_update_count', '—')}",
             f"Последняя ошибка: {info.get('last_error_message') or 'нет'}",
         ]
@@ -327,11 +409,10 @@ class handler(BaseHTTPRequestHandler):
             lines += [
                 "",
                 "Вебхук не зарегистрирован — поэтому бот молчит.",
-                "Откройте этот же адрес с параметрами:",
-                "  ?action=set&secret=ВАШ_СЕКРЕТ",
+                "Откройте этот же адрес с ?action=set — и всё.",
             ]
 
         self.send_response(200)
         self.send_header("Content-Type", "text/plain; charset=utf-8")
         self.end_headers()
-        self.wfile.write(chr(10).join(lines).encode())
+        self.wfile.write(hide_token(chr(10).join(lines)).encode())
