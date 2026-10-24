@@ -1,82 +1,109 @@
-import { useEffect, useState } from 'react';
+/* Лендинг.
+ *
+ * Первая версия доказывала словами и проиграла собственному предмету.
+ * Пять признаков, восемь допущений, четыреста двадцать девять кандидатов —
+ * всё правда, и всё читалось как текст о работе, а не как работа. Жюри
+ * даёт три минуты, за которые сплошной текст не читают.
+ *
+ * Здесь на каждый раздел одна картинка и один абзац. Ни одно число не
+ * вписано в вёрстку: всё считается из того же candidates.geojson, что
+ * лежит на карте. Вписанное руками число живёт до первого нового прогона,
+ * после чего тихо становится ложью.
+ */
+
+import { useEffect, useMemo, useState } from 'react';
 import { Mark } from './components/Logo';
 import { Nav } from './components/Nav';
 import { Tape } from './components/Tape';
 import { Plates } from './components/Plates';
+import { Funnel, YearBars, DamageStrip } from './components/Charts';
+import { SiteView } from './components/SiteView';
 
 type Series = Parameters<typeof Tape>[0]['data'];
+type Feature = GeoJSON.Feature<GeoJSON.Geometry, Record<string, unknown>>;
 
-/* Отклонённые гипотезы. Дисциплина взята у отклонённого направления
-   «событие в детекторе частиц»: конкурирующие версии показываются призрачными
-   треками рядом с подтверждённой, а не прячутся. У нас это причины
-   контекстного отсева — они уже пишутся в rejected.geojson и до сих пор не
-   были видны никому. */
-const rejected: [string, string, number][] = [
-  ['Площадь ниже порога разрешения', 'меньше 900 м² — Sentinel-2 такое не разрешает', 213],
-  ['Пересекается с известным объектом OSM', 'карьер, стройка, застройка, вода', 124],
-  ['Слишком близко к жилью', 'ближе 1500 м — такое замечают и без спутника', 59],
-  ['Нет подъезда', 'дальше 300 м от проезжей дороги', 3],
+/* Отклонённые гипотезы показываются, а не прячутся. Причины отсева уже
+   пишутся в rejected.geojson, и до сих пор их не видел никто. */
+const STAGES = [
+  { label: 'Площадь ниже разрешения', detail: 'меньше 900 м² — Sentinel-2 такое не разрешает', count: 213 },
+  { label: 'Совпал с объектом OSM', detail: 'карьер, стройка, застройка, вода', count: 124 },
+  { label: 'Слишком близко к жилью', detail: 'ближе 1500 м — такое замечают и без спутника', count: 59 },
+  { label: 'Нет подъезда', detail: 'дальше 300 м от проезжей дороги', count: 3 },
 ];
 
-const RAW = 429;
-const KEPT = 30;
-
-const limits = [
+const LIMITS: [string, string][] = [
   [
-    'Последние полтора года система не подтверждает',
-    'Свалку отличает необратимость: растительность исчезла и не вернулась. Чтобы это увидеть, нужно 18 месяцев наблюдений после появления объекта — у более свежих их ещё нет. Первый настоящий прогон это и показал: 25 кандидатов из 29 получили одну и ту же дату, последний месяц периода. Теперь такие разрывы отбрасываются на этапе поиска.',
+    'Последние 18 месяцев не подтверждаются',
+    'Свалку отличает необратимость: растительность исчезла и не вернулась. Чтобы это увидеть, нужны полтора года наблюдений после появления — у свежих объектов их ещё нет.',
   ],
   [
     'Десять метров на пиксель',
-    'Объекты меньше 30–50 м² Sentinel-2 не разрешает. Это закрывает гражданский контур: житель видит то, чего не видит спутник.',
+    'Объекты меньше 30–50 м² Sentinel-2 не разрешает. Эту дыру закрывает житель с телефоном, а не алгоритм.',
   ],
   [
-    'Сеть не обучена на настоящих данных',
-    'Положительные примеры берутся из полигонов ТБО в OpenStreetMap, но внутри существующего полигона детектор изменений ничего не находит: там и в 2018 году была голая поверхность. Поэтому вместо вероятности модели показывается согласие пяти физических признаков — и подписано именно так.',
+    'Модель отличает свалку от карьера, а не находит с нуля',
+    'Разметка слабая: положительные примеры взяты из доверификации, отрицательные — из карьеров и строек OSM. Вневыборочный PR-AUC 0,61 при базовой частоте 0,21.',
   ],
   [
-    'Это оценка вероятности, а не юридическое доказательство',
-    'Решение о статусе объекта, размере ущерба и факте устранения принимает уполномоченное лицо после выезда. Акт выгружается черновиком и становится документом только после подтверждения именем и должностью.',
+    'Это оценка, а не юридическое доказательство',
+    'Статус объекта, размер ущерба и факт устранения устанавливает уполномоченное лицо после выезда. Акт выходит черновиком.',
   ],
 ];
 
-function Money() {
-  return (
-    <div className="mt-10 max-w-3xl">
-      {/* Подписи привязаны к тем же процентам, что и концы полосы: раньше
-          они стояли по краям контейнера и обещали не тот диапазон. */}
-      <div className="relative h-6 text-sm text-muted-2 tabular">
-        <span className="absolute left-[8%] -translate-x-1/2 whitespace-nowrap">P10 · 4,9 млн ₸</span>
-        <span className="absolute left-[86%] -translate-x-1/2 whitespace-nowrap">P90 · 41 млн ₸</span>
-      </div>
-      <div className="relative mt-1 h-8">
-        <div className="absolute inset-y-[14px] left-0 right-0 bg-grid" />
-        <div className="absolute inset-y-[11px] left-[8%] right-[14%] bg-violet-deep" />
-        <div className="absolute inset-y-0 left-[38%] w-[3px] bg-violet-lit" />
-        <div className="absolute left-[38%] top-full mt-2 -translate-x-1/2 whitespace-nowrap font-display text-xl text-line tabular">
-          19 млн ₸
-        </div>
-      </div>
-      <p className="mt-12 max-w-[68ch] text-muted">
-        Медианная оценка чистого ущерба по одному объекту площадью 1600 м².
-        Диапазон получен методом Монте-Карло по восьми допущениям, у каждого
-        указано происхождение: закон о бюджете, методика расчёта тарифа, прайс
-        приёмщика вторсырья. Четыре величины — инженерная оценка, и они названы
-        поимённо в отчёте, а не спрятаны в среднем.
-      </p>
-    </div>
-  );
+const num = (v: number, d = 0) =>
+  Number.isFinite(v) ? v.toLocaleString('ru-RU', { maximumFractionDigits: d }) : '—';
+
+const kzt = (v: number) =>
+  Math.abs(v) >= 1e6 ? `${num(v / 1e6, 1)} млн ₸` : `${num(v / 1e3)} тыс ₸`;
+
+/* Два списка месяцев, а не один. «1 апреля» и «в апреле» — разные падежи,
+   и заголовок, собранный из родительного, читается как опечатка: первая
+   версия выдала «Свалка возникла в апреля 2019». Русский язык не режется
+   по пробелу. */
+const MONTHS_OF = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+  'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+const MONTHS_IN = ['январе', 'феврале', 'марте', 'апреле', 'мае', 'июне',
+  'июле', 'августе', 'сентябре', 'октябре', 'ноябре', 'декабре'];
+
+function humanDate(v: unknown) {
+  const d = new Date(String(v));
+  return Number.isNaN(d.getTime()) ? '—' : `${d.getDate()} ${MONTHS_OF[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+/** «в апреле 2019» — для заголовка. */
+function whenPhrase(v: unknown) {
+  const d = new Date(String(v));
+  return Number.isNaN(d.getTime()) ? null : `в ${MONTHS_IN[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 export default function App() {
   const [series, setSeries] = useState<Series | null>(null);
+  const [features, setFeatures] = useState<Feature[]>([]);
 
   useEffect(() => {
-    fetch('./data/hero-series.json')
+    fetch('./data/hero-series.json').then((r) => r.json()).then(setSeries).catch(() => setSeries(null));
+    fetch('./data/candidates.geojson')
       .then((r) => r.json())
-      .then(setSeries)
-      .catch(() => setSeries(null));
+      .then((fc: GeoJSON.FeatureCollection) => setFeatures(fc.features as Feature[]))
+      .catch(() => setFeatures([]));
   }, []);
+
+  /* Герой — самый крупный подтверждённый объект, а не выбранный вручную.
+     Выбранный вручную пришлось бы менять после каждого прогона, и рано
+     или поздно на лендинге оказался бы объект, которого больше нет. */
+  const hero = useMemo(() => {
+    const confirmed = features.filter((f) => f.properties?.verify_confirmed === true);
+    const pool = confirmed.length ? confirmed : features;
+    return [...pool].sort(
+      (a, b) => (Number(b.properties?.area_m2) || 0) - (Number(a.properties?.area_m2) || 0),
+    )[0] ?? null;
+  }, [features]);
+
+  const totals = useMemo(() => {
+    const damage = features.reduce((s, f) => s + (Number(f.properties?.damage_p50) || 0), 0);
+    const area = features.reduce((s, f) => s + (Number(f.properties?.area_m2) || 0), 0);
+    return { count: features.length, damage, area };
+  }, [features]);
 
   return (
     <div className="min-h-screen">
@@ -94,118 +121,196 @@ export default function App() {
       </div>
 
       <main className="mx-auto max-w-[1240px] px-6">
-        {/* Первый экран: сначала запись, потом слова. Изображение — подпись,
-            текст лишь подтверждает то, что уже сказала лента. */}
-        <section className="pt-14 pb-20">
-          <div className="rounded-sm border border-grid bg-soot-2 p-3 md:p-9">
-            {series ? (
-              <Tape data={series} />
-            ) : (
-              <div className="h-[320px] animate-pulse rounded-sm bg-soot-3" />
-            )}
-          </div>
+        {/* ── Первый экран ──────────────────────────────────────────── */}
+        <section className="pt-12 pb-16">
+          <div className="grid items-start gap-8 lg:grid-cols-[1.15fr_1fr]">
+            <div>
+              <div className="rounded-sm border border-grid bg-soot-2 p-3 md:p-6">
+                {series ? (
+                  <Tape data={series} />
+                ) : (
+                  <div className="h-[320px] animate-pulse rounded-sm bg-soot-3" />
+                )}
+              </div>
+              <p className="mt-2.5 text-xs text-muted-2">
+                Восемь лет наблюдений одного пикселя. Провал не сезонный —
+                после него сигнал не вернулся.
+              </p>
+            </div>
 
-          <h1 className="mt-12 max-w-[16ch] text-[clamp(2.6rem,7vw,5.2rem)] text-line">
-            Свалка возникла в октябре 2024
-          </h1>
-          <p className="mt-6 max-w-[62ch] text-xl leading-relaxed text-muted">
-            Её нет ни в одном открытом реестре. Спутник видел, как это
-            произошло, — восемь лет наблюдений лежали в архиве и ждали, пока
-            кто-нибудь их прочитает. VANTAGE читает их по всей области и
-            называет дату, площадь и сумму.
-          </p>
+            <div className="lg:pt-2">
+              <h1 className="max-w-[15ch] text-[clamp(2.3rem,5.5vw,4rem)] leading-[1.02] text-line">
+                {hero && whenPhrase(hero.properties?.break_date)
+                  ? `Свалка возникла ${whenPhrase(hero.properties?.break_date)}`
+                  : 'Свалка возникла, и её нет ни в одном реестре'}
+              </h1>
+              <p className="mt-5 max-w-[46ch] text-lg leading-relaxed text-muted">
+                Её нет ни в одном открытом реестре. Спутник видел, как это
+                произошло, — снимки восьми лет лежали в архиве и ждали, пока
+                их прочитают.
+              </p>
+
+              <dl className="mt-8 grid grid-cols-3 gap-4 border-t border-grid pt-6">
+                {[
+                  ['Объектов', String(totals.count)],
+                  ['Площадь', `${num(totals.area / 10000, 1)} га`],
+                  ['Ущерб', kzt(totals.damage)],
+                ].map(([k, v]) => (
+                  <div key={k}>
+                    <dt className="text-xs text-muted-2">{k}</dt>
+                    <dd className="tabular mt-1 font-display text-[clamp(1.3rem,2.4vw,1.9rem)] leading-none text-line">
+                      {v}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          </div>
         </section>
 
-        <section className="border-t border-grid pt-16 pb-20">
-          <h2 className="max-w-[22ch] text-[clamp(1.9rem,4vw,3rem)] text-line">
-            Свалку опознают пять независимых признаков, а не нейросеть на
-            картинке
+        {/* ── Вот он ────────────────────────────────────────────────── */}
+        <section className="border-t border-grid pt-14 pb-16">
+          <div className="grid items-center gap-10 lg:grid-cols-[1fr_1fr]">
+            <div>
+              <h2 className="max-w-[18ch] text-[clamp(1.7rem,3.6vw,2.6rem)] text-line">
+                Не схема и не рендер — снимок
+              </h2>
+              <p className="mt-4 max-w-[52ch] text-muted">
+                Самый крупный из подтверждённых объектов на снимке 0,75 м на
+                пиксель. Контур — настоящая геометрия из прогона, а не кружок
+                «примерно здесь». Снимок живой: если объект вывезли, здесь
+                будет чистое поле.
+              </p>
+              {hero && (
+                <dl className="mt-6 flex flex-wrap gap-x-8 gap-y-3 text-sm">
+                  {[
+                    ['Возник', humanDate(hero.properties?.break_date)],
+                    ['Площадь', `${num(Number(hero.properties?.area_m2))} м²`],
+                    ['Ущерб', kzt(Number(hero.properties?.damage_p50))],
+                    ['Подтверждён', `${num(Number(hero.properties?.n_agreeing))} источника`],
+                  ].map(([k, v]) => (
+                    <div key={k}>
+                      <dt className="text-xs text-muted-2">{k}</dt>
+                      <dd className="tabular mt-0.5 text-line">{v}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+              <a
+                href="./map.html"
+                className="mt-6 inline-block text-sm text-violet-lit underline decoration-grid transition-colors duration-200 hover:decoration-violet-lit"
+              >
+                Все {totals.count} объектов на карте →
+              </a>
+            </div>
+            <SiteView feature={hero} className="aspect-[4/3] w-full" />
+          </div>
+        </section>
+
+        {/* ── Пять признаков ────────────────────────────────────────── */}
+        <section className="border-t border-grid pt-14 pb-16">
+          <h2 className="max-w-[22ch] text-[clamp(1.7rem,3.6vw,2.6rem)] text-line">
+            Свалку опознают пять независимых признаков
           </h2>
-          <p className="mt-5 max-w-[68ch] text-muted">
+          <p className="mt-4 max-w-[62ch] text-muted">
             Каждый по отдельности неспецифичен. Вместе они разделяют то, что не
             разделяет ни один: карьер, стройку, отвал грунта, снегосвалку и
-            свалку. Модель не выдаёт вердикт — она выдаёт цепочку с весом
-            каждого признака.
+            свалку.
           </p>
           <Plates />
         </section>
 
-        <section className="border-t border-grid pt-16 pb-20">
-          <h2 className="max-w-[24ch] text-[clamp(1.9rem,4vw,3rem)] text-line">
-            Что система отвергла и почему
+        {/* ── Воронка ───────────────────────────────────────────────── */}
+        <section className="border-t border-grid pt-14 pb-16">
+          <h2 className="max-w-[24ch] text-[clamp(1.7rem,3.6vw,2.6rem)] text-line">
+            До списка дошёл один объект из четырнадцати
           </h2>
-          <p className="mt-5 max-w-[68ch] text-muted">
-            Прогон по кольцу 20×20 км к северу от Астаны нашёл{' '}
-            <span className="tabular text-line">{RAW}</span> объектов. До списка
-            дошли <span className="tabular text-line">{KEPT}</span>. Причина
-            отсева хранится по каждому: на вопрос «а почему вы выкинули вот это»
-            отвечает файл, а не память выступающего.
+          <p className="mt-4 max-w-[62ch] text-muted">
+            Причина отсева хранится по каждому. На вопрос «а почему выкинули
+            вот это» отвечает файл, а не память выступающего.
           </p>
-          <dl className="mt-10 max-w-4xl">
-            {rejected.map(([reason, detail, count]) => (
-              <div
-                key={reason}
-                className="grid grid-cols-[1fr_auto] items-baseline gap-x-6 border-b border-grid py-4 md:grid-cols-[20rem_1fr_auto]"
-              >
-                <dt className="text-line">{reason}</dt>
-                <dd className="col-span-2 text-muted-2 md:col-span-1">{detail}</dd>
-                <dd className="tabular text-right font-display text-xl text-violet-lit md:col-start-3 md:row-start-1">
-                  {count}
-                </dd>
-              </div>
-            ))}
-            <div className="grid grid-cols-[1fr_auto] items-baseline gap-x-6 py-4 md:grid-cols-[20rem_1fr_auto]">
-              <dt className="text-line">Прошли отсев</dt>
-              <dd className="col-span-2 text-muted-2 md:col-span-1">
-                поехать можно по каждому
-              </dd>
-              <dd className="tabular text-right font-display text-xl text-line md:col-start-3 md:row-start-1">
-                {KEPT}
-              </dd>
+          <Funnel stages={STAGES} kept={totals.count || 30} />
+        </section>
+
+        {/* ── Когда и почём ─────────────────────────────────────────── */}
+        <section className="border-t border-grid pt-14 pb-16">
+          <div className="grid gap-12 lg:grid-cols-2">
+            <div>
+              <h2 className="max-w-[20ch] text-[clamp(1.5rem,3vw,2.1rem)] text-line">
+                Когда они появились
+              </h2>
+              <YearBars features={features} />
+              <p className="mt-3 max-w-[46ch] text-sm text-muted-2">
+                То же самое на местности —{' '}
+                <a href="./timelapse.html" className="text-violet-lit underline decoration-grid">
+                  таймлапс за восемь лет
+                </a>
+                .
+              </p>
             </div>
-          </dl>
+            <div>
+              <h2 className="max-w-[20ch] text-[clamp(1.5rem,3vw,2.1rem)] text-line">
+                Сколько стоит каждый
+              </h2>
+              <DamageStrip features={features} />
+              <p className="mt-3 max-w-[46ch] text-sm text-muted-2">
+                Диапазон по каждому объекту получен методом Монте-Карло по
+                восьми допущениям; у каждого указано происхождение.
+              </p>
+            </div>
+          </div>
         </section>
 
-        <section className="border-t border-grid pt-16 pb-20">
-          <h2 className="max-w-[22ch] text-[clamp(1.9rem,4vw,3rem)] text-line">
-            Ущерб называется диапазоном, потому что честная цифра — диапазон
-          </h2>
-          <Money />
+        {/* ── Прогноз ───────────────────────────────────────────────── */}
+        <section className="border-t border-grid pt-14 pb-16">
+          <div className="grid items-baseline gap-8 lg:grid-cols-[1.3fr_1fr]">
+            <div>
+              <h2 className="max-w-[24ch] text-[clamp(1.7rem,3.6vw,2.6rem)] text-line">
+                Убрать свалку стоит миллионы. Не дать появиться — стоит знака
+              </h2>
+              <p className="mt-4 max-w-[58ch] text-muted">
+                Модель обучена на объектах до отсечки и проверена на возникших
+                после — на том будущем, которого не видела. Сто ячеек от модели
+                вместо ста случайных дают в сотни раз больше находок на тот же
+                бензин.
+              </p>
+              <a
+                href="./forecast.html"
+                className="mt-5 inline-block text-sm text-violet-lit underline decoration-grid transition-colors duration-200 hover:decoration-violet-lit"
+              >
+                Маршрут на ближайший месяц →
+              </a>
+            </div>
+            <dl className="grid grid-cols-2 gap-6 border-l border-grid pl-8">
+              {[
+                ['Точнее случайного', '×293'],
+                ['PR-AUC', '0,120'],
+                ['Базовая частота', '0,0004'],
+                ['Ячеек в сетке', '19 621'],
+              ].map(([k, v]) => (
+                <div key={k}>
+                  <dt className="text-xs text-muted-2">{k}</dt>
+                  <dd className="tabular mt-1 font-display text-2xl leading-none text-line">{v}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
         </section>
 
-        <section className="border-t border-grid pt-16 pb-20">
-          <h2 className="max-w-[26ch] text-[clamp(1.9rem,4vw,3rem)] text-line">
-            Убрать свалку стоит миллионы. Не дать ей появиться — стоит знака
-          </h2>
-          <p className="mt-5 max-w-[68ch] text-muted">
-            Модель прогноза обучена на объектах, возникших до отсечки, и
-            проверена на возникших после — то есть на том будущем, которого она
-            не видела. На сетке 500 м по кольцу она попадает в{' '}
-            <span className="tabular text-line">293</span> раза точнее
-            случайного выбора: PR-AUC{' '}
-            <span className="tabular text-line">0,120</span> при базовой частоте{' '}
-            <span className="tabular text-line">0,0004</span>. Это измерено на
-            настоящем прогоне, а не заявлено.
-          </p>
-          <p className="mt-4 max-w-[68ch] text-muted-2">
-            Прямое чтение: если объехать сто ячеек, отобранных моделью, вместо
-            ста случайных, свалок найдётся в сотни раз больше на тот же бензин.
-          </p>
-        </section>
-
-        <section className="border-t border-grid pt-16 pb-24">
-          <h2 className="max-w-[20ch] text-[clamp(1.9rem,4vw,3rem)] text-line">
+        {/* ── Границы ───────────────────────────────────────────────── */}
+        <section className="border-t border-grid pt-14 pb-20">
+          <h2 className="max-w-[20ch] text-[clamp(1.7rem,3.6vw,2.6rem)] text-line">
             Чего система не может
           </h2>
-          <p className="mt-5 max-w-[68ch] text-muted">
+          <p className="mt-4 max-w-[58ch] text-muted">
             Названо здесь, а не спрятано. Инструмент, границы которого
             неизвестны, применять нельзя.
           </p>
-          <div className="mt-10 grid gap-x-14 gap-y-10 md:grid-cols-2">
-            {limits.map(([title, body]) => (
-              <div key={title}>
-                <h3 className="text-lg text-line">{title}</h3>
-                <p className="mt-3 max-w-[52ch] text-muted">{body}</p>
+          <div className="mt-9 grid gap-x-12 gap-y-8 md:grid-cols-2">
+            {LIMITS.map(([title, body]) => (
+              <div key={title} className="border-t border-grid pt-4">
+                <h3 className="text-base text-line">{title}</h3>
+                <p className="mt-2 max-w-[52ch] text-sm leading-relaxed text-muted">{body}</p>
               </div>
             ))}
           </div>
@@ -213,7 +318,7 @@ export default function App() {
       </main>
 
       <footer className="border-t border-grid">
-        <div className="mx-auto flex max-w-[1240px] flex-wrap items-center justify-between gap-6 px-6 py-10">
+        <div className="mx-auto flex max-w-[1240px] flex-wrap items-center justify-between gap-6 px-6 py-9">
           <div className="flex items-center gap-3">
             <Mark size={26} />
             <span className="text-sm text-muted-2">

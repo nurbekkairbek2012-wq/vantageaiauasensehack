@@ -144,23 +144,8 @@ def to_png(before: np.ndarray, after: np.ndarray) -> tuple[Image.Image, Image.Im
     return frames[0], frames[1]
 
 
-index = []
-written = 0
-for dataset in datasets:
-    for i, cid in enumerate(dataset.candidate_ids):
-        if written >= LIMIT:
-            break
-        slug = cid.replace(":", "__")
-        before, after = to_png(dataset.before[i], dataset.after[i])
-        before.save(OUT / f"{slug}-before.png", optimize=True)
-        after.save(OUT / f"{slug}-after.png", optimize=True)
-        index.append({"id": cid, "slug": slug})
-        written += 1
-    if written >= LIMIT:
-        break
-
-# Атрибуты кусков лежат в плиточных результатах — подтягиваем то, что
-# помогает решать: площадь, дату, автоматическую метку.
+# Атрибуты кусков лежат в плиточных результатах. Читаются ДО отбора: по
+# ним и отбирается, что выгружать.
 import geopandas as gpd
 
 attributes: dict[str, dict] = {}
@@ -183,6 +168,33 @@ for path in sorted(Path("outputs_real/tiles").glob("*.geojson")):
             "lat": round(float(point.y), 6),
             "lon": round(float(point.x), 6),
         }
+
+# Отбор: САМЫЕ КРУПНЫЕ, а не первые попавшиеся.
+#
+# Первая версия брала первые LIMIT кусков в порядке файлов и сортировала
+# уже выгруженное. Порядок файлов — это порядок плиток, то есть география,
+# а не важность: выгружался северо-западный угол области целиком, включая
+# куски по 900 м², и ни один из подтверждённых объектов в набор не попадал.
+#
+# Площадь здесь не про значимость, а про различимость. При десяти метрах на
+# пиксель объект в 900 м² — это девять пикселей, по которым человек не
+# скажет ничего. Размечать имеет смысл то, что вообще видно.
+order = []
+for d, dataset in enumerate(datasets):
+    for i, cid in enumerate(dataset.candidate_ids):
+        order.append((attributes.get(cid, {}).get("area_m2", 0), d, i, cid))
+order.sort(key=lambda item: -item[0])
+
+index = []
+written = 0
+for area, d, i, cid in order[:LIMIT]:
+    dataset = datasets[d]
+    slug = cid.replace(":", "__")
+    before, after = to_png(dataset.before[i], dataset.after[i])
+    before.save(OUT / f"{slug}-before.png", optimize=True)
+    after.save(OUT / f"{slug}-after.png", optimize=True)
+    index.append({"id": cid, "slug": slug})
+    written += 1
 
 for item in index:
     item.update(attributes.get(item["id"], {}))
