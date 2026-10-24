@@ -198,3 +198,59 @@ p { text-wrap: pretty; }
 /* Чекбоксы и селекты тоже часть поверхности. */
 input[type='checkbox'] { accent-color: var(--color-violet); width: 15px; height: 15px; }
 select { color-scheme: dark; }
+
+/* Ползунок года. accent-color красит только бегунок — дорожка остаётся
+   светло-серой из настроек браузера и на тёмной ленте выглядит чужой.
+   Поэтому дорожка рисуется руками, в обоих движках. */
+input[type='range'] {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 22px;
+  background: transparent;
+  cursor: pointer;
+}
+input[type='range']::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--color-grid);
+}
+input[type='range']::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--color-grid);
+}
+input[type='range']::-moz-range-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--color-violet);
+}
+input[type='range']::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  margin-top: -7px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--color-line);
+  border: 3px solid var(--color-violet);
+}
+input[type='range']::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border: 3px solid var(--color-violet);
+  border-radius: 999px;
+  background: var(--color-line);
+}
+input[type='range']:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--color-violet-lit);
+  outline-offset: 2px;
+}
+
+/* Линейка масштаба Leaflet приезжает с белой рамкой. */
+.leaflet-control-scale-line,
+.leaflet-control-scale-line:not(:first-child) {
+  background: color-mix(in oklab, var(--color-soot) 82%, transparent) !important;
+  border: 1px solid var(--color-grid) !important;
+  border-top: none !important;
+  color: var(--color-muted) !important;
+}

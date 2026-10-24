@@ -12,7 +12,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { MapView, type Basemap } from './components/MapView';
-import { Logo } from './components/Logo';
+import { Nav } from './components/Nav';
 
 type Props = Record<string, unknown>;
 type Feature = GeoJSON.Feature<GeoJSON.Geometry, Props>;
@@ -101,13 +101,7 @@ export default function MapApp() {
 
   return (
     <div className="flex h-screen flex-col">
-      <header className="flex shrink-0 flex-wrap items-center justify-between gap-4 border-b border-grid px-5 py-3">
-        <div className="flex items-center gap-6">
-          <a href="./index.html" className="no-underline"><Logo size={26} /></a>
-          <span className="hidden text-sm text-muted-2 md:inline">
-            Кольцо 20×20 км к северу от Астаны · прогон 20 августа 2026
-          </span>
-        </div>
+      <Nav current="map">
         <dl className="flex items-baseline gap-6 text-sm">
           <div className="flex items-baseline gap-2">
             <dt className="text-muted-2">Объектов</dt>
@@ -122,7 +116,7 @@ export default function MapApp() {
             <dd className="tabular font-display text-lg text-violet-lit">{kzt(totals.damage)}</dd>
           </div>
         </dl>
-      </header>
+      </Nav>
 
       <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[22rem_1fr_23rem]">
         {/* ── Реестр: таблица решения, а не список ────────────────────── */}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Logo, Mark } from './components/Logo';
+import { Mark } from './components/Logo';
+import { Nav } from './components/Nav';
 import { Tape } from './components/Tape';
 import { Plates } from './components/Plates';
 
@@ -79,17 +80,18 @@ export default function App() {
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 border-b border-grid bg-soot/85 backdrop-blur-[2px]">
-        <div className="mx-auto flex max-w-[1240px] items-center justify-between px-6 py-4">
-          <Logo />
-          <a
-            href="./map.html"
-            className="rounded-sm bg-violet px-5 py-2.5 font-display text-sm font-semibold uppercase tracking-[0.12em] text-paper transition-colors duration-200 hover:bg-violet-lit hover:text-soot"
-          >
-            Открыть карту
-          </a>
+      <div className="sticky top-0 z-10 bg-soot/92 backdrop-blur-[2px]">
+        <div className="mx-auto max-w-[1240px]">
+          <Nav current="index">
+            <a
+              href="./map.html"
+              className="rounded-sm bg-violet px-5 py-2.5 font-display text-sm font-semibold uppercase tracking-[0.12em] text-paper no-underline transition-colors duration-200 hover:bg-violet-lit hover:text-soot"
+            >
+              Открыть карту
+            </a>
+          </Nav>
         </div>
-      </header>
+      </div>
 
       <main className="mx-auto max-w-[1240px] px-6">
         {/* Первый экран: сначала запись, потом слова. Изображение — подпись,

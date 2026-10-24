@@ -136,6 +136,19 @@ vantage web                           # лендинг и карта на http:/
 vantage sample                        # синтетика, помечена красной полосой
 ```
 
+Сайт собирается Vite и состоит из пяти страниц. `vantage web` копирует
+артефакты прогона, собирает и поднимает всё локально:
+
+```powershell
+vantage web                           # http://127.0.0.1:8080
+vantage web --no-build                # без пересборки, если dist уже есть
+```
+
+Сборка самодостаточна: `web-next/dist` открывается и с локального сервера,
+и с флешки, и без интернета. Шрифты лежат в репозитории, подложка карты по
+умолчанию — координатная сетка, а не тайлы. Спутниковый снимок включается
+кнопкой, когда сеть есть.
+
 Сервис:
 
 ```powershell
@@ -167,6 +180,7 @@ python -m vantage.bot
 | 1 | Ручная разметка поверх автоматической из OSM | [labels.py](src/vantage/labels.py) |
 | 4 | Доверификация не вызывается из прогона | [verify.py](src/vantage/verify.py) |
 | 5 | Контроль устранения не получает пост-историю | [removal.py](src/vantage/removal.py) |
+| 10 | Telegram-бот написан, но не развёрнут: без имени от @BotFather сайт показывает инструкцию вместо кнопки | [bot/](src/vantage/bot/) |
 | 6 | Зрительная модель: протокол есть, клиента нет | [verify.py](src/vantage/verify.py) |
 | 7 | Нет страницы для ручной разметки — ускорила бы п.1 в разы | — |
 | 12 | Тариф вывоза за тонну: **82% разброса оценки ущерба** | [economics](config/economics_astana.yaml) |
@@ -191,11 +205,15 @@ src/vantage/
   money · methane · risk · removal · act          экономика и действие
   pipeline · orchestrate · story · demo · cli     оркестрация
   api/ · bot/                                     сервисы
-web/
-  index.html               лендинг
-  app.html                 карта на Leaflet
-  vendor/                  Leaflet локально, без CDN
-tests/                     554 теста
+web-next/                  сайт: Vite + React + Tailwind
+  index.html               лендинг: почему этому можно верить
+  map.html                 карта: куда ехать сегодня
+  timelapse.html           как росло восемь лет
+  forecast.html            где появится в следующие 12 месяцев
+  citizen.html             гражданский контур и Telegram-бот
+  public/fonts/            шрифты локально — карта работает без сети
+  public/data/             артефакты прогона, которые читает фронтенд
+tests/                     563 теста
 docs/
   ARCHITECTURE.md          карта системы за десять минут
   TODO.md                  что не доделано, для новых участников

@@ -1,0 +1,6 @@
+{
+  "telegram_bot": null,
+  "telegram_link": null,
+  "qr": null,
+  "_как_заполнить": "python scripts/make_bot_qr.py @имя_бота — имя выдаёт @BotFather, выдумывать его нельзя"
+}

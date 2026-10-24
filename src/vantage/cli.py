@@ -361,18 +361,24 @@ def sample(
 @app.command()
 def web(
     port: int = typer.Option(8080, "--port", "-p"),
-    outputs: str | None = typer.Option(None, "--outputs", help="Каталог с артефактами"),
+    outputs: str | None = typer.Option(None, "--outputs", help="Каталог с артефактами прогона"),
     open_browser: bool = typer.Option(True, "--open/--no-open"),
+    build: bool = typer.Option(True, "--build/--no-build", help="Пересобрать сайт перед показом"),
 ) -> None:
-    """Поднять карту локально.
+    """Поднять сайт локально.
 
-    Артефакты копируются в web/data/ — фронтенд читает только оттуда и
-    ничего не знает про пайплайн. Это же делает демонстрацию переносимой:
-    каталог web/ целиком работает на любой машине без Python.
+    Сайт собирается Vite из ``web-next``. Артефакты прогона копируются в
+    ``web-next/public/data`` — фронтенд читает только оттуда и ничего не
+    знает про пайплайн.
+
+    Собранный ``dist`` самодостаточен: открывается и с локального сервера,
+    и с флешки, и без интернета. Последнее не украшение, а требование —
+    на площадке сети может не быть.
     """
     import http.server
     import shutil
     import socketserver
+    import subprocess
     import threading
     import webbrowser
 
@@ -380,36 +386,52 @@ def web(
 
     settings = load_settings()
     source = Path(outputs) if outputs else settings.paths.resolve("outputs")
-    web_root = REPO_ROOT / "web"
-    data_dir = web_root / "data"
-    data_dir.mkdir(parents=True, exist_ok=True)
+    site = REPO_ROOT / "web-next"
+    data_dir = site / "public" / "data"
 
+    if not site.exists():
+        console.print(f"[red]Каталог сайта не найден: {site}[/red]")
+        raise typer.Exit(code=1)
+
+    data_dir.mkdir(parents=True, exist_ok=True)
     copied = 0
-    for name in (
-        "candidates.geojson",
-        "risk_public.geojson",
-        "risk_private.geojson",
-        "registry.geojson",
-        "story.json",
-        "metrics.json",
-    ):
-        src = source / name
-        if src.exists():
-            shutil.copy2(src, data_dir / name)
+    for name in PUBLIC_WHITELIST:
+        candidate = source / name
+        if candidate.exists():
+            shutil.copy2(candidate, data_dir / name)
             copied += 1
 
-    if copied == 0:
-        console.print(
-            "[yellow]Артефактов не найдено.[/yellow] "
-            "Запустите [bold]vantage sample[/bold] для отладочных данных "
-            "или [bold]vantage run[/bold] для настоящего прогона."
-        )
-    else:
+    if copied:
         console.print(f"Скопировано артефактов: [green]{copied}[/green] → {data_dir}")
+    else:
+        console.print(
+            f"[yellow]В {source} нет публикуемых артефактов.[/yellow] "
+            "Сайт покажет данные прошлой сборки, если они есть."
+        )
+
+    dist = site / "dist"
+    if build:
+        if not (site / "node_modules").exists():
+            console.print("Ставлю зависимости (первый запуск)…")
+            if subprocess.run(["npm", "ci"], cwd=site, shell=True).returncode:
+                console.print("[red]npm ci не отработал.[/red]")
+                raise typer.Exit(code=1)
+        console.print("Собираю сайт…")
+        if subprocess.run(["npm", "run", "build"], cwd=site, shell=True).returncode:
+            console.print("[red]Сборка не прошла.[/red]")
+            raise typer.Exit(code=1)
+
+    if not dist.exists():
+        console.print(
+            f"[red]Сборки нет: {dist}[/red]\n"
+            "Запустите без [bold]--no-build[/bold] или соберите руками: "
+            "[bold]cd web-next && npm run build[/bold]"
+        )
+        raise typer.Exit(code=1)
 
     class Handler(http.server.SimpleHTTPRequestHandler):
         def __init__(self, *args, **kwargs):
-            super().__init__(*args, directory=str(web_root), **kwargs)
+            super().__init__(*args, directory=str(dist), **kwargs)
 
         def end_headers(self):
             # Оболочка не кешируется браузером: во время отладки это
@@ -421,7 +443,12 @@ def web(
             pass
 
     url = f"http://127.0.0.1:{port}/index.html"
-    console.print(f"Карта: [bold cyan]{url}[/bold cyan]  (Ctrl+C — остановить)")
+    console.print(f"Сайт: [bold cyan]{url}[/bold cyan]  (Ctrl+C — остановить)")
+    console.print(
+        "[dim]Страницы: index.html — лендинг, map.html — карта, "
+        "timelapse.html — как росло, forecast.html — прогноз, "
+        "citizen.html — гражданский контур[/dim]"
+    )
     if open_browser:
         threading.Timer(0.8, lambda: webbrowser.open(url)).start()
 
@@ -447,6 +474,10 @@ PUBLIC_WHITELIST = (
     # честно пишет «модель не обучена», и на защите это выглядит хуже,
     # чем измеренные цифры.
     "metrics.json",
+    # Маршрут объезда — ответ модели прогноза. Точной вероятности по
+    # ячейкам в нём нет: её снимает scripts/make_patrol.py, потому что по
+    # градиенту уверенности восстанавливается вся модель.
+    "patrol.geojson",
 )
 
 #: Файлы, попадание которых в публикацию — утечка адресных данных.
