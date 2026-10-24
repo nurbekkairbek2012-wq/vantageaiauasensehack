@@ -1,0 +1,47 @@
+{
+ "n": 43,
+ "missed_bare_share": 0.2,
+ "missed_late_share": 0.0,
+ "median_by_found": {
+  "veg_before": {
+   "false": 1.0,
+   "true": 0.987
+  },
+  "ndvi_before": {
+   "false": 0.442,
+   "true": 0.49
+  },
+  "ndvi_after": {
+   "false": 0.382,
+   "true": 0.345
+  },
+  "has_break": {
+   "false": 0.0,
+   "true": 0.0
+  },
+  "break_found": {
+   "false": 0.978,
+   "true": 0.953
+  },
+  "break_late": {
+   "false": 0.0,
+   "true": 0.0
+  },
+  "ndvi_drop_low": {
+   "false": 0.929,
+   "true": 0.699
+  },
+  "bsi_rise_low": {
+   "false": 0.913,
+   "true": 0.731
+  },
+  "zscore_low": {
+   "false": 0.816,
+   "true": 0.635
+  },
+  "recovered": {
+   "false": 0.926,
+   "true": 0.815
+  }
+ }
+}
