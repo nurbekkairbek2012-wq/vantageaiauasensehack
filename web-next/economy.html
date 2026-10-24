@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <!-- Тема ставится ДО первой отрисовки.
+         Если ждать React, на каждой загрузке мелькает фиолетовый кадр
+         прежде чем страница станет лазурной, — и заметно это именно на
+         проекторе, ради которого вторая тема и сделана. Скрипт крошечный
+         и синхронный намеренно: асинхронный не успеет. -->
+    <script>
+      try {
+        var t = localStorage.getItem('vantage-theme');
+        if (t === 'azure') document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0d0918" />
+    <title>Vantage AI — экономика</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main-economy.tsx"></script>
+  </body>
+</html>

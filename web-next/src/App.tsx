@@ -61,6 +61,30 @@ const STAGE_TEXT: Record<string, { label: string; detail: string }> = {
 };
 
 type Funnel = { raw: number; rejected: Record<string, number> };
+/* Деньги на лендинге читаются из той же выгрузки, что и экран
+   «Экономика». Своего расчёта здесь нет намеренно: две страницы,
+   считающие ущерб каждая по-своему, рано или поздно разойдутся, и
+   расхождение найдёт проверяющий, а не мы. */
+type Money = {
+  totals: {
+    mass_t: { p50: number };
+    removal_kzt: { p50: number };
+    recyclable_kzt: { p50: number };
+    damage_kzt: { p10: number; p50: number; p90: number };
+    /* Суммы медиан по объектам: ими подписан герой страницы и они же
+       складываются из карточек на карте. Портфельный интервал живёт
+       рядом и отвечает на другой вопрос. */
+    sum_of_medians: {
+      mass_t: number;
+      removal_kzt: number;
+      recyclable_kzt: number;
+      damage_kzt: number;
+    };
+    co2e_emitted_t: number;
+    co2e_t: number;
+  };
+  priority: { n: number; share: number }[];
+};
 type Metrics = { lift: number; pr_auc_future: number; base_rate_future: number; cells?: number;
   /* Интервал по бутстрэпу. Положительных ячеек единицы, и середина без
      границ здесь не измерение, а совпадение подходящего размера. */
@@ -179,7 +203,12 @@ export default function App() {
      первый же вопрос «а что вот это» обесценит всю цифру. */
   const [funnel, setFunnel] = useState<Funnel | null>(null);
   const [metrics, setMetrics] = useState<Metrics | null>(null);
+  const [money, setMoney] = useState<Money | null>(null);
   useEffect(() => {
+    fetch('./data/economy.json')
+      .then((r) => (r.ok ? r.json() : null))
+      .then(setMoney)
+      .catch(() => setMoney(null));
     fetch('./data/funnel.json')
       .then((r) => (r.ok ? r.json() : null))
       .then(setFunnel)
@@ -332,7 +361,7 @@ export default function App() {
                   описание, а описание ниже. */}
               <Logo size={46} className="mb-1.5" />
               <p className="mb-5 text-sm tracking-[0.02em] text-muted-2">
-                свалки из космоса · дата, площадь, сумма
+                экологические потери в тенге · найти · посчитать · приоритизировать
               </p>
 
               {/* Заголовок говорит, что это за продукт, а не рассказывает
@@ -342,15 +371,25 @@ export default function App() {
                   Фраза красивая и совершенно непонятная человеку, который
                   видит страницу впервые: он не знает ни что за свалка, ни
                   чей это сайт, ни что ему предлагают. История объекта —
-                  хорошее второе предложение и плохое первое. */}
-              <h1 className="max-w-[15ch] text-[clamp(2.2rem,5.2vw,3.7rem)] leading-[1.04] text-line">
-                Находим свалки на спутниковых снимках
+                  хорошее второе предложение и плохое первое.
+
+                  Второй заход — «Находим свалки на спутниковых снимках» —
+                  был понятен, но продавал метод, а не результат. Читатель
+                  из акимата спрашивает не «чем вы ищете», а «что я с этого
+                  получу»; трек называется EcoFin, и слово «потери» в
+                  заголовке стоит ровно поэтому. Свалки названы следующей
+                  же строкой — как предмет, на котором это измерено. */}
+              <h1 className="max-w-[17ch] text-[clamp(2.2rem,5.2vw,3.7rem)] leading-[1.04] text-line">
+                Находим экологические потери, пока они дешёвые
               </h1>
               <p className="mt-5 max-w-[48ch] text-lg leading-relaxed text-muted">
-                Программа читает восемь лет архива и ищет места, где
-                растительность исчезла и <strong className="font-normal text-line">не вернулась</strong>.
-                По каждому называет дату появления, площадь и сумму ущерба в
-                тенге{hero && whenPhrase(hero.properties?.break_date)
+                Несанкционированная свалка — это ресурс, вывезенный мимо
+                экономики: чужие деньги на её уборку, потерянное вторсырьё и
+                метан в воздухе. Программа читает восемь лет спутникового
+                архива, находит места, где растительность исчезла и{' '}
+                <strong className="font-normal text-line">не вернулась</strong>, и по
+                каждому называет дату появления, массу отходов и сумму
+                потерь в тенге{hero && whenPhrase(hero.properties?.break_date)
                   ? `. Самая крупная из найденных возникла ${whenPhrase(hero.properties?.break_date)} — и её нет ни в одном открытом реестре.`
                   : '.'}
               </p>
@@ -383,6 +422,83 @@ export default function App() {
             </div>
           </div>
         </section>
+
+        {/* ── Что это в деньгах ─────────────────────────────────────
+            Раздел стоит вторым, сразу после первого экрана, и это
+            осознанный выбор порядка. Проект живёт в треке EcoFin, а
+            прежняя страница до пятого раздела говорила только о методе:
+            признаки, воронка, сроки. Человек, который читает по
+            диагонали, уходил, так и не узнав, что у находок есть цена.
+
+            Числа те же, что на экране «Экономика»: одна выгрузка, один
+            денежный слой, одно зерно. */}
+        {money && (
+          <section className="border-t border-grid pt-14 pb-16">
+            <div className="grid gap-10 lg:grid-cols-[1.05fr_1fr]">
+              <div>
+                <h2 className="max-w-[22ch] text-[clamp(1.7rem,3.6vw,2.6rem)] text-line">
+                  Свалка — это ресурс, за который платят трижды
+                </h2>
+                <p className="mt-4 max-w-[56ch] text-muted">
+                  Первый раз — вывозом: {num(money.totals.sum_of_medians.mass_t)} тонн под
+                  Астаной стоят бюджету{' '}
+                  <strong className="font-normal text-line">
+                    {kzt(money.totals.sum_of_medians.removal_kzt)}
+                  </strong>
+                  . Второй — потерянным сырьём: внутри тех же тонн лежит
+                  пластика, бумаги, металла и стекла на{' '}
+                  <strong className="font-normal text-emerald">
+                    {kzt(money.totals.sum_of_medians.recyclable_kzt)}
+                  </strong>{' '}
+                  по прайсу приёмки. Половину уборки оплачивает то, что в
+                  ней лежит, — если приехать с сортировкой, а не с
+                  самосвалом.
+                </p>
+                <p className="mt-4 max-w-[56ch] text-sm leading-relaxed text-muted-2">
+                  И третий счёт, который не выставят: {num(money.totals.co2e_emitted_t)} т
+                  CO₂-экв из {num(money.totals.co2e_t)} уже ушли в атмосферу, пока
+                  объекты лежали ненайденными. Метан не возвращают уборкой —
+                  только ранним обнаружением.
+                </p>
+                <a
+                  href="./economy.html"
+                  className="mt-6 inline-block text-sm text-violet-lit underline decoration-grid transition-colors duration-200 hover:decoration-violet-lit"
+                >
+                  Весь расчёт, слагаемое за слагаемым →
+                </a>
+              </div>
+
+              {/* Цепочка кейса одной строкой: ресурс → потеря → ИИ →
+                  приоритет → возврат. Без неё разделы страницы читаются
+                  как рассказ о технологии, а не как ответ на вопрос
+                  «что вы делаете с деньгами заказчика». */}
+              <ol className="grid gap-px self-start overflow-hidden rounded-md border border-grid bg-grid sm:grid-cols-2">
+                {[
+                  ['Потери', kzt(money.totals.sum_of_medians.damage_kzt),
+                   `интервал ${kzt(money.totals.damage_kzt.p10)} — ${kzt(money.totals.damage_kzt.p90)}`],
+                  ['Возврат сырьём', kzt(money.totals.sum_of_medians.recyclable_kzt),
+                   'пластик, бумага, металл, стекло'],
+                  ['Отсев до человека',
+                   funnel ? `${funnel.raw} → ${funnel.rejected['ПРОШЁЛ ОТСЕВ'] ?? 0}` : '—',
+                   'выезд стоит часа дороги'],
+                  ['Приоритет',
+                   `${money.priority.find((p) => p.share >= 0.5)?.n ?? '—'} выезда`,
+                   'закрывают половину суммы'],
+                ].map(([label, value, note]) => (
+                  <li key={String(label)} className="bg-soot-2 px-5 py-5">
+                    <div className="font-display text-[10px] uppercase tracking-[0.14em] text-violet-lit">
+                      {label}
+                    </div>
+                    <div className="tabular mt-2 font-display text-[clamp(1.2rem,2.2vw,1.7rem)] leading-none text-line">
+                      {value}
+                    </div>
+                    <div className="mt-1.5 text-xs leading-snug text-muted-2">{note}</div>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </section>
+        )}
 
         {/* ── Вот он ────────────────────────────────────────────────── */}
         <section className="border-t border-grid pt-14 pb-16">

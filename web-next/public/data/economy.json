@@ -1,0 +1,528 @@
+{
+ "generated": "2026-08-24",
+ "iterations": 20000,
+ "queue": {
+  "raw": 385,
+  "auto_rejected": 326,
+  "reviewed": 59,
+  "published": 15,
+  "ground": 15
+ },
+ "objects": [
+  {
+   "id": "C00061",
+   "break_date": "2024-05-01",
+   "age_years": 2.3,
+   "area_m2": 3327,
+   "mass_t": 1089.8,
+   "removal_kzt": 16549070,
+   "recyclable_kzt": 8399832,
+   "climate_kzt": 180043,
+   "damage_p10": 2129864,
+   "damage_p50": 8302282,
+   "damage_p90": 16595774,
+   "co2e_t": 202.2,
+   "co2e_emitted_t": 38.0,
+   "co2e_preventable_t": 163.9,
+   "co2e_next_year_t": 14.9,
+   "penalty_kzt": 432500,
+   "check_source": "ground",
+   "visual_check": "landfill",
+   "removal_status": "active"
+  },
+  {
+   "id": "C00082",
+   "break_date": "2019-09-01",
+   "age_years": 7.0,
+   "area_m2": 2500,
+   "mass_t": 818.9,
+   "removal_kzt": 12435766,
+   "recyclable_kzt": 6312037,
+   "climate_kzt": 135293,
+   "damage_p10": 1600482,
+   "damage_p50": 6238733,
+   "damage_p90": 12470862,
+   "co2e_t": 151.9,
+   "co2e_emitted_t": 75.5,
+   "co2e_preventable_t": 76.2,
+   "co2e_next_year_t": 8.3,
+   "penalty_kzt": 432500,
+   "check_source": "ground",
+   "visual_check": "landfill",
+   "removal_status": "possibly_removed"
+  },
+  {
+   "id": "C00098",
+   "break_date": "2022-04-01",
+   "age_years": 4.4,
+   "area_m2": 2101,
+   "mass_t": 688.4,
+   "removal_kzt": 10453102,
+   "recyclable_kzt": 5305694,
+   "climate_kzt": 113723,
+   "damage_p10": 1345313,
+   "damage_p50": 5244077,
+   "damage_p90": 10482602,
+   "co2e_t": 127.7,
+   "co2e_emitted_t": 43.1,
+   "co2e_preventable_t": 84.5,
+   "co2e_next_year_t": 8.2,
+   "penalty_kzt": 432500,
+   "check_source": "ground",
+   "visual_check": "landfill",
+   "removal_status": "active"
+  },
+  {
+   "id": "C00125",
+   "break_date": "2024-09-01",
+   "age_years": 2.0,
+   "area_m2": 1503,
+   "mass_t": 492.4,
+   "removal_kzt": 7477171,
+   "recyclable_kzt": 3795197,
+   "climate_kzt": 81347,
+   "damage_p10": 962311,
+   "damage_p50": 3751122,
+   "damage_p90": 7498272,
+   "co2e_t": 91.3,
+   "co2e_emitted_t": 15.1,
+   "co2e_preventable_t": 76.2,
+   "co2e_next_year_t": 6.9,
+   "penalty_kzt": 432500,
+   "check_source": "ground",
+   "visual_check": "landfill",
+   "removal_status": "active"
+  },
+  {
+   "id": "C00151",
+   "break_date": "2020-08-01",
+   "age_years": 6.1,
+   "area_m2": 1300,
+   "mass_t": 425.8,
+   "removal_kzt": 6466599,
+   "recyclable_kzt": 3282259,
+   "climate_kzt": 70352,
+   "damage_p10": 832251,
+   "damage_p50": 3244141,
+   "damage_p90": 6484848,
+   "co2e_t": 79.0,
+   "co2e_emitted_t": 35.1,
+   "co2e_preventable_t": 43.8,
+   "co2e_next_year_t": 4.6,
+   "penalty_kzt": 432500,
+   "check_source": "ground",
+   "visual_check": "landfill",
+   "removal_status": "active"
+  },
+  {
+   "id": "C00177",
+   "break_date": "2020-08-01",
+   "age_years": 6.1,
+   "area_m2": 1100,
+   "mass_t": 360.3,
+   "removal_kzt": 5471737,
+   "recyclable_kzt": 2777296,
+   "climate_kzt": 59529,
+   "damage_p10": 704212,
+   "damage_p50": 2745043,
+   "damage_p90": 5487179,
+   "co2e_t": 66.8,
+   "co2e_emitted_t": 29.7,
+   "co2e_preventable_t": 37.1,
+   "co2e_next_year_t": 3.9,
+   "penalty_kzt": 432500,
+   "check_source": "ground",
+   "visual_check": "landfill",
+   "removal_status": "active"
+  },
+  {
+   "id": "C00219",
+   "break_date": "2024-08-01",
+   "age_years": 2.1,
+   "area_m2": 800,
+   "mass_t": 262.1,
+   "removal_kzt": 3979609,
+   "recyclable_kzt": 2019935,
+   "climate_kzt": 43296,
+   "damage_p10": 512175,
+   "damage_p50": 1996477,
+   "damage_p90": 3990840,
+   "co2e_t": 48.6,
+   "co2e_emitted_t": 8.4,
+   "co2e_preventable_t": 40.2,
+   "co2e_next_year_t": 3.6,
+   "penalty_kzt": 432500,
+   "check_source": "ground",
+   "visual_check": "landfill",
+   "removal_status": "active"
+  },
+  {
+   "id": "C00221",
+   "break_date": "2019-04-01",
+   "age_years": 7.4,
+   "area_m2": 800,
+   "mass_t": 262.1,
+   "removal_kzt": 3979445,
+   "recyclable_kzt": 2019852,
+   "climate_kzt": 43294,
+   "damage_p10": 512154,
+   "damage_p50": 1996395,
+   "damage_p90": 3990676,
+   "co2e_t": 48.6,
+   "co2e_emitted_t": 25.2,
+   "co2e_preventable_t": 23.3,
+   "co2e_next_year_t": 2.6,
+   "penalty_kzt": 432500,
+   "check_source": "ground",
+   "visual_check": "landfill",
+   "removal_status": "active"
+  },
+  {
+   "id": "C00225",
+   "break_date": "2023-08-01",
+   "age_years": 3.1,
+   "area_m2": 800,
+   "mass_t": 262.1,
+   "removal_kzt": 3979445,
+   "recyclable_kzt": 2019852,
+   "climate_kzt": 43294,
+   "damage_p10": 512154,
+   "damage_p50": 1996395,
+   "damage_p90": 3990676,
+   "co2e_t": 48.6,
+   "co2e_emitted_t": 12.0,
+   "co2e_preventable_t": 36.5,
+   "co2e_next_year_t": 3.4,
+   "penalty_kzt": 432500,
+   "check_source": "ground",
+   "visual_check": "landfill",
+   "removal_status": "active"
+  },
+  {
+   "id": "C00317",
+   "break_date": "2024-07-01",
+   "age_years": 2.1,
+   "area_m2": 500,
+   "mass_t": 163.8,
+   "removal_kzt": 2487246,
+   "recyclable_kzt": 1262455,
+   "climate_kzt": 27060,
+   "damage_p10": 320108,
+   "damage_p50": 1247793,
+   "damage_p90": 2494266,
+   "co2e_t": 30.4,
+   "co2e_emitted_t": 5.3,
+   "co2e_preventable_t": 25.1,
+   "co2e_next_year_t": 2.3,
+   "penalty_kzt": 432500,
+   "check_source": "ground",
+   "visual_check": "landfill",
+   "removal_status": "active"
+  },
+  {
+   "id": "C00318",
+   "break_date": "2024-05-01",
+   "age_years": 2.3,
+   "area_m2": 500,
+   "mass_t": 163.8,
+   "removal_kzt": 2487153,
+   "recyclable_kzt": 1262407,
+   "climate_kzt": 27059,
+   "damage_p10": 320096,
+   "damage_p50": 1247747,
+   "damage_p90": 2494172,
+   "co2e_t": 30.4,
+   "co2e_emitted_t": 5.7,
+   "co2e_preventable_t": 24.6,
+   "co2e_next_year_t": 2.2,
+   "penalty_kzt": 432500,
+   "check_source": "ground",
+   "visual_check": "landfill",
+   "removal_status": "active"
+  },
+  {
+   "id": "C00323",
+   "break_date": "2024-06-01",
+   "age_years": 2.2,
+   "area_m2": 500,
+   "mass_t": 163.8,
+   "removal_kzt": 2487153,
+   "recyclable_kzt": 1262407,
+   "climate_kzt": 27059,
+   "damage_p10": 320096,
+   "damage_p50": 1247747,
+   "damage_p90": 2494172,
+   "co2e_t": 30.4,
+   "co2e_emitted_t": 5.5,
+   "co2e_preventable_t": 24.9,
+   "co2e_next_year_t": 2.3,
+   "penalty_kzt": 432500,
+   "check_source": "ground",
+   "visual_check": "landfill",
+   "removal_status": "active"
+  },
+  {
+   "id": "C00331",
+   "break_date": "2019-07-01",
+   "age_years": 7.1,
+   "area_m2": 500,
+   "mass_t": 163.8,
+   "removal_kzt": 2487153,
+   "recyclable_kzt": 1262407,
+   "climate_kzt": 27059,
+   "damage_p10": 320096,
+   "damage_p50": 1247747,
+   "damage_p90": 2494172,
+   "co2e_t": 30.4,
+   "co2e_emitted_t": 15.3,
+   "co2e_preventable_t": 15.1,
+   "co2e_next_year_t": 1.7,
+   "penalty_kzt": 432500,
+   "check_source": "ground",
+   "visual_check": "landfill",
+   "removal_status": "active"
+  },
+  {
+   "id": "C00332",
+   "break_date": "2024-06-01",
+   "age_years": 2.2,
+   "area_m2": 500,
+   "mass_t": 163.8,
+   "removal_kzt": 2487153,
+   "recyclable_kzt": 1262407,
+   "climate_kzt": 27059,
+   "damage_p10": 320096,
+   "damage_p50": 1247747,
+   "damage_p90": 2494172,
+   "co2e_t": 30.4,
+   "co2e_emitted_t": 5.5,
+   "co2e_preventable_t": 24.9,
+   "co2e_next_year_t": 2.3,
+   "penalty_kzt": 432500,
+   "check_source": "ground",
+   "visual_check": "landfill",
+   "removal_status": "active"
+  },
+  {
+   "id": "C00334",
+   "break_date": "2021-10-01",
+   "age_years": 4.9,
+   "area_m2": 500,
+   "mass_t": 163.8,
+   "removal_kzt": 2487153,
+   "recyclable_kzt": 1262407,
+   "climate_kzt": 27059,
+   "damage_p10": 320096,
+   "damage_p50": 1247747,
+   "damage_p90": 2494172,
+   "co2e_t": 30.4,
+   "co2e_emitted_t": 11.2,
+   "co2e_preventable_t": 19.1,
+   "co2e_next_year_t": 1.9,
+   "penalty_kzt": 432500,
+   "check_source": "ground",
+   "visual_check": "landfill",
+   "removal_status": "active"
+  }
+ ],
+ "priority": [
+  {
+   "n": 1,
+   "id": "C00061",
+   "share": 0.1931
+  },
+  {
+   "n": 2,
+   "id": "C00082",
+   "share": 0.3382
+  },
+  {
+   "n": 3,
+   "id": "C00098",
+   "share": 0.4601
+  },
+  {
+   "n": 4,
+   "id": "C00125",
+   "share": 0.5473
+  },
+  {
+   "n": 5,
+   "id": "C00151",
+   "share": 0.6228
+  },
+  {
+   "n": 6,
+   "id": "C00177",
+   "share": 0.6866
+  },
+  {
+   "n": 7,
+   "id": "C00219",
+   "share": 0.733
+  },
+  {
+   "n": 8,
+   "id": "C00221",
+   "share": 0.7795
+  },
+  {
+   "n": 9,
+   "id": "C00225",
+   "share": 0.8259
+  },
+  {
+   "n": 10,
+   "id": "C00317",
+   "share": 0.8549
+  },
+  {
+   "n": 11,
+   "id": "C00318",
+   "share": 0.8839
+  },
+  {
+   "n": 12,
+   "id": "C00323",
+   "share": 0.913
+  },
+  {
+   "n": 13,
+   "id": "C00331",
+   "share": 0.942
+  },
+  {
+   "n": 14,
+   "id": "C00332",
+   "share": 0.971
+  },
+  {
+   "n": 15,
+   "id": "C00334",
+   "share": 1.0
+  }
+ ],
+ "totals": {
+  "objects": 15,
+  "area_m2": 17231,
+  "mass_t": {
+   "p10": 5106,
+   "p50": 5794,
+   "p90": 6544
+  },
+  "removal_kzt": {
+   "p10": 57475383,
+   "p50": 89831088,
+   "p90": 125808186
+  },
+  "recyclable_kzt": {
+   "p10": 35951563,
+   "p50": 45240391,
+   "p90": 56283502
+  },
+  "climate_kzt": {
+   "p10": 564126,
+   "p50": 979328,
+   "p90": 1693492
+  },
+  "damage_kzt": {
+   "p10": 13071195,
+   "p50": 45707472,
+   "p90": 80271378
+  },
+  "naive_damage_kzt": {
+   "p10": 11031504,
+   "p50": 43001193,
+   "p90": 85956855
+  },
+  "sum_of_medians": {
+   "mass_t": 5644.7,
+   "removal_kzt": 85714955,
+   "recyclable_kzt": 43506444,
+   "climate_kzt": 932526,
+   "damage_kzt": 43001193,
+   "co2e_t": 1047.1,
+   "co2e_emitted_t": 330.6,
+   "co2e_preventable_t": 715.4,
+   "co2e_next_year_t": 69.1
+  },
+  "co2e_t": 1097.2,
+  "co2e_emitted_t": 348.3,
+  "co2e_preventable_t": 745.2,
+  "penalty_kzt": 6487500,
+  "waiting_year_co2e_t": 72.7,
+  "waiting_year_kzt": 36370
+ },
+ "sensitivity": {
+  "removal_cost": 0.82,
+  "depth": 0.315,
+  "density": 0.303,
+  "doc": 0.028,
+  "k": 0.018,
+  "carbon_price": -0.012
+ },
+ "sensitivity_area_m2": 800,
+ "fractions": [
+  "plastic",
+  "paper",
+  "metal",
+  "glass"
+ ],
+ "provenance": {
+  "removal_cost_kzt_per_t": {
+   "title": "стоимость вывоза тонны",
+   "kind": "derived",
+   "note": "тариф Алматы 3832,5 ₸/м³ ÷ плотность 0,25 т/м³; нижняя граница — 5600 ₸/т (переработка+захоронение для юрлиц, Алматы). ЗАМЕНИТЬ на прямой прайс оператора Астаны, если удастся получить"
+  },
+  "transport_surcharge_per_km_kzt_per_t": {
+   "title": "надбавка за плечо вывоза",
+   "kind": "estimate",
+   "note": "оценка по стоимости самосвального километра; базовый радиус — расстояние до полигона на 7 км трассы Алаш"
+  },
+  "waste_density_t_per_m3": {
+   "title": "плотность отходов",
+   "kind": "source",
+   "note": "Методика расчёта тарифа на сбор, вывоз, утилизацию, переработку и захоронение ТБО (ИПС «Әділет», V1600014285 / V2100024382): расчётная плотность ТБО 0,25 т/м³"
+  },
+  "depth_class_m": {
+   "title": "глубина залегания",
+   "kind": "estimate",
+   "note": "морфометрия по тени и текстуре; калибруется выездным замером объёма фотограмметрией (см. docs/CALIBRATION.md)"
+  },
+  "morphology": {
+   "title": "морфология свалки",
+   "kind": "estimate",
+   "note": "экспертная раскладка: стихийная свалка формируется вывозом строительного и крупногабаритного мусора, а не пищевых отходов. Подлежит уточнению выездным взвешенным отбором на 2-3 объектах"
+  },
+  "recyclable_price_kzt_per_kg": {
+   "title": "прайс приёмки вторсырья",
+   "kind": "source",
+   "note": "прайс-лист LS Ecolife, г. Астана (ls.com.kz/pages/price3.html), проверено 17.08.2026"
+  },
+  "recovery_rate": {
+   "title": "извлекаемая доля фракции",
+   "kind": "estimate",
+   "note": "инженерная оценка: материал со стихийной свалки загрязнён и частично деградировал; бумага страдает сильнее всего, металл — меньше всего. Чувствительность результата к этим коэффициентам проверяется в Монте-Карло"
+  },
+  "carbon_price_kzt_per_t_co2e": {
+   "title": "цена углеродной единицы",
+   "kind": "source",
+   "note": "торги углеродными единицами на товарной бирже РК: сделки в диапазоне 400–560 ₸/т CO2, средняя около 500 ₸; верхняя граница — ожидаемый рост при введении платных квот"
+  },
+  "methane": {
+   "title": "модель разложения (IPCC FOD)",
+   "kind": "source",
+   "note": "IPCC 2006 Guidelines for National Greenhouse Gas Inventories, Vol.5 Ch.3 (First Order Decay); IPCC AR6 WG1 Ch.7 Table 7.15 (GWP метана)"
+  },
+  "mrp_kzt": {
+   "title": "месячный расчётный показатель",
+   "kind": "source",
+   "note": "Закон РК о республиканском бюджете на 2026–2028 гг.; 1 МРП = 4325 ₸ с 01.01.2026 (в 2025 — 3932 ₸)"
+  },
+  "penalty": {
+   "title": "штраф по КоАП РК",
+   "kind": "source",
+   "note": "Кодекс РК об административных правонарушениях от 05.07.2014 № 235-V, ст. 344 и ст. 505 (kodeksy-kz.com, проверено 17.08.2026)"
+  }
+ }
+}

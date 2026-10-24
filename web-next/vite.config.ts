@@ -18,6 +18,7 @@ export default defineConfig({
       input: {
         index: resolve(__dirname, 'index.html'),
         map: resolve(__dirname, 'map.html'),
+        economy: resolve(__dirname, 'economy.html'),
         timelapse: resolve(__dirname, 'timelapse.html'),
         forecast: resolve(__dirname, 'forecast.html'),
         citizen: resolve(__dirname, 'citizen.html'),
