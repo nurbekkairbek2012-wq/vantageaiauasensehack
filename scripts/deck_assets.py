@@ -22,6 +22,8 @@
     forecast     прогноз: точки объезда вместо раскрашенной области
     timelapse    восемь лет за двадцать секунд
     citizen      сколько лет объект лежит незамеченным
+    economy      из чего складываются потери: вывоз − вторсырьё + климат
+    priority     очередь по деньгам и накопленная доля суммы
 
     python scripts/deck_assets.py
 """
@@ -47,14 +49,24 @@ PORT = 8095
 #: отбраковок с лендинга убран, добавлен раздел про масштаб, и прежние
 #: номера снимали не то. Снимок «rejected» приходил весом 86 КБ — пустой
 #: блок, и это было видно только по размеру файла.
+#: Номера разделов сдвинулись 24 августа: на лендинг вторым добавлен
+#: раздел «свалка — это ресурс, за который платят дважды», и всё, что
+#: ниже, съехало на единицу. Селекторы правились вместе с ним — иначе
+#: набор собирается молча и не тем.
 SHOTS: tuple[tuple[str, str, str], ...] = (
     ("pixel",    "index.html",    "main > section:nth-of-type(1)"),   # график вегетации
-    ("signals",  "index.html",    "main > section:nth-of-type(3)"),   # пять признаков
-    ("funnel",   "index.html",    "main > section:nth-of-type(4)"),   # воронка отсева
-    ("money",    "index.html",    "main > section:nth-of-type(5)"),   # когда и почём
-    ("scale",    "index.html",    "main > section:nth-of-type(7)"),   # масштаб
-    ("limits",   "index.html",    "main > section:nth-of-type(8)"),   # границы
+    ("signals",  "index.html",    "main > section:nth-of-type(4)"),   # пять признаков
+    ("funnel",   "index.html",    "main > section:nth-of-type(5)"),   # воронка отсева
+    ("money",    "index.html",    "main > section:nth-of-type(6)"),   # когда и почём
+    ("scale",    "index.html",    "main > section:nth-of-type(8)"),   # масштаб
+    ("limits",   "index.html",    "main > section:nth-of-type(9)"),   # границы
     ("citizen",  "citizen.html",  "section:nth-of-type(1)"),
+    # Раскладка потерь на слагаемые: вывоз минус вторсырьё плюс климат.
+    # Это ответ на кейс трека, и на слайде он должен быть снимком
+    # работающего экрана, а не таблицей, набранной в деке заново.
+    ("economy",  "economy.html",  "main > section:nth-of-type(2)"),
+    # Приоритет: список, отсортированный по деньгам, с накопленной долей.
+    ("priority", "economy.html",  "main > section:nth-of-type(3)"),
 )
 
 #: Страницы, снимаемые целиком: карта и прогноз — это интерфейс, и резать
