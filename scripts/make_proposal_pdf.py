@@ -31,36 +31,38 @@ SOURCES = {
 OUT = ROOT / "docs/proposal"
 PUBLIC = ROOT / "web-next/public/docs"
 
+# Служебное письмо: Times New Roman, только чёрный, поля 20/15/20/30 мм —
+# тот же вид, что у акта и паспортов. До 27 сентября предложение было в
+# фирменных фиолетовых цветах: в папке с документами акимата оно выглядело
+# рекламной листовкой, а не письмом.
 CSS = """
-@page { size: A4; margin: 16mm 16mm 18mm 16mm; }
+@page { size: A4; margin: 20mm 15mm 20mm 30mm; }
 * { box-sizing: border-box; }
-body { font-family: 'Golos', sans-serif; font-size: 10.4pt; line-height: 1.45; color: #1c1530; }
-h1 { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 24pt; line-height: 1.1;
-     color: #2a1260; margin: 0 0 6pt; }
-h2 { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 14pt; color: #4c1d95;
-     margin: 16pt 0 6pt; border-bottom: 1px solid #e3dcf5; padding-bottom: 3pt; }
-p { margin: 0 0 7pt; }
-strong { color: #1c1530; }
-a { color: #5b21b6; text-decoration: none; }
-hr { border: 0; border-top: 2px solid #7c3aed; margin: 10pt 0 12pt; }
-table { width: 100%; border-collapse: collapse; margin: 4pt 0 8pt; font-size: 9.8pt; }
-th, td { padding: 4pt 6pt; border-bottom: 1px solid #ece7f7; vertical-align: top; text-align: left; }
-th { color: #6b5b95; font-weight: 500; }
-td:last-child { text-align: right; white-space: nowrap; }
-ul, ol { margin: 0 0 8pt 16pt; padding: 0; } li { margin: 0 0 3pt; }
+body { font-family: 'Times New Roman', Times, 'Liberation Serif', serif; font-size: 12pt;
+       line-height: 1.3; color: #000; }
+h1 { font-size: 14pt; font-weight: 700; line-height: 1.25; text-align: center; margin: 0 0 6pt; }
+h2 { font-size: 12pt; font-weight: 700; margin: 12pt 0 4pt; }
+p { margin: 0 0 6pt; text-align: justify; }
+strong { color: #000; }
+a { color: #000; text-decoration: underline; }
+hr { border: 0; border-top: 0.5pt solid #000; margin: 8pt 0 10pt; }
+table { width: 100%; border-collapse: collapse; margin: 4pt 0 8pt; font-size: 11pt; }
+th, td { padding: 2pt 4pt; border: 0.5pt solid #000; vertical-align: top; text-align: left; }
+th { font-weight: 700; }
+th:empty { border: 0; padding: 0; }
+thead tr:has(th:empty) { display: none; }
+td:last-child { text-align: right; }
+ul, ol { margin: 0 0 6pt 16pt; padding: 0; } li { margin: 0 0 2pt; }
 h2, table, li { break-inside: avoid; }
 """
 
 
 def render(markdown: str) -> str:
-    from fontfaces import font_faces
     from markdown_it import MarkdownIt
 
     body = MarkdownIt("commonmark", {"html": True}).enable("table").render(markdown)
-    fonts = font_faces("Golos", "golos-text", (400, 500, 600)) + \
-        font_faces("Oswald", "oswald", (500, 600))
     return (f"<!doctype html><html lang='ru'><head><meta charset='utf-8'>"
-            f"<style>{fonts}{CSS}</style></head><body>{body}</body></html>")
+            f"<style>{CSS}</style></head><body>{body}</body></html>")
 
 
 def main() -> int:

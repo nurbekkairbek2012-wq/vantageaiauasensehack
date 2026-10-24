@@ -32,7 +32,7 @@ Northern industrial belt of Astana, a 20 × 20 km square, 2018–2026 archive:
 | Cost of removal | **38.0 million ₸** |
 | Recoverable as recyclables if sorted on site | **19.3 million ₸** — 51% of the removal cost |
 | Saving of the right decision (sorting vs. plain removal) | **7.6 million ₸** |
-| Matches with the 27 sites in open registries | **none** |
+| On the open state waste-monitoring map | **1 of 15** (C00318) |
 
 No site visits have been made yet: all confirmations come from
 high-resolution imagery. A photo-documented visit to the fifteen sites is

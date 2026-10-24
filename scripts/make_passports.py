@@ -39,9 +39,9 @@ OUT = ROOT / "docs/passports"
 LIVE = "https://hakathon-lyart.vercel.app"
 
 STATUS = {
-    "ground": ("ПОДТВЕРЖДЁН ВЫЕЗДОМ", "#1f7a3a"),
-    "landfill": ("ОПОЗНАН ПО СНИМКУ КАК СВАЛКА", "#5b21b6"),
-    "unclear": ("ЖДЁТ ВЫЕЗДА: ПО СНИМКУ НЕ РАЗОБРАТЬ", "#b45309"),
+    "ground": ("ПОДТВЕРЖДЁН ВЫЕЗДОМ", ""),
+    "landfill": ("ОПОЗНАН ПО СНИМКУ КАК СВАЛКА", ""),
+    "unclear": ("ЖДЁТ ВЫЕЗДА: ПО СНИМКУ НЕ РАЗОБРАТЬ", ""),
 }
 SIGNALS = (
     ("ndvi_drop", "падение растительности"),
@@ -118,21 +118,22 @@ def passport(pdf, row, econ: dict | None, gemini: dict | None, fonts, page_no: i
 
     cid = str(row["candidate_id"])
     source = "ground" if row.get("check_source") == "ground" else str(row.get("visual_check"))
-    label, tone = STATUS.get(source, ("СТАТУС НЕ ОПРЕДЕЛЁН", "#555555"))
+    label, _ = STATUS.get(source, ("СТАТУС НЕ ОПРЕДЕЛЁН", ""))
     point = row.geometry.representative_point()
 
     pdf.setFont(bold, 18)
     pdf.setFillColor(colors.black)
     pdf.drawString(margin, y - 4 * mm, f"Паспорт объекта {cid}")
     pdf.setFont(font, 9)
-    pdf.setFillColor(colors.HexColor("#666666"))
     pdf.drawRightString(width - margin, y - 3 * mm, f"Vantage AI · лист {page_no} из {total}")
     y -= 11 * mm
-    pdf.setFillColor(colors.HexColor(tone))
-    pdf.roundRect(margin, y - 6.5 * mm, width - 2 * margin, 8 * mm, 2 * mm, stroke=0, fill=1)
-    pdf.setFillColor(colors.white)
-    pdf.setFont(bold, 10.5)
-    pdf.drawString(margin + 3 * mm, y - 4.2 * mm, label)
+    # Статус — в рамке чёрным, без заливки: паспорт печатают на обычном
+    # принтере и кладут в папку рядом с актом, и оформлены они одинаково.
+    pdf.setStrokeColor(colors.black)
+    pdf.setLineWidth(0.8)
+    pdf.rect(margin, y - 6.5 * mm, width - 2 * margin, 8 * mm, stroke=1, fill=0)
+    pdf.setFont(bold, 11)
+    pdf.drawString(margin + 3 * mm, y - 4.2 * mm, f"Статус: {label.lower()}")
     y -= 12 * mm
 
     # Снимки
@@ -146,9 +147,8 @@ def passport(pdf, row, econ: dict | None, gemini: dict | None, fonts, page_no: i
         if img is not None:
             pdf.drawImage(as_reader(img), x, y - box, width=box, height=box)
         else:
-            pdf.setFillColor(colors.HexColor("#eeeeee"))
-            pdf.rect(x, y - box, box, box, stroke=0, fill=1)
-            pdf.setFillColor(colors.HexColor("#777777"))
+            pdf.setStrokeColor(colors.black)
+            pdf.rect(x, y - box, box, box, stroke=1, fill=0)
             pdf.setFont(font, 9)
             pdf.drawCentredString(x + box / 2, y - box / 2, "снимка нет")
         pdf.setFillColor(colors.black)
@@ -163,10 +163,8 @@ def passport(pdf, row, econ: dict | None, gemini: dict | None, fonts, page_no: i
         pdf.drawString(col_x, yy, title)
         yy -= 5 * mm
         for k, v in items:
-            pdf.setFont(font, 8.8)
-            pdf.setFillColor(colors.HexColor("#555555"))
+            pdf.setFont(font, 10)
             pdf.drawString(col_x, yy, k)
-            pdf.setFillColor(colors.black)
             pdf.drawRightString(col_x + (width - 2 * margin) / 2 - 6 * mm, yy, v)
             yy -= 4.6 * mm
         return yy
@@ -186,9 +184,9 @@ def passport(pdf, row, econ: dict | None, gemini: dict | None, fonts, page_no: i
     # Сверка с открытой картой госмониторинга отходов (scripts/gov_waste.py).
     gov_m = row.get("gov_registry_m")
     if gov_m is not None and gov_m == gov_m:
-        place.append(("Госмониторинг отходов",
+        place.append(("Госмониторинг",
                       "есть на его карте" if float(gov_m) <= 100
-                      else f"нет на карте, ближайшая в {ru(float(gov_m) / 1000, 1)} км"))
+                      else f"нет; ближайшая в {ru(float(gov_m) / 1000, 1)} км"))
     money = []
     if econ:
         money = [
@@ -218,23 +216,14 @@ def passport(pdf, row, econ: dict | None, gemini: dict | None, fonts, page_no: i
     checks = [("Человек по снимку", {"landfill": "свалка", "unclear": "не разобрать",
                                      "not_landfill": "не свалка"}.get(
                                          str(row.get("visual_check")), "—"))]
-    if gemini:
-        checks.append(("Gemini по паре снимков", {"dump": "свалка", "not_dump": "не свалка",
-                                                  "unclear": "не разобрать"}.get(
-                                                      gemini.get("verdict"), "—")
-                       + f", {float(gemini.get('confidence', 0)):.0%}"))
+    # Вердикт Gemini в паспорт не идёт: как проверяющий он теряет свалки
+    # (AI_RESULTS.md, 1м), и в документе для инспектора его «не свалка»
+    # читалось бы как основание не ехать.
     checks.append(("Независимых источников снимков", str(int(row.get("verify_providers") or 0))))
     checks.append(("Выезд", "подтверждён с фото" if source == "ground" else "не было"))
     end1 = rows("Физические признаки", evidence, margin, y)
     end2 = rows("Проверки", checks, col2, y)
     y = min(end1, end2) - 2 * mm
-    if gemini and gemini.get("reasoning"):
-        pdf.setFont(font, 8.3)
-        pdf.setFillColor(colors.HexColor("#444444"))
-        for chunk in _wrap(f"Gemini: {gemini['reasoning']}", 120):
-            pdf.drawString(margin, y, chunk)
-            y -= 3.8 * mm
-        y -= 1 * mm
 
     pdf.setFont(bold, 10)
     pdf.setFillColor(colors.black)
@@ -247,14 +236,13 @@ def passport(pdf, row, econ: dict | None, gemini: dict | None, fonts, page_no: i
         "Кадры копировать с телефона файлом (мессенджер вырезает координаты), "
         "положить в data/field/" + cid.split(":")[-1] + "/.",
     ]
-    pdf.setFont(font, 8.8)
+    pdf.setFont(font, 10)
     for item in todo:
         for i, chunk in enumerate(_wrap(item, 112)):
-            pdf.drawString(margin + (0 if i == 0 else 4 * mm), y, ("☐ " if i == 0 else "") + chunk)
+            pdf.drawString(margin + (0 if i == 0 else 4 * mm), y, ("□ " if i == 0 else "") + chunk)
             y -= 4.4 * mm
 
-    pdf.setFont(font, 7.5)
-    pdf.setFillColor(colors.HexColor("#777777"))
+    pdf.setFont(font, 8)
     pdf.drawString(margin, 12 * mm,
                    f"Карта: {LIVE}/map.html?object={cid}   ·   "
                    f"Google Maps: https://www.google.com/maps?q={point.y:.5f},{point.x:.5f}")
@@ -281,7 +269,7 @@ def main() -> int:
     from reportlab.lib.pagesizes import A4
     from reportlab.pdfgen import canvas
 
-    from vantage.act import register_cyrillic_font
+    from vantage.act import register_document_font
 
     site = gpd.read_file(DATA / "candidates.geojson").to_crs(4326)
     economy = json.loads((DATA / "economy.json").read_text(encoding="utf-8"))
@@ -294,7 +282,7 @@ def main() -> int:
     gemini_path = ROOT / "data/gemini/site_pair.json"
     gemini = json.loads(gemini_path.read_text(encoding="utf-8")) if gemini_path.exists() else {}
 
-    fonts = register_cyrillic_font()
+    fonts = register_document_font()
     OUT.mkdir(parents=True, exist_ok=True)
     combined = canvas.Canvas(str(OUT / "все_объекты.pdf"), pagesize=A4)
     combined.setTitle("Паспорта объектов Vantage AI")
