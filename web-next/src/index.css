@@ -142,3 +142,59 @@ p { text-wrap: pretty; }
     opacity: 1;
   }
 }
+
+/* Сетка вместо подложки: карта обязана работать без интернета, а тайлы —
+   это сеть. Шаг сетки постоянный в пикселях, потому что это координатная
+   бумага прибора, а не проекция местности; масштаб показывает линейка. */
+.map-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--color-grid) 60%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--color-grid) 40%, transparent) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+/* Leaflet приносит свои белые панели, ссылки и кнопки зума — на тёмной
+   ленте они выглядят чужой библиотекой. Красим из палитры.
+
+   !important здесь не лень: leaflet.css импортируется из компонента и
+   попадает в отдельный чанк, который грузится ПОСЛЕ index.css. Его
+   `.leaflet-container { background: #ddd }` иначе выигрывает по порядку, и
+   карта становится светло-серым прямоугольником — ровно это и показал
+   скриншот. Специфичность тут не помогает: селектор тот же. */
+.leaflet-container {
+  /* background-color, а не background: сокращённое свойство сбрасывает и
+     background-image, то есть стирает сетку .map-grid на том же элементе.
+     Скриншот показал карту без сетки именно поэтому. */
+  background-color: transparent !important;
+  font-family: var(--font-sans);
+}
+.leaflet-control-attribution {
+  background: color-mix(in oklab, var(--color-soot) 85%, transparent) !important;
+  color: var(--color-muted-2) !important;
+  font-size: 11px;
+}
+.leaflet-control-attribution a { color: var(--color-muted) !important; }
+.leaflet-bar a {
+  background: var(--color-soot-2) !important;
+  color: var(--color-line) !important;
+  border-color: var(--color-grid) !important;
+}
+.leaflet-bar a:hover { background: var(--color-soot-3) !important; }
+.leaflet-control-scale-line {
+  background: color-mix(in oklab, var(--color-soot) 80%, transparent) !important;
+  border-color: var(--color-grid) !important;
+  color: var(--color-muted) !important;
+  font-variant-numeric: tabular-nums;
+}
+.leaflet-control-attribution svg { display: none; }
+.leaflet-tooltip {
+  background: var(--color-soot-2);
+  border: 1px solid var(--color-grid);
+  color: var(--color-line);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.45);
+}
+.leaflet-tooltip-top::before { border-top-color: var(--color-grid); }
+
+/* Чекбоксы и селекты тоже часть поверхности. */
+input[type='checkbox'] { accent-color: var(--color-violet); width: 15px; height: 15px; }
+select { color-scheme: dark; }

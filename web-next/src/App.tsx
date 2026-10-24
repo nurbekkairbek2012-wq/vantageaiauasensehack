@@ -83,7 +83,7 @@ export default function App() {
         <div className="mx-auto flex max-w-[1240px] items-center justify-between px-6 py-4">
           <Logo />
           <a
-            href="../web/app.html"
+            href="./map.html"
             className="rounded-sm bg-violet px-5 py-2.5 font-display text-sm font-semibold uppercase tracking-[0.12em] text-paper transition-colors duration-200 hover:bg-violet-lit hover:text-soot"
           >
             Открыть карту

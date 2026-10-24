@@ -1,0 +1,16 @@
+{
+  "pr_auc_future": 0.11958775780254587,
+  "base_rate_future": 0.0004082465809348847,
+  "lift": 292.9302127373361,
+  "cutoff": "2023-09-21",
+  "importances": {
+    "dist_road_m": 0.21354383049439135,
+    "dist_settlement_m": 0.28015510317130593,
+    "dist_legal_site_m": 0.0,
+    "existing_density_3km": 0.17767622212989892,
+    "existing_density_10km": 0.06716521257443567,
+    "dist_nearest_existing_m": 0.09860130175875917,
+    "screening_score": 0.16285832987120896
+  },
+  "is_demo": false
+}

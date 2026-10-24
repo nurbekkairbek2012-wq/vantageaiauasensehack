@@ -1,0 +1,91 @@
+{
+  "is_demo": false,
+  "signal_scales": {
+    "ndvi_drop": 0.35,
+    "bsi_rise": 0.25,
+    "pmli_response": 0.15,
+    "sar_incoherence": 3.0,
+    "thermal_anomaly": 3.0
+  },
+  "scenes": [
+    {
+      "id": "registry",
+      "title": "Что известно публично",
+      "line": "Объектов обращения с отходами в открытых данных: 27.",
+      "layers": [
+        "registry"
+      ]
+    },
+    {
+      "id": "found",
+      "title": "Что есть на самом деле",
+      "line": "Мы нашли 30 объектов.",
+      "layers": [
+        "registry",
+        "candidates"
+      ]
+    },
+    {
+      "id": "evidence",
+      "title": "Доказательная цепочка",
+      "line": "Она появилась не вчера. Вот пять независимых признаков.",
+      "layers": [
+        "candidates"
+      ],
+      "focus": {
+        "candidate_id": "C00005",
+        "center": [
+          71.47088314694493,
+          51.220842
+        ],
+        "zoom": 14
+      },
+      "panel": "evidence"
+    },
+    {
+      "id": "money",
+      "title": "Оценка ущерба",
+      "line": "30 объектов = 59–458 млн ₸ ущерба.",
+      "layers": [
+        "candidates"
+      ],
+      "panel": "money"
+    },
+    {
+      "id": "act",
+      "title": "Акт",
+      "line": "Автомат предлагает, человек подтверждает.",
+      "layers": [
+        "candidates"
+      ],
+      "panel": "act"
+    },
+    {
+      "id": "risk",
+      "title": "Прогноз",
+      "line": "А здесь свалки ещё нет. Она появится здесь.",
+      "layers": [
+        "risk"
+      ]
+    },
+    {
+      "id": "mistake",
+      "title": "Где мы ошиблись",
+      "line": "Мы сами знаем границы своей модели.",
+      "layers": [
+        "candidates",
+        "rejected"
+      ],
+      "panel": "mistakes"
+    }
+  ],
+  "totals": {
+    "registry_known": 27,
+    "objects": 30,
+    "damage_p10": 58838040.014774464,
+    "damage_p50": 229352639.63424835,
+    "damage_p90": 458462471.95118606,
+    "area_ha": 9.190673291148475,
+    "co2e_t": 5584.525011706589
+  }
+}

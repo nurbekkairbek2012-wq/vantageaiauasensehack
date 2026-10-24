@@ -1,46 +1,30 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "mkdir -p web/data && cp -f map-data/* web/data/ 2>/dev/null || echo 'map-data пуста — запустите vantage publish и закоммитьте результат'",
-  "outputDirectory": "web",
+  "buildCommand": "cd web-next && npm ci && npm run build",
+  "outputDirectory": "web-next/dist",
   "framework": null,
-  "installCommand": "echo 'сборка не нужна: карта статическая, без зависимостей'",
+  "installCommand": "echo 'зависимости ставит buildCommand внутри web-next'",
   "headers": [
-    {
-      "source": "/sw.js",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-cache, no-store, must-revalidate"
-        },
-        {
-          "key": "Service-Worker-Allowed",
-          "value": "/"
-        }
-      ]
-    },
     {
       "source": "/data/(.*)",
       "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=300, must-revalidate"
-        }
+        { "key": "Cache-Control", "value": "public, max-age=300, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/fonts/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
       ]
     },
     {
       "source": "/(.*)",
       "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
-        },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://basemaps.cartocdn.com https://server.arcgisonline.com; connect-src 'self' https://basemaps.cartocdn.com https://server.arcgisonline.com; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'none'"
+          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https://basemaps.cartocdn.com https://server.arcgisonline.com; connect-src 'self'; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'none'"
         }
       ]
     }
