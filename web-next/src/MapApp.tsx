@@ -170,6 +170,10 @@ function humanDate(v: unknown) {
   return Number.isNaN(d.getTime()) ? '—' : `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+/** Слагаемые ущерба по одному объекту — из economy.json. */
+type Split = { removal: number; recyclable: number; climate: number };
+type EconRow = { id: string; removal_kzt: number; recyclable_kzt: number; climate_kzt: number };
+
 type SortKey = 'visual' | 'probability' | 'evidence_score' | 'damage_p50' | 'area_m2' | 'break_date' | 'risk_of_cover';
 
 /* Подписи короткие намеренно. Список стоит в колонке шириной 22rem, и
@@ -206,6 +210,26 @@ export default function MapApp() {
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => setRaw(typeof d?.raw === 'number' ? d.raw : null))
       .catch(() => setRaw(null));
+  }, []);
+
+  /* Раскладка ущерба на слагаемые: вывоз, возвратное сырьё, климат.
+     В candidates.geojson лежит только итог — для карты этого хватало,
+     пока разговор шёл о том, куда ехать. Но объект, у которого видно
+     «8,3 млн ₸» и не видно, что половину закрывает сырьё внутри кучи,
+     не отвечает на вопрос трека. Берётся из той же выгрузки, что и
+     экран «Экономика»: считать здесь заново значит однажды разойтись.
+     Нет файла — карточка просто не покажет раскладку. */
+  const [money, setMoney] = useState<Map<string, Split>>(new Map());
+  useEffect(() => {
+    fetch('./data/economy.json')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const rows: EconRow[] = d?.objects ?? [];
+        setMoney(new Map(rows.map((o) => [o.id, {
+          removal: o.removal_kzt, recyclable: o.recyclable_kzt, climate: o.climate_kzt,
+        }])));
+      })
+      .catch(() => setMoney(new Map()));
   }, []);
 
   const [selected, setSelected] = useState<string | null>(null);
@@ -586,7 +610,7 @@ export default function MapApp() {
               </p>
             </div>
           ) : (
-            <ObjectCard f={current} />
+            <ObjectCard f={current} split={money.get(String(current.properties?.candidate_id))} />
           )}
         </aside>
       </div>
@@ -628,7 +652,7 @@ function Coordinates({ center }: { center: [number, number] | null }) {
   );
 }
 
-function ObjectCard({ f }: { f: Feature }) {
+function ObjectCard({ f, split }: { f: Feature; split?: Split }) {
   const p = f.properties;
   /* Оценка модели — та же, что в строке списка: highres_score, посчитанная
      по снимку. Раньше здесь стояло probability, которое на настоящем
@@ -780,11 +804,47 @@ function ObjectCard({ f }: { f: Feature }) {
         })}
       </ul>
 
-      <h3 className="mt-6 text-sm text-muted-2">Ущерб</h3>
+      {/* Ущерб с пометкой о происхождении. Площадь и дата измерены,
+          деньги — посчитаны, и это разные по надёжности величины. Пока
+          пометки не было, они выглядели одинаково: «3 327 м²» и
+          «8,3 млн ₸» стояли рядом одним кеглем, и первый же вопрос «а эти
+          миллионы вы измеряли?» бил по обеим. */}
+      <div className="mt-6 flex items-baseline justify-between gap-3">
+        <h3 className="text-sm text-muted-2">Ущерб</h3>
+        <span className="rounded-full border border-amber/40 px-2 py-0.5 text-[10px] uppercase tracking-[0.08em] text-amber">
+          модельная оценка
+        </span>
+      </div>
       <p className="tabular mt-1 font-display text-3xl text-line">{kzt(p.damage_p50)}</p>
       <p className="tabular mt-1 text-xs text-muted-2">
         P10 {kzt(p.damage_p10)} · P90 {kzt(p.damage_p90)}
       </p>
+
+      {/* Из чего он складывается. Возврат сырьём стоит здесь не ради
+          полноты: без него объект читается как чистый расход, а он им не
+          является — половину уборки оплачивает то, что в куче лежит. */}
+      {split && (
+        <>
+          <dl className="mt-3 space-y-1 text-xs">
+            {[
+              ['Вывоз и захоронение', kzt(split.removal), 'text-muted'],
+              ['Возврат вторсырьём', `−${kzt(split.recyclable)}`, 'text-emerald'],
+              ['Климат, метан за 20 лет', kzt(split.climate), 'text-muted'],
+            ].map(([label, value, tone]) => (
+              <div key={label} className="flex items-baseline justify-between gap-3">
+                <dt className="text-muted-2">{label}</dt>
+                <dd className={`tabular ${tone}`}>{value}</dd>
+              </div>
+            ))}
+          </dl>
+          <a
+            href="./economy.html"
+            className="mt-2 inline-block text-xs text-violet-lit underline decoration-grid transition-colors duration-200 hover:decoration-violet-lit"
+          >
+            Как это считается и откуда допущения →
+          </a>
+        </>
+      )}
 
       {/* Кто был на месте и когда. Раньше это жило только в подсказке к
           подписи — то есть пропадало и на печати акта, и на скриншоте, а

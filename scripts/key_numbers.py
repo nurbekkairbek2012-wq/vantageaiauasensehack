@@ -57,6 +57,18 @@ def plural(n: int, one: str, few: str, many: str) -> str:
     return many
 
 
+def _cut(economy: dict, share: float) -> int:
+    """Сколько выездов закрывают заданную долю суммы ущерба.
+
+    Приоритет — это и есть рекомендация: пятнадцать строк списком советом
+    не являются, «начните с четырёх» — является.
+    """
+    for row in economy.get("priority", []):
+        if row["share"] >= share:
+            return int(row["n"])
+    return len(economy.get("priority", []))
+
+
 def main() -> int:
     import geopandas as gpd
     import pandas as pd
@@ -66,6 +78,9 @@ def main() -> int:
     funnel = json.loads((DATA / "funnel.json").read_text(encoding="utf-8"))
     metrics = json.loads((DATA / "metrics.json").read_text(encoding="utf-8"))
     cities = json.loads((DATA / "cities.json").read_text(encoding="utf-8"))
+    econ_path = DATA / "economy.json"
+    economy = (json.loads(econ_path.read_text(encoding="utf-8"))
+               if econ_path.exists() else None)
     # Метрики сиамской сети лежат отдельным файлом и на сайте не
     # показываются. В деке из них берётся ROC-AUC 0,908, и без строки здесь
     # на вопрос «откуда это» пришлось бы искать по репозиторию.
@@ -171,6 +186,38 @@ def main() -> int:
         f"| Средний возраст объекта | {ru(ages.mean(), 1)} года |",
         f"| Самая старая | {str(site['break_date'].min())[:7]} |",
         "",
+        # Раскладка ущерба на слагаемые — то, чем проект отвечает на кейс
+        # трека: не «свалка стоит столько», а «столько теряется, столько
+        # возвращается, столько уже не вернуть». Числа читаются из
+        # economy.json, чтобы совпадать с экраном «Экономика» до тенге.
+        *(([
+            "## Экономика кейса",
+            "",
+            "| Что | Сколько | Как читать |",
+            "|---|---:|---|",
+            f"| Отходов найдено | **{ru(economy['totals']['sum_of_medians']['mass_t'])} т** | "
+            "масса по площади и глубине, модельная оценка |",
+            f"| Стоимость вывоза | {ru(economy['totals']['sum_of_medians']['removal_kzt'] / 1e6, 1)} млн ₸ | "
+            "тариф выведен из тарифа Алматы |",
+            f"| Возврат вторсырьём | **{ru(economy['totals']['sum_of_medians']['recyclable_kzt'] / 1e6, 1)} млн ₸** | "
+            "прайс приёмки подтверждён, извлекаемая доля — оценка |",
+            f"| Доля уборки, которую закрывает сырьё | **{ru(100 * economy['totals']['sum_of_medians']['recyclable_kzt'] / economy['totals']['sum_of_medians']['removal_kzt'])}%** | "
+            "отсюда «за свалку платят трижды» |",
+            f"| Чистый ущерб, сумма медиан | **{ru(economy['totals']['sum_of_medians']['damage_kzt'] / 1e6, 1)} млн ₸** | "
+            "складывается из столбца таблицы |",
+            f"| Он же, интервал по списку целиком | {ru(economy['totals']['damage_kzt']['p10'] / 1e6, 1)} – "
+            f"{ru(economy['totals']['damage_kzt']['p90'] / 1e6, 1)} млн ₸ | "
+            f"медиана суммы {ru(economy['totals']['damage_kzt']['p50'] / 1e6, 1)} млн ₸ |",
+            f"| Выездов на половину суммы | **{_cut(economy, 0.5)}** | приоритет по деньгам |",
+            f"| Выездов на 80% суммы | {_cut(economy, 0.8)} | остальные стоят вместе меньше пятой части |",
+            f"| CO₂-экв уже выброшено | {ru(economy['totals']['sum_of_medians']['co2e_emitted_t'])} т | "
+            f"{ru(100 * economy['totals']['sum_of_medians']['co2e_emitted_t'] / economy['totals']['sum_of_medians']['co2e_t'])}% "
+            "от полного горизонта — не вернуть |",
+            f"| Сильнее всего двигает итог | стоимость вывоза тонны, ρ = "
+            f"{ru(economy['sensitivity'].get('removal_cost', 0), 2)} | "
+            "ранговая корреляция Спирмена, не доля дисперсии |",
+        ]) if economy else []),
+        "",
         "## Охват",
         "",
         "| Что | Сколько |",
@@ -233,8 +280,9 @@ def main() -> int:
         "  провал, а измеренная граница применимости — [BELTS.md](BELTS.md).",
         "- **Три попытки обучить свою модель, все три неудачные.** Числа в",
         "  [AI_RESULTS.md](AI_RESULTS.md), разделы 1в, 1г, 1з.",
-        "- **Прямого тарифа вывоза по Астане нет** — на нём держится 82%",
-        "  разброса оценки ущерба.",
+        "- **Прямого тарифа вывоза по Астане нет.** Именно он двигает оценку",
+        "  сильнее прочих допущений: ранговая корреляция 0,82. Это не «82%",
+        "  разброса» — величины разные, и подмену на Q&A заметят.",
         "",
     ]
     OUT.write_text("\n".join(L), encoding="utf-8")

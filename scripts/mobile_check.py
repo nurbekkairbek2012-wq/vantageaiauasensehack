@@ -42,7 +42,8 @@ PORT = 4183
 #: 390 — iPhone 14/15, 768 — планшет книжной ориентации.
 SCREENS = ((360, 800), (390, 844), (768, 1024))
 
-PAGES = ("index.html", "map.html", "forecast.html", "citizen.html", "timelapse.html")
+PAGES = ("index.html", "economy.html", "map.html", "forecast.html", "citizen.html",
+         "timelapse.html")
 
 
 def main() -> int:

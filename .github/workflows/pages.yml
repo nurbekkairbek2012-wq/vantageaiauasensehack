@@ -8,15 +8,29 @@ name: Публикация сайта на GitHub Pages
 # список легко расширить одной строкой, и без падающего workflow этого
 # никто не заметит до того момента, когда точные координаты уже в сети.
 
-# Запускается только вручную. Автоматический запуск падал на каждом
-# коммите шагом configure-pages: GitHub Pages в настройках репозитория не
-# включён, и без этого шаг не может отработать в принципе. Постоянно
-# красный значок хуже отсутствующего — он приучает не смотреть на значки.
+# Публикация идёт на каждый push в main — и это запасной аэродром, а не
+# дубль ради дубля.
 #
-# Основной деплой идёт на Vercel (vercel.json). Чтобы вернуть Pages:
-# Settings → Pages → Source: GitHub Actions, потом добавить сюда обратно
-# блок `push`.
+# Основной адрес живёт на Vercel, и 24 августа выяснилось, что он отдаёт
+# страницу входа в Vercel, а не сайт: у проекта включена защита
+# развёртывания. Для нас ссылка работает — мы залогинены, — а для любого
+# постороннего это стена авторизации. Именно так её и увидел проверяющий.
+#
+# Отсюда правило: живая ссылка обязана открываться из окна в режиме
+# инкогнито. Pages от такой ошибки застрахован — там нет ни защиты
+# развёртывания, ни отдельного логина.
+#
+# Чтобы публикация заработала, нужно один раз включить Pages в настройках
+# репозитория: Settings → Pages → Source: GitHub Actions.
+#
+# Пока не включено, сборка и проверки всё равно идут на каждый push, а шаг
+# публикации пропускается — без ошибки. Раньше здесь стоял ручной запуск
+# именно потому, что configure-pages падал на невключённом Pages, а
+# постоянно красный значок хуже отсутствующего: он приучает не смотреть на
+# значки. Теперь красным будет только настоящая поломка сборки.
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -31,6 +45,10 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      # Включён ли Pages в настройках репозитория. От этого зависит,
+      # публиковать собранное или остановиться на проверках.
+      pages: ${{ steps.pages.outcome }}
     steps:
       - uses: actions/checkout@v4
 
@@ -79,22 +97,34 @@ jobs:
           npm ci
           npm run build
 
-      - name: Проверить, что собрались обе страницы
+      - name: Проверить, что собрались все страницы
         run: |
-          for file in index.html map.html favicon.svg data/candidates.geojson; do
+          # Список полный намеренно. Проверка «собрались обе страницы»
+          # пережила появление ещё четырёх и молча пропустила бы сборку,
+          # в которой половины сайта нет: Vite не считает пропущенную
+          # точку входа ошибкой, он просто её не собирает.
+          for file in index.html map.html economy.html timelapse.html                       forecast.html citizen.html label.html favicon.svg                       data/candidates.geojson data/economy.json; do
             test -f "web-next/dist/$file" || { echo "нет файла dist/$file"; exit 1; }
           done
           # Шрифты обязаны лежать локально: карта должна открываться без сети.
           test -n "$(ls web-next/dist/fonts/*.woff2 2>/dev/null)" || { echo "шрифты не попали в сборку"; exit 1; }
           du -sh web-next/dist
 
-      - uses: actions/configure-pages@v5
+      - id: pages
+        uses: actions/configure-pages@v5
+        # Единственный шаг, который не может отработать без настройки
+        # репозитория. Его падение — не поломка проекта, и валить из-за
+        # него сборку нельзя.
+        continue-on-error: true
+
       - uses: actions/upload-pages-artifact@v3
+        if: steps.pages.outcome == 'success'
         with:
           path: web-next/dist
 
   deploy:
     needs: build
+    if: needs.build.outputs.pages == 'success'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
