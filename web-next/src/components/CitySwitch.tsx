@@ -65,7 +65,7 @@ export function CitySwitch({ cities, current, onSelect, className = '' }: Props)
           state === 'found'
             ? `${city.name}: найдено ${city.count}`
             : state === 'empty'
-              ? `${city.name}: проверено ${city.reviewed} находок, настоящих свалок нет`
+              ? `${city.name}: проверено ${city.reviewed} находок, свалок среди них нет`
               : `${city.name}: прогон ещё не проходил`;
         return (
           <button

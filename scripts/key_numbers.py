@@ -96,6 +96,11 @@ def main() -> int:
     # разметки оно разошлось с данными.
     screen_path = DATA / "screen.json"
     screen = json.loads(screen_path.read_text(encoding="utf-8")) if screen_path.exists() else {}
+    # Сверка с госмониторингом — из scripts/gov_waste.py (data/eval/gov_waste.json).
+    gov_path = Path("data/eval/gov_waste.json")
+    gov = json.loads(gov_path.read_text(encoding="utf-8")) if gov_path.exists() else {}
+    gov_total, gov_found = gov.get("total", 0), gov.get("found", 0)
+    gov_elsewhere = sum(1 for r in gov.get("rows", []) if r.get("area") != "outputs_real")
     # Точность модели по снимку — из scripts/attach_chipmodel.py.
     image_path = DATA / "image_model.json"
     image = json.loads(image_path.read_text(encoding="utf-8")) if image_path.exists() else {}
@@ -339,8 +344,11 @@ def main() -> int:
             "  «фотофиксация». Разница небольшая, но проверяющий, который",
             "  заметит её сам, отнесётся ко всему остальному иначе.",
         ] if ground and not photos else []),
-        "- **Четыре области из пяти дали ноль настоящих свалок.** Это не",
-        "  провал, а измеренная граница применимости — [BELTS.md](BELTS.md).",
+        "- **В четырёх областях из пяти среди находок метода нет ни одной свалки.**",
+        f"  Свалки там есть: на открытой карте госмониторинга их {gov_elsewhere}.",
+        f"  Метод находит {gov_found} из {gov_total} свалок госмониторинга —",
+        "  видит исчезновение растительности, а не каждую свалку. Не говорить",
+        "  «там свалок нет» (AI_RESULTS.md, 1ф; [BELTS.md](BELTS.md)).",
         "- **Три попытки обучить свою модель, все три неудачные.** Числа в",
         "  [AI_RESULTS.md](AI_RESULTS.md), разделы 1в, 1г, 1з.",
         "- **Прямого тарифа вывоза по Астане нет.** Именно он двигает оценку",
