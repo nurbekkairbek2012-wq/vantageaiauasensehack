@@ -39,6 +39,21 @@ const FEATURE_NAMES: Record<string, string> = {
 const num = (v: number, d = 0) =>
   Number.isFinite(v) ? v.toLocaleString('ru-RU', { maximumFractionDigits: d }) : '—';
 
+/** Согласовать существительное с числом.
+ *
+ *  «рядом уже 3 объектов» стояло у каждой из двадцати строк маршрута:
+ *  число приходит из данных, а окончание было вписано одно на всех.
+ *  Такое читатель замечает раньше содержания и справедливо переносит
+ *  небрежность на числа рядом. */
+const plural = (count: number, one: string, few: string, many: string) => {
+  const mod100 = Math.abs(Math.round(count)) % 100;
+  if (mod100 >= 11 && mod100 <= 14) return many;
+  const mod10 = mod100 % 10;
+  if (mod10 === 1) return one;
+  if (mod10 >= 2 && mod10 <= 4) return few;
+  return many;
+};
+
 export default function Forecast() {
   const host = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
@@ -198,7 +213,7 @@ export default function Forecast() {
                       до жилья <span className="tabular text-line">{num(Number(p.dist_settlement_m) / 1000, 1)} км</span>
                       {Number(p.density_3km) > 0 && (
                         <>
-                          , рядом уже <span className="tabular text-line">{num(Number(p.density_3km), 2)}</span> объектов на 3 км
+                          , рядом уже <span className="tabular text-line">{num(Number(p.density_3km), 2)}</span> {' '}{plural(Number(p.density_3km), 'объект', 'объекта', 'объектов')} на 3 км
                         </>
                       )}
                     </span>

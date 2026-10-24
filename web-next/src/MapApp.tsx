@@ -444,11 +444,11 @@ export default function MapApp() {
               className="pointer-events-auto"
             />
             <div className="pointer-events-auto flex flex-col gap-1.5 rounded-sm border border-grid bg-soot/90 px-3 py-2 text-xs backdrop-blur-sm">
-              <label className="flex cursor-pointer items-center gap-2">
+              <label className="flex min-h-[32px] cursor-pointer items-center gap-2 py-0.5">
                 <input type="checkbox" checked={showRisk} onChange={(e) => setShowRisk(e.target.checked)} />
                 <span className="text-muted">Зоны риска</span>
               </label>
-              <label className="flex cursor-pointer items-center gap-2">
+              <label className="flex min-h-[32px] cursor-pointer items-center gap-2 py-0.5">
                 <input type="checkbox" checked={showRegistry} onChange={(e) => setShowRegistry(e.target.checked)} />
                 <span className="text-muted">Известные объекты</span>
               </label>
@@ -620,7 +620,9 @@ function ObjectCard({ f }: { f: Feature }) {
           {!hasModel
             ? 'Объект не попал в обучающую выборку, и модель по нему не высказывалась. Прочерк честнее подставленного числа.'
             : model < DISAGREEMENT
-            ? 'Модель возражает детектору: изменение похоже на законное — карьер, стройку или отвал грунта. Ехать сюда стоит первым делом.'
+            ? (visualOf(p)?.short === 'свалка'
+                ? 'Модель возражает: изменение похоже на законное. Но объект уже просмотрен по снимку 0,5 м, и там видна ссыпка — человек сильнее модели, обученной на чужой стране.'
+                : 'Модель возражает детектору: изменение похоже на законное — карьер, стройку или отвал грунта. Ехать сюда стоит первым делом.')
             : model >= 0.85
             ? `Признаков сработало ${Number(p.n_agreeing) || 0} из 5, согласие ${Math.round(score * 100)}%. Оценка вневыборочная: этот объект модель на обучении не видела.`
             : `Признаков сработало ${Number(p.n_agreeing) || 0} из 5, согласие ${Math.round(score * 100)}%. Середина шкалы — объект стоит проверить глазами.`}

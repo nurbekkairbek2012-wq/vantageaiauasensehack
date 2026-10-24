@@ -48,6 +48,18 @@ export default function Timelapse() {
   const started = useRef(0);
   const fitted = useRef(false);
 
+  /* Выигрыш модели читается из metrics.json, а не стоит числом.
+     «293 раза» пережило два пересчёта: сначала стало 301, потом 295, а
+     подпись под тепловой картой продолжала называть первое. Число модели,
+     не совпадающее с её собственной выгрузкой, проверяют первым. */
+  const [lift, setLift] = useState<number | null>(null);
+  useEffect(() => {
+    fetch('./data/metrics.json')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setLift(typeof d?.lift === 'number' ? Math.round(d.lift) : null))
+      .catch(() => setLift(null));
+  }, []);
+
   const [points, setPoints] = useState<HeatPoint[]>([]);
   const [risk, setRisk] = useState<GeoJSON.FeatureCollection | null>(null);
   const [basemap, setBasemap] = useState<Basemap>('sat');
@@ -303,7 +315,7 @@ export default function Timelapse() {
             <p className="text-sm text-line">Тепло без объектов — где свалок ещё нет</p>
             <p className="mt-1 text-xs leading-snug text-muted">
               Модель обучена на объектах до сентября 2023 и проверена на
-              возникших после. Попадает в 293 раза точнее случайного выбора.
+              возникших после.{lift ? ` Попадает в ${lift} раз точнее случайного выбора.` : ''}
             </p>
           </div>
         )}

@@ -49,7 +49,7 @@ type Feature = GeoJSON.Feature<GeoJSON.Geometry, Record<string, unknown>>;
  * пишет в reject_reason контекстный отсев. */
 const STAGE_TEXT: Record<string, { label: string; detail: string }> = {
   'площадь ниже порога разрешения Sentinel-2':
-    { label: 'Площадь ниже разрешения', detail: 'меньше 900 м² — Sentinel-2 такое не разрешает' },
+    { label: 'Площадь ниже разрешения', detail: 'меньше 500 м² — пять пикселей Sentinel-2, ниже уже шум' },
   'площадь слишком велика — это полигон, а не стихийная свалка':
     { label: 'Слишком большая площадь', detail: 'это полигон ТБО, а не стихийная свалка' },
   'пересекается с известным объектом OSM (карьер, стройка, застройка, вода)':
@@ -296,7 +296,7 @@ export default function App() {
               <dl className="mt-8 grid grid-cols-3 border-t border-grid pt-6">
                 {[
                   ['Объектов в списке', String(totals.real), false],
-                  ['Из них опознаны как свалка', String(totals.confirmed), true],
+                  ['Опознаны как свалка', String(totals.confirmed), true],
                   ['Ущерб по списку', kzt(totals.damage), false],
                 ].map(([k, v, accent], i) => (
                   <div

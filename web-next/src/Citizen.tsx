@@ -127,6 +127,11 @@ cd web-next && npm run build`}
           </div>
         </div>
 
+        {/* Ответ «а мне что» идёт ПЕРЕД объяснением устройства.
+            Раньше блок стоял после трёх шагов, и человек читал, как
+            система работает, прежде чем узнавал, зачем ему это. */}
+        <HowLong features={features as never} />
+
         <ol className="mt-16 border-t border-grid">
           {STEPS.map(([title, body], i) => (
             <li
@@ -141,8 +146,6 @@ cd web-next && npm run build`}
             </li>
           ))}
         </ol>
-
-        <HowLong features={features as never} />
 
         <section className="mt-14 grid gap-x-14 gap-y-10 md:grid-cols-2">
           <div>

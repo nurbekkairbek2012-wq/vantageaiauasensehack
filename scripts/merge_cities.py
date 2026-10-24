@@ -24,7 +24,8 @@
 копирует на сайт. Папка одного города остаётся нетронутой, и вернуться к
 ней можно в любой момент.
 
-    python scripts/merge_cities.py astana:outputs_real almaty shymkent
+    python scripts/merge_cities.py astana:outputs_real astana_east
+                                   astana_southeast astana_west
 """
 
 import json
@@ -43,7 +44,12 @@ WEB = Path("web-next/public/data")
 
 #: Приставка к номеру объекта по городу. Три буквы: короче не различить,
 #: длиннее — не влезает в подпись на карте.
-PREFIX = {"astana": "AST", "almaty": "ALM", "shymkent": "SHY"}
+PREFIX = {
+    "astana": "AST",
+    "astana_east": "AVE",
+    "astana_southeast": "ASE",
+    "astana_west": "AZP",
+}
 
 #: Слои, которые склеиваются построчно.
 STACKED = ("candidates.geojson", "risk_public.geojson", "patrol.geojson", "registry.geojson")
@@ -66,7 +72,8 @@ def main() -> int:
     import geopandas as gpd
     import pandas as pd
 
-    picked = sources(sys.argv[1:] or ["astana:outputs_real", "almaty", "shymkent"])
+    picked = sources(sys.argv[1:] or ["astana:outputs_real", "astana_east",
+                                     "astana_southeast", "astana_west"])
     if not picked:
         log.error("нечего объединять")
         return 1
@@ -137,6 +144,18 @@ def main() -> int:
         if item.is_file():
             shutil.copy2(item, WEB / item.name)
             copied += 1
+
+    # Слияние копирует в выгрузку НАПРЯМУЮ и тем самым обходит фильтр
+    # публикации: объединённый список содержит и отвергнутые объекты со
+    # всех поясов. Без этого вызова они разом вернулись бы на сайт — тот
+    # же тихий откат, что уже ловился проверкой в конце досчёта.
+    import subprocess
+
+    log.info("")
+    log.info("── Фильтр публикации по объединённому набору")
+    subprocess.run([sys.executable, "scripts/publish_filter.py",
+                    "--outputs", str(MERGED)], check=False)
+    subprocess.run([sys.executable, "scripts/make_bot_index.py"], check=False)
 
     log.info("")
     log.info("── Объединено ──")

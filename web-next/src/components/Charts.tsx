@@ -152,7 +152,12 @@ export function DamageStrip({ features }: { features: Feature[] }) {
         ))}
       </div>
       <p className="mt-3 max-w-[62ch] text-sm text-muted-2">
-        Тридцать объектов по убыванию ущерба. Три первых —{' '}
+        {/* Число объектов из данных, а не словом. «Тридцать» пережило два
+            пересчёта и стало неправдой: в списке шестнадцать. */}
+        <span className="tabular text-line">{values.length}</span>{' '}
+        {values.length % 10 === 1 && values.length % 100 !== 11 ? 'объект' :
+         [2, 3, 4].includes(values.length % 10) && ![12, 13, 14].includes(values.length % 100) ? 'объекта' : 'объектов'}
+        {' '}по убыванию ущерба. Три первых —{' '}
         <span className="tabular text-line">{Math.round((topThree / total) * 100)}%</span> всей
         суммы. Ехать по списку сверху вниз и ехать по случайному — не одно и
         то же.
