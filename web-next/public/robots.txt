@@ -1,0 +1,6 @@
+User-agent: *
+# Разметка — рабочий инструмент команды, не страница для поиска.
+Disallow: /label.html
+Allow: /
+
+Sitemap: https://hakathon-lyart.vercel.app/sitemap.xml

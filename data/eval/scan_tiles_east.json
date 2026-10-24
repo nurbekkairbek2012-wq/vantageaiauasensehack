@@ -1,0 +1,50 @@
+{
+ "bbox": [
+  71.53672,
+  51.09824,
+  71.61059,
+  51.14158
+ ],
+ "windows": 2754,
+ "gov_dumps": 24,
+ "positive_windows": 22,
+ "our_dumps": 0,
+ "models": {
+  "dinov2": {
+   "roc_auc": 0.73,
+   "dumps_in_top_5pct": 4,
+   "ours_in_top_5pct": 0,
+   "dumps_in_top_10pct": 9,
+   "ours_in_top_10pct": 0,
+   "dumps_in_top_20pct": 12,
+   "ours_in_top_20pct": 0
+  },
+  "cwld": {
+   "roc_auc": 0.761,
+   "dumps_in_top_5pct": 6,
+   "ours_in_top_5pct": 0,
+   "dumps_in_top_10pct": 6,
+   "ours_in_top_10pct": 0,
+   "dumps_in_top_20pct": 12,
+   "ours_in_top_20pct": 0
+  },
+  "skyclip": {
+   "roc_auc": 0.878,
+   "dumps_in_top_5pct": 8,
+   "ours_in_top_5pct": 0,
+   "dumps_in_top_10pct": 15,
+   "ours_in_top_10pct": 0,
+   "dumps_in_top_20pct": 18,
+   "ours_in_top_20pct": 0
+  },
+  "среднее": {
+   "roc_auc": 0.842,
+   "dumps_in_top_5pct": 8,
+   "ours_in_top_5pct": 0,
+   "dumps_in_top_10pct": 11,
+   "ours_in_top_10pct": 0,
+   "dumps_in_top_20pct": 19,
+   "ours_in_top_20pct": 0
+  }
+ }
+}

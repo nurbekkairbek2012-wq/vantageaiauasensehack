@@ -1,0 +1,16 @@
+{
+"type": "FeatureCollection",
+"name": "new_sites_ne",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "area": "ne", "codes": "W001,W002,W004,W005,W007,W009,W011,W012,W014,W016,W017,W019,W020,W021,W024,W026,W027,W031,W033,W036,W038,W039,W040,W041,W045,W048,W052,W054,W057,W061,W065,W068,W072,W077,W084,W095,W104,W108,W130,W149", "windows": 40, "detector_m": 641, "gov_m": 4, "reviewer": "claude-vision", "new": false }, "geometry": { "type": "Point", "coordinates": [ 71.560821533203125, 51.253320526331322 ] } },
+{ "type": "Feature", "properties": { "area": "ne", "codes": "W003,W008,W010,W015,W022,W023,W028,W034,W043,W044,W047,W060,W062,W085,W090,W098,W099,W100", "windows": 18, "detector_m": 925, "gov_m": 1, "reviewer": "claude-vision", "new": false }, "geometry": { "type": "Point", "coordinates": [ 71.519622802734375, 51.212045390353012 ] } },
+{ "type": "Feature", "properties": { "area": "ne", "codes": "W006,W018,W025,W029,W049,W050,W051,W064,W067,W069,W076,W086,W088,W094,W141,W145,W148", "windows": 17, "detector_m": 1255, "gov_m": 584, "reviewer": "claude-vision", "new": true }, "geometry": { "type": "Point", "coordinates": [ 71.522369384765625, 51.222367645529729 ] } },
+{ "type": "Feature", "properties": { "area": "ne", "codes": "W042,W056,W080,W102,W107,W117,W131,W140,W146", "windows": 9, "detector_m": 1487, "gov_m": 0, "reviewer": "claude-vision", "new": false }, "geometry": { "type": "Point", "coordinates": [ 71.527862548828125, 51.216346611266729 ] } },
+{ "type": "Feature", "properties": { "area": "ne", "codes": "W066,W092", "windows": 2, "detector_m": 1478, "gov_m": 731, "reviewer": "claude-vision", "new": true }, "geometry": { "type": "Point", "coordinates": [ 71.536102294921875, 51.2318276797713 ] } },
+{ "type": "Feature", "properties": { "area": "ne", "codes": "W070", "windows": 1, "detector_m": 1167, "gov_m": 1368, "reviewer": "claude-vision", "new": true }, "geometry": { "type": "Point", "coordinates": [ 71.527862548828125, 51.249882345751658 ] } },
+{ "type": "Feature", "properties": { "area": "ne", "codes": "W074,W082,W091,W119,W124,W127,W136", "windows": 7, "detector_m": 1226, "gov_m": 869, "reviewer": "claude-vision", "new": true }, "geometry": { "type": "Point", "coordinates": [ 71.538848876953125, 51.233547477083277 ] } },
+{ "type": "Feature", "properties": { "area": "ne", "codes": "W078", "windows": 1, "detector_m": 159, "gov_m": 914, "reviewer": "claude-vision", "new": true }, "geometry": { "type": "Point", "coordinates": [ 71.503143310546875, 51.217206807233396 ] } },
+{ "type": "Feature", "properties": { "area": "ne", "codes": "W103", "windows": 1, "detector_m": 1423, "gov_m": 1331, "reviewer": "claude-vision", "new": true }, "geometry": { "type": "Point", "coordinates": [ 71.52374267578125, 51.249882345751672 ] } }
+]
+}

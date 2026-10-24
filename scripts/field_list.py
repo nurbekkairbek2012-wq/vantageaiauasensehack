@@ -214,6 +214,32 @@ def main() -> int:
                           "unclear": int(unsure), "url": route_link(stops)})
     # Те же поездки — боту: команда /route отдаёт их выездной группе.
     TRIPS.write_text(json.dumps(bot_trips, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+
+    # Места, найденные сканированием снимка (scripts/scan_review.py sites):
+    # их просмотрел только ИИ-проверяющий, поэтому они — отдельным списком,
+    # не на карте и не в суммах. Выезд к ним решает, есть ли там свалка.
+    scanned = []
+    for path in sorted(Path("data/scan").glob("new_sites_*.geojson")):
+        frame = gpd.read_file(path)
+        scanned += [r for r in frame.itertuples() if bool(getattr(r, "new", False))]
+    if scanned:
+        lines += [
+            "",
+            "## Найдено сканированием снимка — проверить",
+            "",
+            "Эти места нашёл второй способ поиска — сканирование снимка высокого",
+            "разрешения (AI_RESULTS.md, 1ц). Их нет ни среди находок детектора, ни",
+            "на открытой карте госмониторинга. **Их смотрел только ИИ-проверяющий,",
+            "человек ещё нет**: на карту и в суммы они не входят, пока выезд или",
+            "просмотр человеком их не подтвердит.",
+            "",
+            "| # | Окон со свалкой | Координаты | Карта |",
+            "|---:|---:|---|---|",
+        ]
+        for k, r in enumerate(sorted(scanned, key=lambda r: -r.windows), 1):
+            p = r.geometry
+            lines.append(f"| {k} | {r.windows} | `{p.y:.5f}, {p.x:.5f}` | "
+                         f"[открыть](https://www.google.com/maps?q={p.y:.5f},{p.x:.5f}) |")
     lines += [
         "",
         "## Что снимать на месте",
