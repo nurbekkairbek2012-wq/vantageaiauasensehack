@@ -129,6 +129,50 @@ def build_cities() -> bool:
         return False
 
 
+def verify_published() -> bool:
+    """Убедиться, что в выгрузке не осталось отвергнутых объектов.
+
+    Фильтр публикации стоит последним, но «последним» его делает порядок
+    строк в этом файле, а не что-либо ещё. Любой шаг, дописанный ниже и
+    переписывающий candidates.geojson целиком, вернул бы отвергнутые на
+    сайт — и заметить это было бы нечем: файл на месте, объекты на месте,
+    просто их снова пятьдесят вместо четырнадцати.
+
+    Так и случилось в ночь на 23 августа: досчёт вернул на сайт все 49.
+    Проверка дешёвая, а тихий откат стоит доверия ко всему списку.
+    """
+    log.info("── Проверка выгрузки")
+    target = WEB_DATA / "candidates.geojson"
+    if not target.exists():
+        results.append(("Проверка выгрузки", False, "файла нет"))
+        return False
+    try:
+        data = json.loads(target.read_text(encoding="utf-8"))
+    except Exception as error:
+        results.append(("Проверка выгрузки", False, str(error)[:80]))
+        return False
+
+    bad = [
+        f["properties"].get("candidate_id")
+        for f in data.get("features", [])
+        if (f.get("properties") or {}).get("visual_check") == "not_landfill"
+    ]
+    if bad:
+        log.error("   в выгрузке %d отвергнутых объектов — прогоняю фильтр заново", len(bad))
+        subprocess.run([sys.executable, "scripts/publish_filter.py"], check=False)
+        # Указатель бота собирается ИЗ выгрузки и уже устарел: если его не
+        # пересобрать, житель пришлёт точку у склада и получит ответ
+        # «объект известен». Хуже, чем молчание.
+        subprocess.run([sys.executable, "scripts/make_bot_index.py"], check=False)
+        results.append(("Проверка выгрузки", False, f"было отвергнутых: {len(bad)}, фильтр повторён"))
+        return False
+
+    count = len(data.get("features", []))
+    results.append(("Проверка выгрузки", True, f"объектов {count}, отвергнутых нет"))
+    log.info("   объектов %d, отвергнутых нет", count)
+    return True
+
+
 def main() -> int:
     python = sys.executable
     flags = [flag for flag in sys.argv[1:] if flag.startswith("--")]
@@ -161,6 +205,8 @@ def main() -> int:
     # странице, а данные на ней обновились только что.
     step("Сборка сайта", ["npm", "run", "build", "--prefix", "web-next"])
     step("Запись таймлапса", [python, "scripts/make_timelapse.py"])
+
+    verify_published()
 
     log.info("")
     log.info("── Сводка ─────────────────────────────────────────")

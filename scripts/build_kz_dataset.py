@@ -107,6 +107,28 @@ def overpass(query: str) -> list[dict]:
     raise RuntimeError(f"все зеркала Overpass недоступны: {last}")
 
 
+def overpass_patient(query: str, rounds: int = 4) -> list[dict]:
+    """То же, но с растущей паузой между кругами по всем зеркалам.
+
+    Один проход по зеркалам занимает секунды, и если перегружены все —
+    а они перегружаются одновременно, — повтор через пять секунд попадает
+    в ту же перегрузку. Ночью 23 августа так и не собрался главный
+    положительный класс: landuse=landfill отвалился с 500 и 502 на всех
+    трёх зеркалах, и набор остался без самой нужной части.
+    """
+    for attempt in range(rounds):
+        try:
+            return overpass(query)
+        except Exception:
+            if attempt + 1 >= rounds:
+                raise
+            pause = 15 * (2 ** attempt)
+            log.info("   все зеркала молчат, жду %d с (круг %d из %d)",
+                     pause, attempt + 2, rounds)
+            time.sleep(pause)
+    return []
+
+
 #: Казахстан по квадрантам. Один запрос на всю страну по частому тегу
 #: Overpass не выдерживает: landuse=landfill валил все три зеркала подряд
 #: с 500 и 502, а это как раз главный положительный класс.
@@ -140,7 +162,7 @@ def fetch_places(tags, limit_per_tag: int) -> list[tuple[float, float, str]]:
                 'out center;'
             )
             try:
-                elements = overpass(query)
+                elements = overpass_patient(query)
             except Exception as error:
                 log.warning("   %s=%s, квадрант %.0f/%.0f: %s",
                             key, value, south, west, str(error)[:50])

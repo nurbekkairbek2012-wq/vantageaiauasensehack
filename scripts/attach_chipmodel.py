@@ -44,6 +44,16 @@ CANDIDATES = Path("outputs_real/candidates.geojson")
 WEB = Path("web-next/public/data/candidates.geojson")
 MODEL = Path("models/aerialwaste_chip.joblib")
 
+# Папка прогона и модель выбираются ключами: областей стало четыре, а
+# моделей несколько, и оценивать их прибитыми путями значит держать по
+# копии скрипта на каждую.
+for _i, _a in enumerate(sys.argv):
+    if _a == "--outputs" and _i + 1 < len(sys.argv):
+        CANDIDATES = Path(sys.argv[_i + 1]) / "candidates.geojson"
+        WEB = Path("nowhere")          # чужую область на сайт не выгружаем
+    if _a == "--model" and _i + 1 < len(sys.argv):
+        MODEL = Path(sys.argv[_i + 1])
+
 #: Черта, ниже которой оценка помечается как низкая. Это порог показа, а
 #: не доказанное свойство модели — см. заголовок о том, почему пять
 #: верных отбраковок подряд ничего не доказывают при такой выборке.
@@ -132,7 +142,7 @@ def main() -> int:
             log.warning("модель отбраковывает НАСТОЯЩИЕ свалки — порог занижать нельзя")
 
     working.to_file(CANDIDATES, driver="GeoJSON")
-    if WEB.parent.exists():
+    if WEB.parent.exists() and WEB.name != "nowhere":
         working.to_file(WEB, driver="GeoJSON")
     log.info("записано в %s и %s", CANDIDATES, WEB)
     return 0

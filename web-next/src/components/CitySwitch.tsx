@@ -14,6 +14,10 @@
 export type City = {
   id: string;
   name: string;
+  /** Короткая подпись для кнопки. Полное имя уходит в подсказку:
+   *  «Астана · юго-восток» на телефоне рвётся на три строки и ломает
+   *  ряд, а различать области достаточно одним словом. */
+  short?: string;
   center: [number, number];
   zoom: number;
   /** Сколько объектов найдено. Ноль означает «прогон не проходил». */
@@ -32,7 +36,7 @@ export function CitySwitch({ cities, current, onSelect, className = '' }: Props)
 
   return (
     <div
-      className={`flex overflow-hidden rounded-sm border border-grid bg-soot/90 backdrop-blur-sm ${className}`}
+      className={`flex max-w-[calc(100vw-2rem)] overflow-x-auto rounded-sm border border-grid bg-soot/90 backdrop-blur-sm ${className}`}
       role="group"
       aria-label="Город"
     >
@@ -46,7 +50,7 @@ export function CitySwitch({ cities, current, onSelect, className = '' }: Props)
             onClick={() => onSelect(city)}
             aria-pressed={current === city.id}
             title={ready ? `${city.name}: найдено ${city.count}` : `${city.name}: прогон ещё не проходил`}
-            className={`cursor-pointer px-3 py-1.5 text-xs transition-colors duration-150 ${
+            className={`shrink-0 cursor-pointer whitespace-nowrap px-3 py-1.5 text-xs transition-colors duration-150 ${
               current === city.id
                 ? 'bg-violet text-paper'
                 : ready
@@ -54,7 +58,7 @@ export function CitySwitch({ cities, current, onSelect, className = '' }: Props)
                   : 'cursor-not-allowed text-muted-2/45'
             }`}
           >
-            {city.name}
+            {city.short ?? city.name}
             {ready && (
               <span className="tabular ml-1.5 opacity-70">{city.count}</span>
             )}

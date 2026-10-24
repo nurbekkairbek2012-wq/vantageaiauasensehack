@@ -2,16 +2,18 @@
  {
   "id": "astana",
   "name": "Астана · северная промзона",
+  "short": "Север",
   "center": [
    51.21,
    71.5
   ],
   "zoom": 11,
-  "count": 14
+  "count": 16
  },
  {
   "id": "astana_east",
   "name": "Астана · восток",
+  "short": "Восток",
   "center": [
    51.19,
    71.8
@@ -22,16 +24,18 @@
  {
   "id": "astana_southeast",
   "name": "Астана · юго-восток",
+  "short": "Юго-восток",
   "center": [
    51.1,
    71.74
   ],
   "zoom": 11,
-  "count": 2
+  "count": 1
  },
  {
   "id": "astana_west",
   "name": "Астана · запад",
+  "short": "Запад",
   "center": [
    51.16,
    71.22

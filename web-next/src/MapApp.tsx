@@ -58,13 +58,13 @@ const DISAGREEMENT = 0.2;
 const VISUAL: Record<string, { short: string; full: string; tone: string; dot: string }> = {
   landfill: {
     short: 'свалка',
-    full: 'Проверено по снимку на снимке 0,6 м/пиксель: это свалка.',
+    full: 'На снимке 0,5 м на пиксель видны признаки ссыпки: гребни от самосвалов, россыпь мусора, подъездные колеи.',
     tone: 'text-line',
     dot: '#a78bfa',
   },
   not_landfill: {
     short: 'не свалка',
-    full: 'Проверено по снимку: это не свалка — постройка, промплощадка, стройка или водоём. Детектор нашёл здесь необратимое исчезновение растительности, и это правда: именно так выглядит любая застройка. Отсечь такое должен был контекстный фильтр по OpenStreetMap, но новая застройка вокруг Астаны в него не нанесена.',
+    full: 'На снимке это не свалка — постройка, промплощадка, стройка или водоём. Детектор нашёл здесь необратимое исчезновение растительности, и это правда: именно так выглядит любая застройка. Отсечь такое должен был контекстный фильтр по OpenStreetMap, но новая застройка вокруг Астаны в него не нанесена.',
     tone: 'text-amber',
     dot: '#e3b341',
   },
@@ -299,7 +299,7 @@ export default function MapApp() {
 
       <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[22rem_1fr_23rem]">
         {/* ── Реестр: таблица решения, а не список ────────────────────── */}
-        <aside className="flex max-h-[60vh] min-h-0 flex-col border-r border-grid lg:max-h-none">
+        <aside className="order-2 flex max-h-[55vh] min-h-0 flex-col border-r border-grid lg:order-1 lg:max-h-none">
           <div className="flex shrink-0 items-center gap-2 border-b border-grid px-4 py-2.5">
             <label htmlFor="sort" className="text-xs text-muted-2">Сортировка</label>
             <select
@@ -414,7 +414,11 @@ export default function MapApp() {
         </aside>
 
         {/* ── Карта ───────────────────────────────────────────────────── */}
-        <div className="relative h-[65vh] min-h-[22rem] lg:h-auto">
+        {/* На телефоне карта идёт ПЕРВОЙ. Раньше сверху был список, и карта
+            уходила под сгиб: на демонстрации приходилось листать, прежде чем
+            показать главное. На широком экране порядок прежний — там видно всё
+            сразу. */}
+        <div className="order-1 relative h-[60vh] min-h-[20rem] lg:order-2 lg:h-auto">
           <MapView
             candidates={candidates}
             registry={registry}
@@ -462,7 +466,7 @@ export default function MapApp() {
         </div>
 
         {/* ── Карточка объекта ────────────────────────────────────────── */}
-        <aside className="min-h-0 overflow-y-auto border-l border-grid">
+        <aside className="order-3 min-h-0 overflow-y-auto border-l border-grid">
           {!current ? (
             <div className="px-5 py-8">
               <h2 className="text-xl text-line">Выберите объект</h2>
