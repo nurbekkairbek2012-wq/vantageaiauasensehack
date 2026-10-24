@@ -31,10 +31,12 @@ type Props = {
   basemap: Basemap;
   showRisk: boolean;
   showRegistry: boolean;
+  /** Куда перелететь. Меняется при выборе города; null — не трогать вид. */
+  flyTo?: { center: [number, number]; zoom: number; key: string } | null;
 };
 
 export function MapView({
-  candidates, registry, risk, selected, onSelect, basemap, showRisk, showRegistry,
+  candidates, registry, risk, selected, onSelect, basemap, showRisk, showRegistry, flyTo,
 }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
@@ -160,6 +162,18 @@ export function MapView({
       heat.current.setPoints(riskToPoints(risk));
     }
   }, [risk, showRisk]);
+
+  /* Перелёт к городу. Ключ в зависимостях, а не сам объект: нажатие на
+     тот же город должно возвращать вид на место, даже если координаты не
+     изменились. */
+  useEffect(() => {
+    const m = map.current;
+    if (!m || !flyTo) return;
+    m.flyTo(flyTo.center, flyTo.zoom, { duration: 1.1 });
+    // подгонка охвата уже была — иначе прилёт тут же отменится
+    fitted.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flyTo?.key]);
 
   // выделение
   useEffect(() => {

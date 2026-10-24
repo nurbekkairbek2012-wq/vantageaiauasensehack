@@ -14,6 +14,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { MapView } from './components/MapView';
 import { BasemapSwitch } from './components/BasemapSwitch';
+import { CitySwitch, type City } from './components/CitySwitch';
 import type { Basemap } from './components/basemaps';
 import { Nav } from './components/Nav';
 import { Act } from './components/Act';
@@ -158,6 +159,9 @@ export default function MapApp() {
   const [showRisk, setShowRisk] = useState(false);
   const [showRegistry, setShowRegistry] = useState(true);
   const [failed, setFailed] = useState(false);
+  const [cities, setCities] = useState<City[]>([]);
+  const [city, setCity] = useState<string | null>(null);
+  const [flyTo, setFlyTo] = useState<{ center: [number, number]; zoom: number; key: string } | null>(null);
 
   /* Список и карта — две проекции одного набора, и выбор в одной обязан
      быть виден в другой. Клик по объекту на карте раньше подсвечивал
@@ -171,6 +175,17 @@ export default function MapApp() {
     Promise.all([load('candidates'), load('registry'), load('risk_public')])
       .then(([c, g, r]) => { setCandidates(c); setRegistry(g); setRisk(r); })
       .catch(() => setFailed(true));
+
+    fetch('./data/cities.json')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((list: City[]) => {
+        setCities(list);
+        // Открываемся на городе, где что-то найдено, а не на первом в
+        // списке: пустая карта на старте выглядит как поломка.
+        const ready = list.find((c) => c.count > 0);
+        if (ready) setCity(ready.id);
+      })
+      .catch(() => setCities([]));
   }, []);
 
   const rows = useMemo(() => {
@@ -387,10 +402,21 @@ export default function MapApp() {
             basemap={basemap}
             showRisk={showRisk}
             showRegistry={showRegistry}
+            flyTo={flyTo}
           />
 
           <div className="pointer-events-none absolute left-3 top-3 z-[500] flex flex-col gap-2">
             <BasemapSwitch value={basemap} onChange={setBasemap} className="pointer-events-auto" />
+            <CitySwitch
+              cities={cities}
+              current={city}
+              onSelect={(next) => {
+                setCity(next.id);
+                setSelected(null);
+                setFlyTo({ center: next.center, zoom: next.zoom, key: `${next.id}:${Date.now()}` });
+              }}
+              className="pointer-events-auto"
+            />
             <div className="pointer-events-auto flex flex-col gap-1.5 rounded-sm border border-grid bg-soot/90 px-3 py-2 text-xs backdrop-blur-sm">
               <label className="flex cursor-pointer items-center gap-2">
                 <input type="checkbox" checked={showRisk} onChange={(e) => setShowRisk(e.target.checked)} />

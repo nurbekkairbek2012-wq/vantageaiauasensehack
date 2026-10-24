@@ -1,6 +1,5 @@
 {
-  "telegram_bot": null,
-  "telegram_link": null,
-  "qr": null,
-  "_как_заполнить": "python scripts/make_bot_qr.py @имя_бота — имя выдаёт @BotFather, выдумывать его нельзя"
+ "telegram_bot": "vantageee_ai_bot",
+ "telegram_link": "https://t.me/vantageee_ai_bot",
+ "qr": "./bot-qr.svg"
 }

@@ -1,0 +1,32 @@
+[
+ {
+  "id": "astana",
+  "name": "Астана",
+  "center": [
+   51.21,
+   71.5
+  ],
+  "zoom": 11,
+  "count": 30
+ },
+ {
+  "id": "almaty",
+  "name": "Алматы",
+  "center": [
+   43.35,
+   76.86
+  ],
+  "zoom": 12,
+  "count": 0
+ },
+ {
+  "id": "shymkent",
+  "name": "Шымкент",
+  "center": [
+   42.39,
+   69.6
+  ],
+  "zoom": 12,
+  "count": 0
+ }
+]

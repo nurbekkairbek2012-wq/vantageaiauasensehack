@@ -131,10 +131,41 @@ export default function App() {
 
       <main className="mx-auto max-w-[1240px] px-6">
         {/* ── Первый экран ──────────────────────────────────────────── */}
-        <section className="pt-12 pb-16">
+        <section className="relative pt-12 pb-16">
+          {/* Мягкое свечение за первым экраном. Единственное украшение на
+              странице, и стоит оно здесь по делу: тёмная страница без
+              градиента читается как консоль, а первый экран должен читаться
+              как продукт. Дальше по странице свечения нет — иначе оно
+              перестаёт что-либо выделять. */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -top-24 left-1/2 -z-10 h-[38rem] w-[72rem] -translate-x-1/2 opacity-70"
+            style={{
+              background:
+                'radial-gradient(60% 50% at 50% 40%, rgba(124,58,237,.22), rgba(13,9,24,0) 70%)',
+            }}
+          />
+
           <div className="grid items-start gap-8 lg:grid-cols-[1.15fr_1fr]">
             <div>
-              <div className="rounded-sm border border-grid bg-soot-2 p-3 md:p-6">
+              {/* Карточка ленты: рамка светлеет сверху, фон уходит вниз в
+                  темноту. Плоский прямоугольник рядом с крупным заголовком
+                  выглядел заготовкой, а не главным изображением страницы. */}
+              <div
+                className="rounded-md border border-grid p-3 md:p-6"
+                style={{
+                  background:
+                    'linear-gradient(180deg, #1a1330 0%, #150f26 45%, #110c20 100%)',
+                  boxShadow:
+                    '0 1px 0 rgba(167,139,250,.14) inset, 0 24px 60px -30px rgba(76,29,149,.75)',
+                }}
+              >
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="font-display text-[11px] uppercase tracking-[0.16em] text-violet-lit">
+                    Наблюдение одного пикселя
+                  </span>
+                  <span className="tabular text-[11px] text-muted-2">2018 — 2026</span>
+                </div>
                 {series ? (
                   <Tape data={series} />
                 ) : (
@@ -142,8 +173,8 @@ export default function App() {
                 )}
               </div>
               <p className="mt-2.5 text-xs text-muted-2">
-                Восемь лет наблюдений одного пикселя. Провал не сезонный —
-                после него сигнал не вернулся.
+                Провал не сезонный — после него сигнал не вернулся. Именно
+                это отличает свалку от пашни и от гари.
               </p>
             </div>
 
@@ -179,15 +210,22 @@ export default function App() {
                   : '.'}
               </p>
 
-              <dl className="mt-8 grid grid-cols-3 gap-4 border-t border-grid pt-6">
+              <dl className="mt-8 grid grid-cols-3 border-t border-grid pt-6">
                 {[
-                  ['Найдено', String(totals.count)],
-                  ['Подтверждено глазами', String(totals.confirmed)],
-                  ['Ущерб', kzt(totals.damage)],
-                ].map(([k, v]) => (
-                  <div key={k}>
-                    <dt className="text-xs text-muted-2">{k}</dt>
-                    <dd className="tabular mt-1 font-display text-[clamp(1.3rem,2.4vw,1.9rem)] leading-none text-line">
+                  ['Найдено', String(totals.count), false],
+                  ['Подтверждено глазами', String(totals.confirmed), true],
+                  ['Ущерб', kzt(totals.damage), false],
+                ].map(([k, v, accent], i) => (
+                  <div
+                    key={String(k)}
+                    className={i > 0 ? 'border-l border-grid pl-4' : 'pr-4'}
+                  >
+                    <dt className="text-xs leading-snug text-muted-2">{k}</dt>
+                    <dd
+                      className={`tabular mt-1.5 font-display text-[clamp(1.5rem,2.8vw,2.2rem)] leading-none ${
+                        accent ? 'text-violet-lit' : 'text-line'
+                      }`}
+                    >
                       {v}
                     </dd>
                   </div>
