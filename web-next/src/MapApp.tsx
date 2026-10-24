@@ -171,8 +171,19 @@ function humanDate(v: unknown) {
 }
 
 /** Слагаемые ущерба по одному объекту — из economy.json. */
-type Split = { removal: number; recyclable: number; climate: number };
-type EconRow = { id: string; removal_kzt: number; recyclable_kzt: number; climate_kzt: number };
+/** Слагаемые ущерба и сравнение решений по одному объекту. */
+type Split = {
+  removal: number; recyclable: number; climate: number;
+  plain: number; sorted: number; saving: number;
+  savingLow: number; savingHigh: number;
+  breakeven: number; nextYear: number;
+};
+type EconRow = {
+  id: string; removal_kzt: number; recyclable_kzt: number; climate_kzt: number;
+  plain_kzt: number; sorted_kzt: number; saving_kzt: number;
+  saving_p10: number; saving_p90: number;
+  breakeven_share: number; co2e_next_year_t: number;
+};
 
 type SortKey = 'visual' | 'probability' | 'evidence_score' | 'damage_p50' | 'area_m2' | 'break_date' | 'risk_of_cover';
 
@@ -227,6 +238,9 @@ export default function MapApp() {
         const rows: EconRow[] = d?.objects ?? [];
         setMoney(new Map(rows.map((o) => [o.id, {
           removal: o.removal_kzt, recyclable: o.recyclable_kzt, climate: o.climate_kzt,
+          plain: o.plain_kzt, sorted: o.sorted_kzt, saving: o.saving_kzt,
+          savingLow: o.saving_p10, savingHigh: o.saving_p90,
+          breakeven: o.breakeven_share, nextYear: o.co2e_next_year_t,
         }])));
       })
       .catch(() => setMoney(new Map()));
@@ -355,6 +369,29 @@ export default function MapApp() {
   }, [candidates, sort]);
 
   const current = rows.find((f) => f.properties.candidate_id === selected) ?? null;
+
+  /* Прямая ссылка на объект: map.html?object=C00061.
+   *
+   * Нужна ровно для одного — для живой демонстрации. Семь минут питча
+   * не то место, где выступающий ищет нужную строку в списке из
+   * пятнадцати, промахивается и извиняется. Ссылка открывает карту сразу
+   * на объекте, с которого начинается рассказ.
+   *
+   * Срабатывает один раз и только если объект в выгрузке есть: ссылка на
+   * снятый объект должна открыть карту как обычно, а не пустую карточку
+   * с чужим номером. */
+  const deepLinked = useRef(false);
+  useEffect(() => {
+    if (deepLinked.current || !rows.length) return;
+    const wanted = new URLSearchParams(window.location.search).get('object');
+    if (!wanted) { deepLinked.current = true; return; }
+    const row = rows.find((f) => String(f.properties.candidate_id) === wanted);
+    if (!row) { deepLinked.current = true; return; }
+    deepLinked.current = true;
+    setSelected(wanted);
+    const centre = centerOf(row);
+    if (centre) setFlyTo({ center: centre, zoom: 15, key: `link:${wanted}` });
+  }, [rows]);
 
   useEffect(() => {
     if (!selected) return;
@@ -944,6 +981,59 @@ function ObjectCard({ f, split }: { f: Feature; split?: Split }) {
           >
             Как это считается и откуда допущения →
           </a>
+        </>
+      )}
+
+      {/* Рекомендация: что с этим объектом выгоднее сделать.
+       *
+       * Пятый шаг сценария и, судя по вопросам, самый нужный. До него
+       * карточка отвечала на вопрос «сколько эта свалка стоит» — а
+       * инспектор, стоящий перед ней, решает другое: везти на полигон
+       * как есть или разбирать на площадке. Сумма ущерба на этот вопрос
+       * не отвечает вообще.
+       *
+       * Разбор дороже работой и дешевле итогом, пока внутри есть что
+       * сдать. Точка, в которой он перестаёт окупаться, названа прямо:
+       * это единственное число, которое надо спросить у подрядчика,
+       * чтобы проверить рекомендацию, — и его же мы просим на пилоте. */}
+      {split && (
+        <>
+          <h3 className="mt-7 text-sm text-muted-2">Что выгоднее сделать</h3>
+          <dl className="mt-2 overflow-hidden rounded-sm border border-grid">
+            <div className="flex items-baseline justify-between gap-3 border-b border-grid px-3 py-2.5">
+              <dt className="text-sm text-muted">Вывезти как есть</dt>
+              <dd className="tabular whitespace-nowrap text-sm text-muted">{kzt(split.plain)}</dd>
+            </div>
+            <div className="flex items-baseline justify-between gap-3 bg-violet-deep/25 px-3 py-2.5">
+              <dt className="text-sm text-line">
+                Вывезти с разбором
+                <span className="ml-2 text-[10px] uppercase tracking-[0.08em] text-violet-lit">
+                  рекомендуем
+                </span>
+              </dt>
+              <dd className="tabular whitespace-nowrap text-sm text-line">{kzt(split.sorted)}</dd>
+            </div>
+            <div className="flex items-baseline justify-between gap-3 border-t border-grid px-3 py-2.5">
+              <dt className="text-sm text-emerald">Экономия</dt>
+              <dd className="tabular whitespace-nowrap font-display text-base text-emerald">{kzt(split.saving)}</dd>
+            </div>
+          </dl>
+          <p className="mt-2 text-xs leading-snug text-muted-2">
+            Разбор окупается, пока он дешевле{' '}
+            <span className="text-line">{Math.round(split.breakeven * 100)}%</span> стоимости
+            вывоза — столько стоит сырьё внутри этой кучи. Наша оценка разбора —
+            30%.{' '}
+            {split.savingLow <= 0
+              ? 'При худшем сочетании цен экономия сходит к нулю, и тогда решения равны.'
+              : `В худшем случае экономия ${kzt(split.savingLow)}, в лучшем ${kzt(split.savingHigh)}.`}
+          </p>
+          {split.nextYear > 0 && (
+            <p className="mt-1.5 text-xs leading-snug text-muted-2">
+              Если не трогать — за год объект отдаст ещё{' '}
+              <span className="text-amber">{num(split.nextYear, 1)} т CO₂-экв</span>, и
+              это уже не вернуть уборкой.
+            </p>
+          )}
         </>
       )}
 

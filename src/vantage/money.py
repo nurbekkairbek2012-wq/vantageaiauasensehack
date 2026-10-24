@@ -90,6 +90,18 @@ class DamageAssessment:
     climate_cost_kzt: Percentiles
     net_damage_kzt: Percentiles
 
+    #: Во сколько обойдётся объект при каждом из двух решений и что даёт
+    #: выбор в пользу разбора. Это ответ на вопрос «что делать», а не
+    #: «сколько стоит», и он считается здесь же, чтобы рекомендация и
+    #: сумма не разъехались.
+    plain_removal_kzt: Percentiles
+    sorted_removal_kzt: Percentiles
+    sorting_saving_kzt: Percentiles
+    #: Доля от стоимости вывоза, при которой разбор перестаёт окупаться.
+    #: Единственное число, которое надо спросить у подрядчика, чтобы
+    #: проверить рекомендацию.
+    breakeven_surcharge_share: Percentiles
+
     penalty_mrp: int
     penalty_kzt: float
     penalty_article: str
@@ -175,6 +187,11 @@ def assess(
         age_years=float(age_years),
         climate_cost_kzt=Percentiles.of(draw["climate_cost_kzt"], percentiles),
         net_damage_kzt=Percentiles.of(draw["net_damage_kzt"], percentiles),
+        plain_removal_kzt=Percentiles.of(draw["plain_removal_kzt"], percentiles),
+        sorted_removal_kzt=Percentiles.of(draw["sorted_removal_kzt"], percentiles),
+        sorting_saving_kzt=Percentiles.of(draw["sorting_saving_kzt"], percentiles),
+        breakeven_surcharge_share=Percentiles.of(
+            draw["breakeven_surcharge_share"], percentiles),
         penalty_mrp=penalty_mrp,
         penalty_kzt=penalty_mrp * mrp_value,
         penalty_article=penalty_article,
@@ -197,7 +214,7 @@ def assess(
 #: Остальные допущения — глубина, плотность, доля органики, извлекаемость
 #: фракции — свойства конкретной кучи и разыгрываются по каждой отдельно.
 SHARED_ASSUMPTIONS: tuple[str, ...] = (
-    "base_cost", "surcharge", "carbon_price", "k",
+    "base_cost", "surcharge", "carbon_price", "k", "sorting_share",
     *(f"price_{fraction}" for fraction in RECYCLABLE_FRACTIONS),
 )
 
@@ -317,6 +334,33 @@ def _draw(
     # такую свалку выгодно разобрать, а не просто вывезти на полигон.
     net_damage = removal_cost - recyclable_value + climate_cost
 
+    # --- 6. Что выгоднее сделать ------------------------------------------ #
+    #
+    # До этого места денежный слой отвечал на вопрос «сколько стоит эта
+    # свалка». Заказчику нужен другой ответ — «что с ней делать», а он
+    # получается сравнением решений, а не одной суммой.
+    #
+    # Решений два, и различаются они не техникой, а тем, куда уезжает
+    # содержимое кучи:
+    #
+    #   обычный вывоз — всё на полигон, сырьё потеряно, платим только
+    #                   за перевозку и захоронение;
+    #   вывоз с разбором — те же тонны, но с сортировкой на площадке:
+    #                   дороже работой, дешевле итогом, если внутри есть
+    #                   что сдать.
+    #
+    # Разбор окупается ровно до тех пор, пока надбавка за него меньше
+    # стоимости извлекаемого сырья. Точка безубыточности считается по
+    # каждому объекту отдельно и выражается долей от стоимости вывоза —
+    # это то единственное число, которое надо спросить у подрядчика,
+    # чтобы проверить рекомендацию.
+    surcharge_share = take("sorting_share", "sorting_surcharge_share")
+    plain_cost = removal_cost
+    sorted_cost = removal_cost * (1.0 + surcharge_share) - recyclable_value
+    sorting_saving = plain_cost - sorted_cost
+    # Деление безопасно: removal_cost положителен всюду, где площадь > 0.
+    breakeven_share = recyclable_value / removal_cost
+
     return {
         "volume_m3": volume,
         "mass_t": mass,
@@ -328,6 +372,10 @@ def _draw(
         "co2e_preventable_t": co2e_preventable_t,
         "climate_cost_kzt": climate_cost,
         "net_damage_kzt": net_damage,
+        "plain_removal_kzt": plain_cost,
+        "sorted_removal_kzt": sorted_cost,
+        "sorting_saving_kzt": sorting_saving,
+        "breakeven_surcharge_share": breakeven_share,
     }
 
 
@@ -376,6 +424,7 @@ def portfolio(
         "surcharge": economics.triangular("transport_surcharge_per_km_kzt_per_t").sample(rng, n),
         "carbon_price": economics.triangular("carbon_price_kzt_per_t_co2e").sample(rng, n),
         "k": economics.triangular("methane", "k_rate_per_year").sample(rng, n),
+        "sorting_share": economics.triangular("sorting_surcharge_share").sample(rng, n),
     }
     for fraction in RECYCLABLE_FRACTIONS:
         shared[f"price_{fraction}"] = economics.triangular(
@@ -393,7 +442,17 @@ def portfolio(
             shared=shared,
         )
         for key, values in draw.items():
+            # Доля не складывается: сумма пятнадцати долей — не доля.
+            # По списку она считается отдельно, из сумм слагаемых.
+            if key == "breakeven_surcharge_share":
+                continue
             total[key] = total[key] + values if key in total else values.copy()
+
+    # Точка безубыточности по списку целиком: столько стоит всё сырьё
+    # относительно всего вывоза. Считается из сумм, а не усреднением
+    # долей по объектам — крупная свалка весит больше мелкой.
+    total["breakeven_surcharge_share"] = (
+        total["recyclable_value_kzt"] / total["removal_cost_kzt"])
 
     return {key: Percentiles.of(values, percentiles) for key, values in total.items()}
 

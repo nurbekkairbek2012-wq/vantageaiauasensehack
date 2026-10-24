@@ -83,7 +83,7 @@ type Money = {
     co2e_emitted_t: number;
     co2e_t: number;
   };
-  priority: { n: number; share: number }[];
+  priority: { n: number; id: string; share: number }[];
 };
 type Metrics = { lift: number; pr_auc_future: number; base_rate_future: number; cells?: number;
   /* Интервал по бутстрэпу. Положительных ячеек единицы, и середина без
@@ -493,6 +493,68 @@ export default function App() {
                       {value}
                     </div>
                     <div className="mt-1.5 text-xs leading-snug text-muted-2">{note}</div>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </section>
+        )}
+
+        {/* ── Сценарий за минуту ────────────────────────────────────
+            Богатство интерфейса — преимущество ровно до того момента,
+            когда за ним теряется главный путь. У нас семь поверхностей,
+            и человек, попавший сюда впервые, не обязан догадываться, с
+            какой начать и чем кончить.
+
+            Поэтому путь назван явно, шестью шагами, и открывается одной
+            ссылкой — сразу на том объекте, с которого его показывают.
+            Искать нужную строку в списке из пятнадцати во время
+            демонстрации — худшее, что можно сделать с первой минутой. */}
+        {money && (
+          <section id="scenario" className="border-t border-grid pt-14 pb-16">
+            <div className="grid gap-10 lg:grid-cols-[1fr_1.15fr]">
+              <div>
+                <h2 className="max-w-[20ch] text-[clamp(1.7rem,3.6vw,2.6rem)] text-line">
+                  Весь продукт за одну минуту
+                </h2>
+                <p className="mt-4 max-w-[52ch] text-muted">
+                  Один объект проходит путь целиком: от точки на снимке до
+                  сметы и подписанного акта. Остальные экраны —{' '}
+                  <a href="./forecast.html" className="text-violet-lit underline decoration-grid">прогноз</a>,{' '}
+                  <a href="./timelapse.html" className="text-violet-lit underline decoration-grid">таймлапс</a>,{' '}
+                  <a href="./citizen.html" className="text-violet-lit underline decoration-grid">гражданский контур</a>{' '}
+                  — про то же самое, но с других сторон, и на этот путь не
+                  нужны.
+                </p>
+                {money.priority[0]?.id && (
+                  <a
+                    href={`./map.html?object=${money.priority[0].id}`}
+                    className="mt-6 inline-block rounded-sm bg-violet px-5 py-3 font-display text-sm font-semibold uppercase tracking-[0.12em] text-paper no-underline transition-colors duration-200 hover:bg-violet-lit hover:text-soot"
+                  >
+                    Пройти сценарий →
+                  </a>
+                )}
+                <p className="mt-3 max-w-[44ch] text-xs leading-snug text-muted-2">
+                  Ссылка открывает карту сразу на самом дорогом объекте
+                  области — шаг второй. Первый виден по дороге.
+                </p>
+              </div>
+
+              <ol className="grid gap-px overflow-hidden rounded-md border border-grid bg-grid sm:grid-cols-2">
+                {[
+                  ['Открыл карту', 'очередь по деньгам, а не список точек'],
+                  ['Взял верхний объект', 'самый дорогой в области'],
+                  ['Увидел доказательства', 'снимок до и после, пять признаков с весами'],
+                  ['Увидел деньги', 'вывоз, возврат сырьём, интервал'],
+                  ['Получил рекомендацию', 'что выгоднее сделать и на сколько'],
+                  ['Сформировал действие', 'черновик акта и контроль устранения'],
+                ].map(([step, note], i) => (
+                  <li key={String(step)} className="bg-soot-2 px-4 py-4">
+                    <div className="tabular font-display text-[11px] tracking-[0.14em] text-violet-lit">
+                      ШАГ {i + 1}
+                    </div>
+                    <div className="mt-1.5 text-base leading-snug text-line">{step}</div>
+                    <div className="mt-1 text-xs leading-snug text-muted-2">{note}</div>
                   </li>
                 ))}
               </ol>

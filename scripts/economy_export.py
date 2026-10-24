@@ -69,6 +69,7 @@ TRACKED = {
     "morphology": "морфология свалки",
     "recyclable_price_kzt_per_kg": "прайс приёмки вторсырья",
     "recovery_rate": "извлекаемая доля фракции",
+    "sorting_surcharge_share": "надбавка за разбор на месте",
     "carbon_price_kzt_per_t_co2e": "цена углеродной единицы",
     "methane": "модель разложения (IPCC FOD)",
     "mrp_kzt": "месячный расчётный показатель",
@@ -147,6 +148,19 @@ def main() -> int:
             "damage_p10": round(now.net_damage_kzt.p10),
             "damage_p50": round(now.net_damage_kzt.p50),
             "damage_p90": round(now.net_damage_kzt.p90),
+            # Что выгоднее сделать: два решения и цена выбора между ними.
+            "plain_kzt": round(now.plain_removal_kzt.p50),
+            "sorted_kzt": round(now.sorted_removal_kzt.p50),
+            # Экономия — разность показанных величин, а не медиана
+            # разности. Величины эти отличаются (3,30 против 3,10 млн ₸
+            # на крупнейшем объекте), и обе верны, но вычитает столбец
+            # читатель. Число, которое не сходится с таблицей над ним,
+            # обесценивает и таблицу, и объяснение.
+            # Честный разброс экономии — рядом, из того же розыгрыша.
+            "saving_kzt": round(now.plain_removal_kzt.p50 - now.sorted_removal_kzt.p50),
+            "saving_p10": round(now.sorting_saving_kzt.p10),
+            "saving_p90": round(now.sorting_saving_kzt.p90),
+            "breakeven_share": round(now.breakeven_surcharge_share.p50, 3),
             "co2e_t": round(now.co2e_t.p50, 1),
             "co2e_emitted_t": round(now.co2e_emitted_t.p50, 1),
             "co2e_preventable_t": round(now.co2e_preventable_t.p50, 1),
@@ -205,6 +219,14 @@ def main() -> int:
             "recyclable_kzt": _pct(whole["recyclable_value_kzt"]),
             "climate_kzt": _pct(whole["climate_cost_kzt"]),
             "damage_kzt": _pct(whole["net_damage_kzt"]),
+            # Решения по списку целиком. Интервал экономии считается по
+            # портфелю: надбавка за разбор у подрядчика одна на все
+            # объекты, и разыгрывать её по каждому заново значило бы
+            # обещать усреднение, которого не будет.
+            "plain_kzt": _pct(whole["plain_removal_kzt"]),
+            "sorted_kzt": _pct(whole["sorted_removal_kzt"]),
+            "saving_kzt": _pct(whole["sorting_saving_kzt"]),
+            "breakeven_share": round(whole["breakeven_surcharge_share"].p50, 3),
             "naive_damage_kzt": {
                 "p10": sum(o["damage_p10"] for o in objects),
                 "p50": sum(o["damage_p50"] for o in objects),
@@ -232,6 +254,9 @@ def main() -> int:
                 "co2e_emitted_t": round(sum(o["co2e_emitted_t"] for o in objects), 1),
                 "co2e_preventable_t": round(sum(o["co2e_preventable_t"] for o in objects), 1),
                 "co2e_next_year_t": round(sum(o["co2e_next_year_t"] for o in objects), 1),
+                "plain_kzt": sum(o["plain_kzt"] for o in objects),
+                "sorted_kzt": sum(o["sorted_kzt"] for o in objects),
+                "saving_kzt": sum(o["plain_kzt"] - o["sorted_kzt"] for o in objects),
             },
             "co2e_t": round(whole["co2e_t"].p50, 1),
             "co2e_emitted_t": round(whole["co2e_emitted_t"].p50, 1),
@@ -264,6 +289,12 @@ def main() -> int:
           f"{t['naive_damage_kzt']['p10'] / 1e6:.1f}–"
           f"{t['naive_damage_kzt']['p90'] / 1e6:.1f} млн ₸")
     print(f"   год ожидания: {t['waiting_year_co2e_t']:,.0f} т CO₂-экв".replace(",", " "))
+    som = t["sum_of_medians"]
+    print(f"   решение: обычный вывоз {som['plain_kzt'] / 1e6:.1f} млн ₸ против "
+          f"{som['sorted_kzt'] / 1e6:.1f} млн ₸ с разбором, "
+          f"экономия {som['saving_kzt'] / 1e6:.1f} млн ₸")
+    print(f"   разбор окупается, пока он дешевле "
+          f"{t['breakeven_share']:.0%} стоимости вывоза")
     return 0
 
 

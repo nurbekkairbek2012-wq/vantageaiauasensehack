@@ -99,6 +99,20 @@ def facts() -> dict[str, list]:
             ["README.md", "docs/QA.md", "docs/PITCH.md"],
         ],
         "опубликовано": [str(queue["published"]), ["README.md", "docs/QA.md", "docs/PITCH.md"]],
+        # Решение — то, ради чего продукт существует, и его числа
+        # сторожатся так же, как остальные.
+        "обычный вывоз, млн ₸": [
+            ru(sums["plain_kzt"] / 1e6, 1),
+            ["README.md", "docs/QA.md", "docs/PITCH.md"],
+        ],
+        "вывоз с разбором, млн ₸": [
+            ru(sums["sorted_kzt"] / 1e6, 1),
+            ["README.md", "docs/QA.md", "docs/PITCH.md"],
+        ],
+        "экономия выбора, млн ₸": [
+            ru(sums["saving_kzt"] / 1e6, 1),
+            ["README.md", "docs/QA.md", "docs/PITCH.md"],
+        ],
         "выездов на половину суммы": [str(cut(0.5)), ["README.md", "docs/QA.md"]],
         "выездов на 80% суммы": [str(cut(0.8)), ["docs/QA.md"]],
         "CO₂-экв уже выброшено, т": [

@@ -143,6 +143,57 @@ def main() -> int:
                       f"ошибок {len(errors)}, неудачных запросов {len(failures)}")
                 context.close()
 
+            # ── Сценарий за минуту ─────────────────────────────────────
+            #
+            # Главный путь продукта: лендинг → карта на нужном объекте →
+            # доказательства → деньги → рекомендация → действие. Именно
+            # его показывают на защите, и именно он ломается тише всего:
+            # каждый шаг живёт в своём файле, а рвётся связка между ними.
+            #
+            # Проверяются не тексты ради текстов, а наличие каждого шага.
+            # Пропавшая рекомендация или мёртвая прямая ссылка обнулят
+            # демонстрацию, и узнать об этом на сцене — поздно.
+            context = browser.new_context(viewport={"width": 1440, "height": 900})
+            page = context.new_page()
+            page.goto(f"http://127.0.0.1:{PORT}/index.html",
+                      wait_until="networkidle", timeout=60_000)
+            page.wait_for_timeout(2500)
+
+            steps: list[tuple[str, bool]] = []
+            link = page.locator("#scenario a", has_text="Пройти сценарий")
+            href = link.get_attribute("href") if link.count() else None
+            steps.append(("ссылка сценария", bool(href and "object=" in href)))
+
+            if href:
+                page.goto(f"http://127.0.0.1:{PORT}/{href.lstrip('./')}",
+                          wait_until="networkidle", timeout=60_000)
+                page.wait_for_timeout(4000)
+                # Прямая ссылка обязана открыть карточку сама: если она
+                # молча откроет карту без выбора, выступающий будет искать
+                # строку руками и потеряет полминуты.
+                opened = page.locator("aside h2").first
+                wanted = href.split("object=")[-1]
+                steps.append(("объект открыт ссылкой",
+                              opened.count() > 0 and wanted in opened.inner_text()))
+                # inner_text отдаёт ОТРИСОВАННЫЙ текст: подпись
+                # «рекомендуем» набрана строчными, а показывается
+                # прописными из-за text-transform. Сверять надо в одном
+                # регистре, иначе проверка падает на верной странице.
+                body = page.inner_text("body").lower()
+                for name, phrase in (("доказательства", "признаки"),
+                                     ("деньги", "вывоз и захоронение"),
+                                     ("рекомендация", "что выгоднее сделать"),
+                                     ("выбор назван", "рекомендуем"),
+                                     ("действие", "черновик акта")):
+                    steps.append((name, phrase in body))
+
+            broken = [name for name, ok in steps if not ok]
+            mark = "OK  " if not broken else "!!  "
+            print(f"{mark}{'сценарий':16s} шагов пройдено {len(steps) - len(broken)} из {len(steps)}")
+            if broken:
+                problems.append("сценарий за минуту оборван: " + ", ".join(broken))
+            context.close()
+
             # ── Карта без интернета ────────────────────────────────────
             #
             # На защите вайфай в зале может не работать, и это не редкость,

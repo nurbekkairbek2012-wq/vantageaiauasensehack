@@ -119,6 +119,10 @@ def numbers() -> dict:
         "emitted": sums["co2e_emitted_t"],
         "co2_total": sums["co2e_t"],
         "irreversible": 100 * sums["co2e_emitted_t"] / sums["co2e_t"],
+        "plain": sums["plain_kzt"] / 1e6,
+        "sorted": sums["sorted_kzt"] / 1e6,
+        "saving": sums["saving_kzt"] / 1e6,
+        "breakeven": 100 * econ["totals"]["breakeven_share"],
         "half_trips": cut(0.5),
         "most_trips": cut(0.8),
         "rho_removal": econ["sensitivity"].get("removal_cost", 0.0),
@@ -301,8 +305,8 @@ def slides(n: dict) -> str:
           <dd class="num big lit">{ru(n['mass_sum'])}<span style="font-size:30px"> т</span></dd></div>
         <div class="stat"><dt>Потери бюджета по списку</dt>
           <dd class="num big">{ru(n['net'], 1)}<span style="font-size:30px"> млн ₸</span></dd></div>
-        <div class="stat"><dt>Стоимости уборки вернёт вторсырьё</dt>
-          <dd class="num big em">{ru(n['recovery'])}<span style="font-size:30px">%</span></dd></div>
+        <div class="stat"><dt>Экономия правильного решения</dt>
+          <dd class="num big em">{ru(n['saving'], 1)}<span style="font-size:30px"> млн ₸</span></dd></div>
       </dl>
       {foot(1, 'титул')}</section>""")
 
@@ -418,30 +422,29 @@ def slides(n: dict) -> str:
     # 5 ── Экономический эффект
     s.append(f"""<section class="slide">
       <div class="kicker">Экономический эффект</div>
-      <h2>Отходы — это ресурс,<br>вывезенный мимо экономики</h2>
+      <h2>Не «сколько это стоит»,<br>а «что выгоднее сделать»</h2>
       <div class="body">
       <div class="row" style="margin-top:12px">
-        <div class="col" style="flex:1.15">{shot('economy.png')}</div>
+        <div class="col" style="flex:1.15">{shot('decision.png')}</div>
         <div class="col">
+          <p class="note" style="margin-bottom:10px">Сумма ущерба — диагноз.
+            Решение принимается сравнением двух смет:</p>
           <table>
-            <tr><td class="k">Вывоз и захоронение</td>
-                <td class="r">+{ru(n['removal'], 1)} млн ₸</td></tr>
-            <tr><td class="k">Извлекаемое вторсырьё</td>
-                <td class="r em">−{ru(n['recyclable'], 1)} млн ₸</td></tr>
-            <tr><td class="k">Климатический ущерб</td>
-                <td class="r am">+{ru(n['climate'], 1)} млн ₸</td></tr>
-            <tr><td class="k">Чистые потери</td>
-                <td class="r lit">{ru(n['net'], 1)} млн ₸</td></tr>
+            <tr><td class="k">Вывезти как есть</td>
+                <td class="r">{ru(n['plain'], 1)} млн ₸</td></tr>
+            <tr><td class="k">Вывезти с разбором</td>
+                <td class="r lit">{ru(n['sorted'], 1)} млн ₸</td></tr>
+            <tr><td class="k">Экономия выбора</td>
+                <td class="r em">{ru(n['saving'], 1)} млн ₸</td></tr>
           </table>
-          <div class="num mid em" style="margin-top:24px">{ru(n['recovery'])}%</div>
-          <p class="note" style="margin-top:8px">стоимости уборки возвращается
-            вторсырьём — если приехать с сортировкой, а не с самосвалом.
-            Это и есть финансовая половина EcoFin: свалка перестаёт быть
-            только статьёй расхода.</p>
-          <p class="note" style="margin-top:16px">
-            Интервал по списку целиком — {ru(n['band_low'], 1)}–{ru(n['band_high'], 1)} млн ₸,
-            20 000 итераций Монте-Карло. Цены на каждой итерации одни для
-            всех объектов: тариф на вывоз в городе один.</p>
+          <div class="num mid em" style="margin-top:22px">{ru(n['breakeven'])}%</div>
+          <p class="note" style="margin-top:8px">до этой доли от стоимости
+            вывоза разбор окупается — столько стоит сырьё внутри. Наша оценка
+            надбавки за разбор — 30%, запас почти двукратный.</p>
+          <p class="note" style="margin-top:14px">Это единственное число,
+            которое надо спросить у подрядчика, чтобы проверить весь расчёт.
+            Станет дороже — рекомендация меняется на обратную, и мы скажем об
+            этом первыми.</p>
         </div>
       </div>
             </div>

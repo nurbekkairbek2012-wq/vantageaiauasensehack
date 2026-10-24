@@ -69,6 +69,10 @@ type Economy = {
     climate_kzt: Band;
     damage_kzt: Band;
     naive_damage_kzt: Band;
+    plain_kzt: Band;
+    sorted_kzt: Band;
+    saving_kzt: Band;
+    breakeven_share: number;
     sum_of_medians: {
       mass_t: number;
       removal_kzt: number;
@@ -79,6 +83,9 @@ type Economy = {
       co2e_emitted_t: number;
       co2e_preventable_t: number;
       co2e_next_year_t: number;
+      plain_kzt: number;
+      sorted_kzt: number;
+      saving_kzt: number;
     };
     co2e_t: number;
     co2e_emitted_t: number;
@@ -217,7 +224,7 @@ export default function Economy() {
 
       <main className="mx-auto max-w-[1240px] px-6">
         {/* ── Ответ на вопрос трека ─────────────────────────────────── */}
-        <section className="border-b border-grid pt-12 pb-14">
+        <section id="answer" className="border-b border-grid pt-12 pb-14">
           <p className="font-display text-[11px] uppercase tracking-[0.16em] text-violet-lit">
             Экономический эффект
           </p>
@@ -258,7 +265,7 @@ export default function Economy() {
         </section>
 
         {/* ── Из чего складывается сумма ────────────────────────────── */}
-        <section className="border-b border-grid pt-14 pb-14">
+        <section id="breakdown" className="border-b border-grid pt-14 pb-14">
           <h2 className="max-w-[24ch] text-[clamp(1.6rem,3.4vw,2.4rem)] text-line">
             Из чего складывается {mln(sum.damage_kzt)}
           </h2>
@@ -362,8 +369,104 @@ export default function Economy() {
           </p>
         </section>
 
+        {/* ── Что выгоднее сделать ──────────────────────────────────
+            Раздел отвечает на вопрос, которого до него на сайте не было
+            вообще. «Ущерб 43 млн ₸» — это диагноз; заказчику нужен
+            рецепт, а рецепт получается сравнением решений, а не одной
+            суммой, какой бы точной она ни была.
+
+            Решения два, и различаются они тем, куда уезжает содержимое
+            кучи. Разбор дороже работой и дешевле итогом ровно до той
+            точки, где надбавка за него сравнивается со стоимостью
+            сырья внутри. Точка названа: её и надо спросить у
+            подрядчика, чтобы проверить рекомендацию. */}
+        <section id="decision" className="border-b border-grid pt-14 pb-14">
+          <h2 className="max-w-[24ch] text-[clamp(1.6rem,3.4vw,2.4rem)] text-line">
+            Что выгоднее сделать
+          </h2>
+          <p className="mt-4 max-w-[62ch] text-muted">
+            Сумма ущерба — это диагноз. Решение принимается сравнением:
+            вывезти всё на полигон как есть или разобрать на площадке и
+            сдать то, что имеет цену. Ниже — обе сметы по всем{' '}
+            {t.objects} объектам.
+          </p>
+
+          <div className="mt-8 grid gap-8 lg:grid-cols-[1.1fr_1fr]">
+            <dl className="self-start overflow-hidden rounded-md border border-grid">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-grid px-5 py-4">
+                <div className="min-w-[18ch] flex-1">
+                  <dt className="text-base text-muted">Вывезти как есть</dt>
+                  <dd className="mt-1 max-w-[44ch] text-xs leading-snug text-muted-2">
+                    всё на полигон одним самосвалом; сырьё уезжает вместе с
+                    мусором и списывается в ноль
+                  </dd>
+                </div>
+                <dd className="tabular whitespace-nowrap font-display text-xl text-muted">
+                  {mln(sum.plain_kzt)}
+                </dd>
+              </div>
+              <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 bg-violet-deep/25 px-5 py-4">
+                <div className="min-w-[18ch] flex-1">
+                  <dt className="text-base text-line">
+                    Вывезти с разбором
+                    <span className="ml-2 whitespace-nowrap rounded-full border border-violet-lit/40 px-2 py-0.5 text-[10px] uppercase tracking-[0.08em] text-violet-lit">
+                      рекомендуем
+                    </span>
+                  </dt>
+                  <dd className="mt-1 max-w-[44ch] text-xs leading-snug text-muted-2">
+                    сортировка на площадке и раздельные рейсы: дороже работой
+                    на 30%, но {mln(sum.recyclable_kzt)} возвращается приёмкой
+                  </dd>
+                </div>
+                <dd className="tabular whitespace-nowrap font-display text-xl text-line">
+                  {mln(sum.sorted_kzt)}
+                </dd>
+              </div>
+              <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-t border-grid px-5 py-4">
+                <dt className="text-base text-emerald">Экономия выбора</dt>
+                <dd className="tabular whitespace-nowrap font-display text-2xl text-emerald">
+                  {mln(sum.saving_kzt)}
+                </dd>
+              </div>
+            </dl>
+
+            <div>
+              <div className="rounded-md border border-grid bg-soot-2 p-5">
+                <div className="text-xs uppercase tracking-[0.1em] text-muted-2">
+                  Где рекомендация перестаёт работать
+                </div>
+                <div className="tabular mt-3 font-display text-[clamp(2rem,4vw,2.8rem)] leading-none text-line">
+                  {num(t.breakeven_share * 100)}%
+                </div>
+                <p className="mt-3 text-sm leading-relaxed text-muted">
+                  Столько стоит извлекаемое сырьё относительно вывоза — и
+                  ровно до этой доли разбор окупается. Наша оценка надбавки
+                  за разбор — <strong className="font-normal text-line">30%</strong>,
+                  запас почти двукратный. Станет дороже{' '}
+                  {num(t.breakeven_share * 100)}% — рекомендация меняется на
+                  обратную, и мы скажем об этом первыми.
+                </p>
+                <p className="mt-3 text-sm leading-relaxed text-muted-2">
+                  Это единственное число, которое нужно спросить у
+                  подрядчика, чтобы проверить весь расчёт. Его же мы просим
+                  первым на пилоте.
+                </p>
+              </div>
+
+              <p className="mt-5 max-w-[52ch] text-sm leading-relaxed text-muted-2">
+                Третье решение — не делать ничего — бюджету сегодня не стоит
+                ничего, и поэтому свалки лежат годами. Его цена приходит
+                позже и не деньгами: {num(sum.co2e_next_year_t)} т CO₂-экв за
+                следующий год по всему списку, сырьё продолжает гнить, а
+                объект растёт. Роста мы не моделируем и не делаем вид, что
+                моделируем.
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* ── Приоритет: рекомендация, а не список ──────────────────── */}
-        <section className="border-b border-grid pt-14 pb-14">
+        <section id="priority" className="border-b border-grid pt-14 pb-14">
           <h2 className="max-w-[26ch] text-[clamp(1.6rem,3.4vw,2.4rem)] text-line">
             {cut?.half} выезда закрывают половину суммы
           </h2>
@@ -427,7 +530,7 @@ export default function Economy() {
         </section>
 
         {/* ── Экономия на самой проверке ────────────────────────────── */}
-        <section className="border-b border-grid pt-14 pb-14">
+        <section id="screening" className="border-b border-grid pt-14 pb-14">
           <h2 className="max-w-[24ch] text-[clamp(1.6rem,3.4vw,2.4rem)] text-line">
             Вторая экономия — на самой проверке
           </h2>
@@ -469,7 +572,7 @@ export default function Economy() {
         </section>
 
         {/* ── Что уже потеряно ──────────────────────────────────────── */}
-        <section className="border-b border-grid pt-14 pb-14">
+        <section id="irreversible" className="border-b border-grid pt-14 pb-14">
           <div className="grid gap-10 lg:grid-cols-[1.1fr_1fr]">
             <div>
               <h2 className="max-w-[22ch] text-[clamp(1.6rem,3.4vw,2.4rem)] text-line">
@@ -506,7 +609,7 @@ export default function Economy() {
         </section>
 
         {/* ── Происхождение чисел ───────────────────────────────────── */}
-        <section className="border-b border-grid pt-14 pb-14">
+        <section id="provenance" className="border-b border-grid pt-14 pb-14">
           <h2 className="max-w-[24ch] text-[clamp(1.6rem,3.4vw,2.4rem)] text-line">
             Откуда взято каждое допущение
           </h2>
