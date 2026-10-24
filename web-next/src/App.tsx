@@ -51,7 +51,25 @@ const STAGE_TEXT: Record<string, { label: string; detail: string }> = {
     { label: 'Слишком далеко от жилья', detail: 'дальше 15 км — возить невыгодно' },
 };
 
+/** Согласовать существительное с числом по-русски.
+ *
+ *  Нужно потому, что числа теперь приходят из данных: при вписанных
+ *  руками формулировка подгонялась под конкретное число, а «Ещё 14
+ *  кандидата» — то, что читатель замечает раньше содержания.
+ *
+ *  plural(14, 'кандидат', 'кандидата', 'кандидатов') → 'кандидатов'
+ */
+function plural(count: number, one: string, few: string, many: string): string {
+  const mod100 = Math.abs(count) % 100;
+  if (mod100 >= 11 && mod100 <= 14) return many;
+  const mod10 = mod100 % 10;
+  if (mod10 === 1) return one;
+  if (mod10 >= 2 && mod10 <= 4) return few;
+  return many;
+}
+
 type Funnel = { raw: number; rejected: Record<string, number> };
+type Metrics = { lift: number; pr_auc_future: number; base_rate_future: number };
 
 function stagesFrom(funnel: Funnel | null): Stage[] {
   if (!funnel?.rejected) return [];
@@ -141,11 +159,16 @@ export default function App() {
      Складывать ущерб по складу под синей кровлей значит завышать итог, и
      первый же вопрос «а что вот это» обесценит всю цифру. */
   const [funnel, setFunnel] = useState<Funnel | null>(null);
+  const [metrics, setMetrics] = useState<Metrics | null>(null);
   useEffect(() => {
     fetch('./data/funnel.json')
       .then((r) => (r.ok ? r.json() : null))
       .then(setFunnel)
       .catch(() => setFunnel(null));
+    fetch('./data/metrics.json')
+      .then((r) => (r.ok ? r.json() : null))
+      .then(setMetrics)
+      .catch(() => setMetrics(null));
   }, []);
 
   const totals = useMemo(() => {
@@ -294,10 +317,11 @@ export default function App() {
                   нами — доказывает, что проверка была. */}
               {totals.rejected > 0 && (
                 <p className="mt-4 max-w-[48ch] text-sm leading-relaxed text-muted-2">
-                  Ещё {totals.rejected} кандидата детектор нашёл, а проверка по
-                  снимку 0,6 м на пиксель отвергла — склады, промплощадки и
-                  болота. Они остались на карте помеченными: удалённая ошибка
-                  неотличима от её отсутствия.
+                  Детектор нашёл ещё {totals.rejected}{' '}
+                  {plural(totals.rejected, 'кандидат', 'кандидата', 'кандидатов')}, а
+                  проверка по снимку 0,6 м на пиксель их отвергла — склады,
+                  промплощадки и болота. Они остались на карте помеченными:
+                  удалённая ошибка неотличима от её отсутствия.
                 </p>
               )}
             </div>
@@ -422,10 +446,16 @@ export default function App() {
               </a>
             </div>
             <dl className="grid grid-cols-2 gap-6 border-l border-grid pl-8">
+              {/* Метрики читаются из metrics.json, который пишет прогон.
+                  Вписанные руками уже разошлись: после пересчёта по всему
+                  кольцу выигрыш стал ×301, PR-AUC 0,046, базовая частота
+                  0,00015 — а на странице стояли числа предыдущего прогона.
+                  Числа модели, не совпадающие с её же выгрузкой, — первое,
+                  что проверяют на техническом Q&A. */}
               {[
-                ['Точнее случайного', '×293'],
-                ['PR-AUC', '0,120'],
-                ['Базовая частота', '0,0004'],
+                ['Точнее случайного', metrics ? `×${Math.round(metrics.lift)}` : '—'],
+                ['PR-AUC', metrics ? metrics.pr_auc_future.toFixed(3).replace('.', ',') : '—'],
+                ['Базовая частота', metrics ? metrics.base_rate_future.toFixed(5).replace('.', ',') : '—'],
                 ['Ячеек в сетке', '19 621'],
               ].map(([k, v]) => (
                 <div key={k}>

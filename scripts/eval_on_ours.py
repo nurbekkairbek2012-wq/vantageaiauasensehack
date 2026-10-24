@@ -1,88 +1,85 @@
-"""Проверить модель, обученную на AerialWaste, на наших казахстанских метках.
+"""Проверить модель AerialWaste на казахстанских объектах — честно.
 
-── Зачем отдельный скрипт ──────────────────────────────────────────────
+── Почему не по чипам Sentinel ─────────────────────────────────────────
 
-Качество на AerialWaste говорит только о том, что модель научилась
-отличать свалки Ломбардии от не-свалок Ломбардии. Нам нужно другое: как
-она работает на Казахстане — другой ландшафт, другой состав отходов,
-другая высота солнца, другая застройка.
+Первая версия этого скрипта сравнивала предсказания с нашими чипами для
+разметки. Это была ошибка измерения, а не кода: чипы собраны из Sentinel-2
+и несут десять метров на пиксель, а AerialWaste снят с воздуха и с
+WorldView-3 — от двадцати до пятидесяти сантиметров. Разница в двадцать
+раз по разрешению означает, что модель смотрела бы на другой предмет.
+Провал такого переноса ничего не сказал бы о модели.
 
-Ответ на этот вопрос — единственное честное число, которое можно назвать
-на защите. Всё остальное будет описанием чужого датасета.
+Здесь берутся тайлы высокого разрешения — те самые, что тянет
+доверификация, около полуметра на пиксель. Это та же модальность, в
+которой модель обучалась, и результат интерпретируем.
 
-── Почему выборка маленькая и что это значит ───────────────────────────
+── Чего ждать от трёх положительных примеров ───────────────────────────
 
-Наших меток 71, свалок среди них пять. Это мало настолько, что точечная
-оценка бессмысленна: убери одну свалку — метрика прыгнет. Поэтому здесь
-считается не только само число, но и границы, в которых оно гуляет
-(бутстрэп). Если границы окажутся от «случайно» до «отлично» — так и надо
-сказать, а не выбрать середину.
+Подтверждённых свалок три, отвергнутых четырнадцать. Точечная оценка на
+таком размере не значит ничего: убери одну свалку — метрика прыгнет на
+десятые. Поэтому считается интервал по бутстрэпу, и решение принимается по
+его нижней границе, а не по середине.
 
-── Чего этот скрипт не делает ──────────────────────────────────────────
+Если нижняя граница окажется ниже 0,5 — перенос НЕ доказан, и говорить
+надо именно так. Названная слабость стоит дороже необоснованной цифры:
+на техническом Q&A вторую разберут за минуту.
 
-Он не дообучает модель на наших данных. Дообучение на пяти положительных
-примерах даст модель, подогнанную под эти пять, и проверять её будет
-нечем. Здесь измеряется чистый перенос.
+── Кэш ─────────────────────────────────────────────────────────────────
 
-    python scripts/eval_on_ours.py
+Тайлы тянутся с чужих серверов с паузой между запросами. Скачанное
+складывается в data/highres и переиспользуется: результат по объекту не
+меняется от того, что рядом пересчитали деньги.
+
+    python scripts/eval_on_ours.py [--refresh]
 """
 
-import json
 import logging
-import re
 import sys
-from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s", datefmt="%H:%M:%S")
 log = logging.getLogger("eval")
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-LABELS = Path("labels_manual.geojson")
-CHIPS = Path("web-next/public/chips")
+CANDIDATES = Path("outputs_real/candidates.geojson")
+CACHE = Path("data/highres")
 MODEL = Path("models/aerialwaste_chip.joblib")
 
-#: Как вердикт разметки превращается в метку. «Не понятно» выбрасывается:
-#: объект, про который человек не смог решить, не годится ни в
-#: положительные, ни в отрицательные — он бы измерял нашу неуверенность,
-#: а не качество модели.
-POSITIVE = "свалка"
-NEGATIVE = "не свалка"
+#: Вердикт разметки -> метка. «Не понятно» выброшено: объект, про который
+#: человек не смог решить, измерял бы нашу неуверенность, а не модель.
+VERDICT = {"landfill": 1, "not_landfill": 0}
 
 
-def wanted() -> dict[str, int]:
-    """candidate_id -> 1 свалка / 0 не свалка."""
-    features = json.loads(LABELS.read_text(encoding="utf-8"))["features"]
-    out: dict[str, int] = {}
-    skipped = 0
-    for item in features:
-        props = item["properties"]
-        cid, verdict = props.get("candidate_id"), props.get("verdict")
-        if not cid or verdict not in (POSITIVE, NEGATIVE):
-            skipped += 1
+def picture(lat: float, lon: float, name: str, cfg, refresh: bool):
+    """Снимок высокого разрешения вокруг точки, из кэша или из сети."""
+    from PIL import Image
+
+    from vantage.verify import PROVIDERS, fetch_tile_grid
+
+    CACHE.mkdir(parents=True, exist_ok=True)
+    path = CACHE / f"{name}.png"
+    if path.exists() and not refresh:
+        return Image.open(path).convert("RGB")
+
+    # Первый доступный поставщик: расхождения между ними здесь не важны —
+    # доверификация уже сравнила их между собой, а нам нужен снимок.
+    for key in cfg.providers:
+        provider = PROVIDERS.get(key)
+        if provider is None:
             continue
-        out[cid] = int(verdict == POSITIVE)
-    log.info("меток пригодных %d, пропущено %d («не понятно» и без идентификатора)",
-             len(out), skipped)
-    return out
-
-
-def chip_paths() -> dict[str, list[Path]]:
-    """candidate_id -> файлы чипов «после».
-
-    Идентификатор в имени файла идёт после двойного подчёркивания:
-    astana_north_x000y000__C00034-after.png. Он уникален внутри плитки, но
-    не между плитками, поэтому один и тот же C00034 может встретиться
-    дважды — такие случаи считаются и исключаются, иначе метка одного
-    объекта досталась бы снимку другого.
-    """
-    found: dict[str, list[Path]] = defaultdict(list)
-    for path in sorted(CHIPS.glob("*-after.png")):
-        match = re.search(r"__([A-Za-z]\d+)-after\.png$", path.name)
-        if match:
-            found[match.group(1)].append(path)
-    return found
+        try:
+            grid = fetch_tile_grid(provider, lat, lon, cfg.zoom, cfg.tile_grid,
+                                   timeout=cfg.timeout_s)
+        except Exception as error:
+            log.debug("   %s: %s", key, error)
+            continue
+        image = Image.fromarray(grid.astype("uint8"))
+        image.save(path)
+        return image
+    return None
 
 
 def main() -> int:
@@ -90,86 +87,87 @@ def main() -> int:
         log.error("нет модели %s — сначала scripts/train_aerialwaste.py", MODEL)
         return 1
 
-    marks = wanted()
-    chips = chip_paths()
-
+    import geopandas as gpd
     import joblib
     import torch
-    from PIL import Image
+
+    from vantage import env
+    from vantage.config import load_settings
+
+    env.configure()
+    cfg = load_settings().verify
 
     sys.path.insert(0, str(Path("scripts")))
     from train_aerialwaste import backbone, preprocess
 
+    kept = gpd.read_file(CANDIDATES).to_crs(4326)
+    kept["mark"] = kept["visual_check"].map(VERDICT)
+    usable = kept[kept["mark"].notna()].copy()
+    log.info("объектов с вердиктом: %d из %d (свалок %d)",
+             len(usable), len(kept), int(usable["mark"].sum()))
+    if len(usable) < 8 or usable["mark"].sum() < 2:
+        log.error("нечего измерять")
+        return 1
+
+    refresh = "--refresh" in sys.argv
     net, prep = backbone(), preprocess()
     model = joblib.load(MODEL)
 
-    ready, truth, ambiguous, missing = [], [], 0, 0
-    for cid, mark in marks.items():
-        paths = chips.get(cid, [])
-        if not paths:
-            missing += 1
+    images, truth, names = [], [], []
+    for row in usable.itertuples():
+        point = row.geometry.centroid
+        image = picture(point.y, point.x, str(row.candidate_id), cfg, refresh)
+        if image is None:
+            log.warning("   %s: снимок не получен", row.candidate_id)
             continue
-        if len(paths) > 1:
-            ambiguous += 1
-            continue
-        ready.append(paths[0])
-        truth.append(mark)
+        images.append(prep(image))
+        truth.append(int(row.mark))
+        names.append(str(row.candidate_id))
 
-    log.info("сопоставлено %d объектов; без чипа %d, неоднозначных %d",
-             len(ready), missing, ambiguous)
-    if len(ready) < 10 or sum(truth) == 0:
-        log.error("нечего измерять: объектов %d, свалок %d", len(ready), sum(truth))
+    if len(images) < 8 or sum(truth) < 2:
+        log.error("снимков хватило только на %d объектов, свалок %d", len(images), sum(truth))
         return 1
 
-    vectors = []
     with torch.no_grad():
-        for start in range(0, len(ready), 32):
-            batch = [prep(Image.open(p).convert("RGB")) for p in ready[start:start + 32]]
-            vectors.append(net(torch.stack(batch)).numpy())
-    features = np.vstack(vectors)
-
+        features = net(torch.stack(images)).numpy()
     scores = model.predict_proba(features)[:, 1]
     truth = np.array(truth)
 
     from sklearn.metrics import average_precision_score, roc_auc_score
 
-    base = truth.mean()
+    base = float(truth.mean())
     log.info("")
-    log.info("── Перенос на Казахстан ───────────────────────")
+    log.info("── Перенос AerialWaste на Казахстан, снимки ~0,5 м/пиксель ──")
     log.info("объектов %d, свалок %d (%.0f%%)", len(truth), int(truth.sum()), 100 * base)
 
-    try:
-        roc = roc_auc_score(truth, scores)
-        pr = average_precision_score(truth, scores)
-    except ValueError as error:
-        log.error("метрику не посчитать: %s", error)
-        return 1
-
+    roc = roc_auc_score(truth, scores)
+    pr = average_precision_score(truth, scores)
     log.info("ROC-AUC %.3f", roc)
     log.info("PR-AUC  %.3f при базовой частоте %.3f — лучше случайного в %.1f раза",
              pr, base, pr / base)
 
-    # Границы, а не одно число: при пяти свалках точечная оценка ничего не
-    # значит, и назвать её на защите без интервала — значит подставиться.
     rng = np.random.default_rng(0)
     draws = []
-    for _ in range(2000):
+    for _ in range(4000):
         pick = rng.integers(0, len(truth), len(truth))
-        if truth[pick].sum() in (0, len(pick)):
-            continue
-        draws.append(roc_auc_score(truth[pick], scores[pick]))
+        if 0 < truth[pick].sum() < len(pick):
+            draws.append(roc_auc_score(truth[pick], scores[pick]))
     if draws:
         low, high = np.percentile(draws, [5, 95])
         log.info("ROC-AUC, 90%% интервал по бутстрэпу: %.3f – %.3f", low, high)
+        log.info("")
         if low < 0.5:
-            log.warning("нижняя граница ниже 0.5 — перенос НЕ доказан, так и говорить")
+            log.warning("ВЫВОД: перенос НЕ доказан — нижняя граница ниже случайного.")
+            log.warning("На защите говорить именно так, а не называть середину.")
         elif low > 0.7:
-            log.info("нижняя граница выше 0.7 — перенос состоялся")
+            log.info("ВЫВОД: перенос состоялся, нижняя граница выше 0,7.")
+        else:
+            log.info("ВЫВОД: перенос вероятен, но выборка мала — интервал широкий.")
 
     log.info("")
-    log.info("── Как модель оценила наши объекты ────────────")
-    for path, mark, score in sorted(zip(ready, truth, scores), key=lambda x: -x[2])[:12]:
-        log.info("  %.3f  %-12s  %s", score, "СВАЛКА" if mark else "не свалка", path.name[:46])
+    log.info("── Как модель оценила каждый ──")
+    for name, mark, score in sorted(zip(names, truth, scores), key=lambda x: -x[2]):
+        log.info("  %.3f  %-11s  %s", score, "СВАЛКА" if mark else "не свалка", name)
     return 0
 
 

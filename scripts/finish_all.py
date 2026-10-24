@@ -149,6 +149,7 @@ def main() -> int:
     # колонок verify_*, и подтверждение двумя источниками исчезает молча.
     # Здесь оно живёт в своём кэше и переживает любой пересчёт.
     step("Доверификация по снимкам", [python, "scripts/attach_verify.py"])
+    step("Оценка моделью по снимку", [python, "scripts/attach_chipmodel.py"])
     step("Чипы для разметки", [python, "scripts/export_chips.py"])
     step("Указатель для бота", [python, "scripts/make_bot_index.py"])
     build_cities()

@@ -255,10 +255,15 @@ def on_location(message: dict) -> None:
 
     if item and distance is not None and distance <= MATCH_RADIUS_M:
         status = STATUS.get(item.get("visual_check"), STATUS_UNKNOWN)
+        # Число независимых источников понятнее любой вероятности:
+        # «два разных спутника показывают одно и то же» — проверяемое
+        # утверждение, а «уверенность 0,87» для жителя пустой звук.
+        sources = int(item.get("verify_providers") or 0)
+        proof = f" Подтверждено независимыми снимками: {sources}." if sources >= 2 else ""
         send(
             chat_id,
             f"Спасибо. Объект в этом месте уже известен: <b>{item['id']}</b>, "
-            f"площадь {spaced(item['area_m2'])} м², {status}.\n\n"
+            f"площадь {spaced(item['area_m2'])} м², {status}.{proof}\n\n"
             "Ваше сообщение — независимое подтверждение, оно повышает "
             "приоритет на выезд.",
         )

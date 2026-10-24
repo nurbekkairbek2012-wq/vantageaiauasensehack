@@ -116,9 +116,24 @@ const removalOf = (p: Props) => {
 const kzt = (v: unknown) => {
   const n = Number(v);
   if (!Number.isFinite(n)) return '—';
-  if (Math.abs(n) >= 1e9) return `${(n / 1e9).toFixed(1)} млрд ₸`;
-  if (Math.abs(n) >= 1e6) return `${(n / 1e6).toFixed(1)} млн ₸`;
+  // Запятая, а не точка: по-русски дробная часть отделяется запятой, и
+  // «37.9 млн» рядом с «1,5 га» на той же полосе читается как опечатка.
+  const one = (x: number) => x.toFixed(1).replace('.', ',');
+  if (Math.abs(n) >= 1e9) return `${one(n / 1e9)} млрд ₸`;
+  if (Math.abs(n) >= 1e6) return `${one(n / 1e6)} млн ₸`;
   return `${Math.round(n / 1e3).toLocaleString('ru-RU')} тыс ₸`;
+};
+
+/** Согласовать существительное с числом. «21 объектов» замечают раньше,
+ *  чем содержание фразы, а числа теперь приходят из данных и подогнать
+ *  формулировку под одно из них нельзя. */
+const plural = (count: number, one: string, few: string, many: string) => {
+  const mod100 = Math.abs(count) % 100;
+  if (mod100 >= 11 && mod100 <= 14) return many;
+  const mod10 = mod100 % 10;
+  if (mod10 === 1) return one;
+  if (mod10 >= 2 && mod10 <= 4) return few;
+  return many;
 };
 
 const num = (v: unknown, d = 0) => {
@@ -150,6 +165,18 @@ export default function MapApp() {
   const [candidates, setCandidates] = useState<GeoJSON.FeatureCollection | null>(null);
   const [registry, setRegistry] = useState<GeoJSON.FeatureCollection | null>(null);
   const [risk, setRisk] = useState<GeoJSON.FeatureCollection | null>(null);
+  /* Сколько кандидатов рассмотрел детектор — из воронки, а не числом в
+     коде. Вписанное «429» пережило пересчёт и стало неправдой: сырых
+     кандидатов теперь 385. Соседняя цифра в той же фразе при этом
+     считалась из данных, так что предложение противоречило само себе. */
+  const [raw, setRaw] = useState<number | null>(null);
+  useEffect(() => {
+    fetch('./data/funnel.json')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setRaw(typeof d?.raw === 'number' ? d.raw : null))
+      .catch(() => setRaw(null));
+  }, []);
+
   const [selected, setSelected] = useState<string | null>(null);
   const [sort, setSort] = useState<SortKey>('visual');
   const [basemap, setBasemap] = useState<Basemap>('sat');
@@ -445,7 +472,9 @@ export default function MapApp() {
             <div className="px-5 py-8">
               <h2 className="text-xl text-line">Выберите объект</h2>
               <p className="mt-3 max-w-[34ch] text-sm text-muted">
-                В реестре слева {totals.count} объектов, отобранных из 429.
+                В реестре слева {totals.count}{' '}
+                {plural(totals.count, 'объект', 'объекта', 'объектов')}
+                {raw ? `, отобранных из ${raw}` : ''}.
                 Каждый просмотрен глазами на снимке 0,6 м на пиксель:{' '}
                 <span className="text-line">{totals.confirmed}</span> подтверждены как
                 свалки, остальные оказались постройками, промплощадками и
@@ -542,6 +571,41 @@ function ObjectCard({ f }: { f: Feature }) {
             </span>
           </div>
           <p className="mt-1.5 text-xs leading-snug text-muted-2">{visualOf(p)!.full}</p>
+        </div>
+      )}
+
+      {/* Оценка по снимку высокого разрешения.
+       *
+       * Модель обучена на AerialWaste (Politecnico di Milano): 5 220
+       * снимков, ROC-AUC 0,858 при пятикратной кросс-проверке НА ИХ
+       * ДАННЫХ. Это единственное число, которое здесь доказано.
+       *
+       * Перенос на Казахстан НЕ доказан, и написать иначе нельзя:
+       * ROC-AUC 0,643 при интервале по бутстрэпу 0,333–0,923 — нижняя
+       * граница ниже случайного. Виновата не модель, а размер проверки:
+       * подтверждённых свалок три.
+       *
+       * Соблазн был написать «ниже 0,35 модель надёжно отбраковывает» —
+       * пять таких объектов действительно оказались не свалками. Но при
+       * четырнадцати не-свалках из семнадцати такая пятёрка выпадает
+       * случайно примерно в трети случаев. Это не доказательство, и
+       * выдавать его за доказательство нельзя.
+       *
+       * Поэтому оценка показана как справка, а не как вердикт. */}
+      {typeof p.highres_score === 'number' && (
+        <div className="mt-3 rounded-sm border border-grid bg-soot-2 px-3 py-2.5">
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="text-xs text-muted-2">Модель по снимку 0,5 м</span>
+            <span className="tabular text-sm text-muted">
+              {p.highres_score.toFixed(2)}
+            </span>
+          </div>
+          <p className="mt-1.5 text-xs leading-snug text-muted-2">
+            Обучена на AerialWaste, 5 220 снимков, ROC-AUC 0,858 на их данных.
+            Перенос на Казахстан пока не доказан: подтверждённых свалок у нас
+            три, и интервал оценки переноса шире, чем сама оценка. Число —
+            справка, а не вердикт.
+          </p>
         </div>
       )}
 
