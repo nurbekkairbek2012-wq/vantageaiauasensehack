@@ -10,7 +10,7 @@
 
 **Находит потери ресурсов и денег на обращении с отходами, считает их в тенге и говорит, что с ними выгоднее сделать.**
 
-Future Minds Hackathon 2026 · трек EcoFin · Астана
+AuaSense Hackathon · Астана
 
 [Живой продукт](https://hakathon-lyart.vercel.app/) · [карта](https://hakathon-lyart.vercel.app/map.html) · [экономика](https://hakathon-lyart.vercel.app/economy.html)
 
