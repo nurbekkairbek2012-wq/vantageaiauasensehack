@@ -350,6 +350,117 @@ def web(
             console.print("\nОстановлено.")
 
 
+#: Единственные файлы, которые разрешено публиковать в открытый доступ.
+#: Список намеренно короткий и живёт в коде, а не в скрипте деплоя:
+#: расширить его должно быть заметным действием, а не правкой одной
+#: строки в YAML, которую никто не проверит.
+PUBLIC_WHITELIST = ("candidates.geojson", "risk_public.geojson", "story.json")
+
+#: Файлы, попадание которых в публикацию — утечка адресных данных.
+PUBLIC_DENYLIST = ("risk_private.geojson", "access.log", "citizen_reports.jsonl")
+
+
+@app.command()
+def publish(
+    outputs: str | None = typer.Option(None, "--outputs", help="Откуда брать артефакты"),
+    target: str = typer.Option("map-data", "--target", help="Куда складывать для деплоя"),
+    allow_demo: bool = typer.Option(False, "--allow-demo", help="Разрешить синтетические данные"),
+) -> None:
+    """Подготовить данные карты к публикации в интернет.
+
+    Копирует в ``map-data/`` только белый список файлов и проверяет, что
+    в публикацию не попал ни один закрытый слой. Отсюда их забирают
+    Vercel и GitHub Pages.
+
+    Проверка идёт по факту наличия файла, а не по намерению: белый
+    список легко случайно расширить, и без падающей команды этого никто
+    не заметит до того момента, когда точные координаты уже в открытом
+    доступе.
+    """
+    import json as _json
+    import shutil
+
+    from .config import REPO_ROOT
+
+    settings = load_settings()
+    source = Path(outputs) if outputs else settings.paths.resolve("outputs")
+    destination = Path(target)
+    if not destination.is_absolute():
+        destination = REPO_ROOT / destination
+
+    if not source.exists():
+        console.print(f"[red]Каталог с артефактами не найден: {source}[/red]")
+        console.print("Запустите [bold]vantage run[/bold] или [bold]vantage sample[/bold].")
+        raise typer.Exit(code=1)
+
+    destination.mkdir(parents=True, exist_ok=True)
+    for stale in destination.iterdir():
+        if stale.is_file():
+            stale.unlink()
+
+    copied: list[str] = []
+    for name in PUBLIC_WHITELIST:
+        src = source / name
+        if src.exists():
+            shutil.copy2(src, destination / name)
+            copied.append(name)
+
+    if not copied:
+        console.print(f"[red]В {source} нет ни одного публикуемого файла.[/red]")
+        raise typer.Exit(code=1)
+
+    # --- Проверка утечки ------------------------------------------------ #
+    leaks: list[str] = []
+    for name in PUBLIC_DENYLIST:
+        if (destination / name).exists():
+            leaks.append(f"закрытый слой {name}")
+
+    for path in destination.glob("*.geojson"):
+        payload = _json.loads(path.read_text(encoding="utf-8"))
+        for feature in payload.get("features", []):
+            if "risk" in (feature.get("properties") or {}):
+                leaks.append(f"{path.name}: поле risk — точная вероятность")
+                break
+
+    if leaks:
+        console.print("[bold red]Публикация отменена — обнаружена утечка:[/bold red]")
+        for leak in leaks:
+            console.print(f"  [red]x[/red] {leak}")
+        raise typer.Exit(code=1)
+
+    # --- Проверка на синтетику ------------------------------------------ #
+    is_demo = False
+    story = destination / "story.json"
+    if story.exists():
+        is_demo = bool(_json.loads(story.read_text(encoding="utf-8")).get("is_demo"))
+
+    table = Table(title="Готово к публикации", show_header=True)
+    table.add_column("Файл", style="cyan")
+    table.add_column("Размер", justify="right")
+    total = 0
+    for name in copied:
+        size = (destination / name).stat().st_size
+        total += size
+        table.add_row(name, f"{size / 1024:,.0f} КБ".replace(",", " "))
+    console.print(table)
+    console.print(f"Всего: [green]{total / 1024:,.0f} КБ[/green]".replace(",", " "))
+    console.print("[green]Закрытых слоёв в публикации нет.[/green]")
+
+    if is_demo:
+        console.print(
+            "\n[bold red]ВНИМАНИЕ: это синтетические данные.[/bold red] "
+            "Карта покажет предупреждающую полосу."
+        )
+        if not allow_demo:
+            console.print(
+                "Публикация синтетики в интернет требует явного согласия: "
+                "повторите с флагом [bold]--allow-demo[/bold]."
+            )
+            raise typer.Exit(code=1)
+
+    console.print(f"\nДальше: [bold]git add {target} && git commit && git push[/bold]")
+
+
 @app.command()
 def run(
     config: str | None = typer.Option(None, "--config", "-c"),

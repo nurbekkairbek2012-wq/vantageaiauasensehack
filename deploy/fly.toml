@@ -1,0 +1,41 @@
+# Fly.io — бот.
+#
+# Выбран потому, что даёт машину, которая не засыпает при простое.
+# Бесплатные веб-хостинги обычно усыпляют контейнер без входящих
+# запросов, а бот на long polling входящих HTTP-запросов не получает
+# вообще — и умирает через несколько минут после деплоя.
+#
+# Регион ams: ближайший к Казахстану из тех, что доступны бесплатно.
+
+app = "vantage-bot"
+primary_region = "ams"
+
+[build]
+  dockerfile = "Dockerfile"
+  build-target = "bot"
+
+[env]
+  PYTHONUTF8 = "1"
+
+# Секреты задаются командой, а не здесь — в файл они не попадают:
+#   fly secrets set VANTAGE_BOT_TOKEN=...
+#   fly secrets set VANTAGE_BOT_SALT=...
+#   fly secrets set VANTAGE_BOT_SUBSCRIBERS=...
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+
+# Бот работает через long polling: он сам ходит в Telegram за
+# обновлениями, поэтому входящий порт ему не нужен и http_service
+# здесь намеренно отсутствует.
+
+[processes]
+  bot = "python -m vantage.bot"
+
+# Машина не должна останавливаться: бот, который спит, не бот.
+[[services]]
+  internal_port = 0
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1

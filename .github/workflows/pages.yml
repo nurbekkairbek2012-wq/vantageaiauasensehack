@@ -1,0 +1,112 @@
+name: Публикация карты на GitHub Pages
+
+# Карта — статическая: HTML, CSS, один JS-файл и GeoJSON.
+# Никакого сервера ей не нужно, поэтому Pages подходит идеально.
+#
+# Данные берутся из папки map-data/, если она есть в репозитории
+# (туда кладут результат настоящего прогона). Если её нет, workflow
+# генерирует синтетику — и карта сама показывает красную полосу
+# «синтетические данные», потому что в файлах стоит флаг is_demo.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/**'
+      - 'map-data/**'
+      - 'src/vantage/demo.py'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:        # можно запустить руками из вкладки Actions
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Установить зависимости
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Подготовить данные карты
+        run: |
+          rm -rf web/data && mkdir -p web/data staging
+          if [ -d map-data ] && [ -n "$(ls -A map-data 2>/dev/null)" ]; then
+            echo "Используем данные настоящего прогона из map-data/"
+            cp map-data/* staging/ 2>/dev/null || true
+          else
+            echo "map-data/ пуста — генерируем синтетику для отладки интерфейса."
+            echo "Карта покажет предупреждающую полосу: в файлах стоит флаг is_demo."
+            vantage sample --count 24 --output staging
+          fi
+
+          # Публикуется ТОЛЬКО белый список. Всё остальное остаётся
+          # в staging и на сайт не попадает.
+          for file in candidates.geojson risk_public.geojson story.json; do
+            if [ -f "staging/$file" ]; then
+              cp "staging/$file" web/data/
+              echo "опубликован: $file"
+            fi
+          done
+          ls -la web/data
+
+      - name: Проверка утечки закрытых слоёв
+        run: |
+          # Публичный сайт не должен отдавать точную сетку риска и
+          # ничего, что помечено как private. Это та же граница, что
+          # в API: житель видит зону, служба видит точку.
+          #
+          # Проверка идёт по факту наличия файла, а не по намерению:
+          # белый список выше можно случайно расширить одной строкой,
+          # и никто этого не заметит без падающей сборки.
+          leaked=0
+          for forbidden in web/data/risk_private.geojson web/data/access.log web/data/citizen_reports.jsonl; do
+            if [ -e "$forbidden" ]; then
+              echo "УТЕЧКА: $forbidden не должен публиковаться"
+              leaked=1
+            fi
+          done
+          if grep -rl '"risk"[[:space:]]*:' web/data/ 2>/dev/null | grep -q .; then
+            echo "УТЕЧКА: в публичных данных есть поле risk (точная вероятность)"
+            leaked=1
+          fi
+          test "$leaked" -eq 0 || exit 1
+          echo "закрытых слоёв в публикации нет"
+
+      - name: Проверить, что карта собрана целиком
+        run: |
+          for file in index.html styles.css app.js sw.js manifest.webmanifest; do
+            test -f "web/$file" || { echo "нет файла web/$file"; exit 1; }
+          done
+          test -f web/data/candidates.geojson || { echo "нет данных карты"; exit 1; }
+          rm -rf staging
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

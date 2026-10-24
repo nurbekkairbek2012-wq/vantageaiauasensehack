@@ -1,0 +1,32 @@
+# Всё, что не нужно в образе. Каждый лишний мегабайт — это время
+# сборки при каждом деплое и место в реестре.
+
+.git/
+.github/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+htmlcov/
+.coverage
+
+tests/
+docs/
+web/
+deploy/
+notebooks/
+
+data/
+outputs/
+map-data/
+models/
+*.tif
+*.geojson
+*.pdf
+
+.env
+*.key
+secrets/
