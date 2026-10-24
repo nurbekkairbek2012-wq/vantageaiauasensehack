@@ -453,3 +453,58 @@ class TestBotIndexMatchesSite:
             f"только в боте: {sorted(in_bot - in_site)[:5]}, "
             f"только на сайте: {sorted(in_site - in_bot)[:5]}"
         )
+
+
+class TestModelIsRejectorNotDetector:
+    """Порог отбраковки не должен терять подтверждённые свалки.
+
+    Модель стоит в системе фильтром в конце очереди: всё ниже порога
+    снимается с ручной проверки. Цена ошибки здесь несимметрична. Лишний
+    объект в очереди стоит минуты просмотра; выброшенная свалка не
+    вернётся никогда — её просто не будет в списке, и никто не узнает.
+
+    Порог 0,35 измерен на 33 находках восточного пояса, просмотренных
+    глазами и оказавшихся ложными: снимает 88%. С другой стороны — три
+    подтверждённые свалки со оценками 0,453, 0,852, 0,852.
+
+    Тест сторожит вторую половину: если пересчёт или новая модель опустят
+    подтверждённый объект ниже порога, это будет видно сразу.
+    """
+
+    def test_confirmed_dumps_stay_above_threshold(self):
+        import json
+        from pathlib import Path
+
+        published = Path("web-next/public/data/candidates.geojson")
+        if not published.exists():
+            pytest.skip("выгрузки нет")
+
+        data = json.loads(published.read_text(encoding="utf-8"))
+        lost_human, lost_screen = [], []
+        for feature in data.get("features", []):
+            p = feature.get("properties") or {}
+            score = p.get("highres_score")
+            if p.get("visual_check") != "landfill" or not isinstance(score, (int, float)):
+                continue
+            if score >= 0.35:
+                continue
+            (lost_human if p.get("check_source") == "human" else lost_screen).append(
+                (p.get("candidate_id"), round(score, 3))
+            )
+
+        # Человеческая разметка — строгая граница: если порог начал ронять
+        # объект, подтверждённый человеком, порог неверен.
+        assert not lost_human, (
+            f"порог 0,35 отбраковывает подтверждённые человеком свалки: {lost_human}. "
+            "Выброшенный объект не вернётся — его просто не будет в списке"
+        )
+
+        # Машинный просмотр слабее человеческого, и один такой случай
+        # известен: C00318 при 0,155. Он записан в AI_RESULTS.md как
+        # причина, по которой порог остаётся ПОДСКАЗКОЙ, а не фильтром.
+        # Тест не падает, но список должен оставаться коротким: если он
+        # начнёт расти, порог придётся пересматривать.
+        assert len(lost_screen) <= 1, (
+            f"порог роняет уже {len(lost_screen)} опознанных свалок: {lost_screen}. "
+            "При двух и больше он перестаёт быть безопасной подсказкой"
+        )

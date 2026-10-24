@@ -154,7 +154,63 @@ def share_of_industry(bbox: tuple[float, float, float, float], settings) -> floa
     return float(covered / total) if total else 0.0
 
 
-def verdict(share: float, industry: float | None = None) -> str:
+def osm_density(bbox: tuple[float, float, float, float], settings) -> float:
+    """Сколько размеченных контуров OSM приходится на квадратный километр.
+
+    Лучший из найденных предсказателей, и не случайно: он мерит ровно то,
+    что делает в системе различение.
+
+    Пять физических признаков находят необратимое изменение поверхности —
+    измерено, что свалку от склада внутри одной местности они НЕ отличают
+    (ROC-AUC 0,500). Отсеивает лишнее контекстный фильтр по OSM, и работает
+    он ровно настолько, насколько подробна карта.
+
+    Замерено на пяти областях, порядок оказался строгим:
+
+        запад · промзона   97,8 контура на км²   считается
+        север Астаны       94,7                  3 подтверждённых + 5 опознанных
+        запад · сёла       32,5                  не запускался
+        юго-восток         18,1                  0 настоящих из 9 просмотренных
+        восток              6,8                  0 настоящих из 33
+
+    Разница в четырнадцать раз между работающей областью и провальной, и
+    ни одного нарушения порядка: чем подробнее карта, тем больше настоящих
+    свалок доходит до списка.
+
+    Площадь считается в UTM, а не в веб-Меркаторе. Первый замер этой
+    величины был сделан в 3857 и занизил все плотности ровно в 2,5 раза:
+    на широте 51° Меркатор раздувает площадь в 1/cos²(51). Отношения между
+    областями при этом сохранились, и вывод не изменился — но абсолютные
+    числа, по которым калибруются пороги ниже, были неверны.
+
+    Запрос лёгкий: `out count` не отдаёт геометрию, только число.
+    """
+    import geopandas as gpd
+    from shapely.geometry import box
+
+    from vantage.aoi import AOI
+    from vantage.context import OverpassClient, _bbox_clause
+
+    crs = settings.project.crs_working
+    aoi = AOI.from_bbox(bbox, name="probe", crs_working=crs)
+    clause = _bbox_clause(aoi)
+    query = (
+        "[out:json][timeout:150];("
+        f'way["landuse"]({clause});way["building"]({clause});'
+        ");out count;"
+    )
+    client = OverpassClient(settings.paths.resolve("data_cache"))
+    payload = client.query(query)
+    elements = payload.get("elements") or []
+    total = int((elements[0].get("tags") or {}).get("total", 0)) if elements else 0
+
+    area = gpd.GeoDataFrame(geometry=[box(*bbox)], crs=4326).to_crs(crs)
+    km2 = float(area.area.iloc[0]) / 1e6
+    return total / km2 if km2 else 0.0
+
+
+def verdict(share: float, industry: float | None = None,
+            density: float | None = None) -> str:
     """Словами — чтобы решение принималось без пересчёта в голове.
 
     Границы откалиброваны на трёх прогонах, два из которых провалились:
@@ -166,6 +222,21 @@ def verdict(share: float, industry: float | None = None) -> str:
     То есть замер предсказал бы оба провала до того, как на них ушло
     четыре с половиной часа счёта. Три точки — мало для закона, но
     достаточно, чтобы не запускать область с нулём процентов."""
+    # Плотность карты решает раньше всего. Она мерит то, что делает
+    # различение: признаки находят изменение, а отсеивает лишнее фильтр по
+    # OSM, и работает он ровно настолько, насколько карта подробна.
+    #
+    # Пороги стоят между замеренными исходами, а не выбраны красиво:
+    # 18,1 дал ноль настоящих из девяти, 94,7 — восемь. Между ними
+    # непроверенная середина, и она названа непроверенной.
+    if density is not None and density < 20:
+        return (f"НЕ ЗАПУСКАТЬ: карта пуста ({density:.1f} контура на км² против "
+                f"95 там, где метод работает) — отсеивать будет нечем. "
+                f"Так выглядели восток (6,8) и юго-восток (18,1): 0 свалок из 42")
+    if density is not None and density < 50:
+        return (f"неизвестно: карта средняя ({density:.0f} на км²) — между "
+                f"провалившимися поясами и работающей промзоной прогонов не было")
+
     # Промышленность решает раньше площади: восточный пояс имел 23,3%
     # годной земли — «хорошая область» — и ноль настоящих свалок из
     # тридцати трёх находок, потому что промышленной земли там 0,00%.
@@ -239,9 +310,15 @@ def main() -> int:
             industry = share_of_industry(bbox, settings)
         except Exception:
             industry = None
-        shown = f"{industry * 100:5.2f}%" if industry is not None else "  ?  "
-        print(f"{name:12s} годной земли {share * 100:5.1f}%   промышленной {shown}   "
-              f"{verdict(share, industry)}")
+        try:
+            density = osm_density(bbox, settings)
+        except Exception:
+            density = None
+        ind = f"{industry * 100:5.2f}%" if industry is not None else "  ?  "
+        den = f"{density:5.1f}" if density is not None else "  ?  "
+        print(f"{name:12s} годной земли {share * 100:5.1f}%   промышленной {ind}   "
+              f"контуров/км² {den}")
+        print(f"{'':12s} {verdict(share, industry, density)}")
     print()
     print("Замер не смотрит на снимки — он говорит только о том, есть ли в области")
     print("земля, которую отсев в принципе может пропустить. Это нижняя граница:")
