@@ -93,7 +93,7 @@ Protection → Vercel Authentication → Disabled**. После этого
 ### Если карта серая
 
 Значит не загрузились тайлы подложки. Смотреть консоль браузера: CSP в
-`vercel.json` разрешает ровно два хоста — `basemaps.cartocdn.com` и
+`vercel.json` разрешает ровно два хоста — `tile.openstreetmap.org` и
 `server.arcgisonline.com`. Если в коде появился третий, его нужно добавить
 в `img-src`, иначе браузер молча заблокирует запросы.
 

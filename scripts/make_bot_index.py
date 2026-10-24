@@ -49,9 +49,14 @@ def main() -> int:
                 "id": str(properties.get("candidate_id", "")),
                 "lat": round(lat, 6),
                 "lon": round(lon, 6),
-                "area_m2": int(properties.get("area_m2") or 0),
+                # round, а не int. int отбрасывает дробную часть, а сайт
+                # её округляет: объект в 3326,6 м² выходил на карте как
+                # «3 327 м²», а в боте — как «3 326 м²». Пока площадь
+                # стояла только в ответе на геопозицию, разницу никто не
+                # сводил; в /stats оба числа теперь называются вслух.
+                "area_m2": round(float(properties.get("area_m2") or 0)),
                 "break_date": str(properties.get("break_date") or "")[:10],
-                "damage_p50": int(properties.get("damage_p50") or 0),
+                "damage_p50": round(float(properties.get("damage_p50") or 0)),
                 # Проверка глазами важнее модели: жителю честнее сказать
                 # «объект подтверждён», чем «модель считает 0,9».
                 "visual_check": properties.get("visual_check"),

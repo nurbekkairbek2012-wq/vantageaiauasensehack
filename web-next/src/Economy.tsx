@@ -549,7 +549,7 @@ export default function Economy() {
               [num(data.queue.reviewed), 'просмотрел человек',
                'по снимку 0,4–0,8 м на пиксель'],
               [num(data.queue.published), 'дошли до списка',
-               `из них ${data.queue.ground} проверены на месте`],
+               `из них ${data.queue.ground} подтверждено`],
             ].map(([big, what, note]) => (
               <div key={String(what)} className="bg-soot-2 px-4 py-5">
                 <div className="tabular font-display text-[clamp(1.5rem,2.6vw,2rem)] leading-none text-violet-lit">

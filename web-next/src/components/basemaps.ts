@@ -25,9 +25,20 @@ export const BASEMAPS: Record<Basemap, { url: string; attribution: string; label
     attribution: 'Esri · Maxar',
     label: 'Снимок',
   },
+  /* Схема — OpenStreetMap, а не тёмная подложка CARTO, которая тут стояла
+     раньше. CARTO закрыл бесплатную выдачу: сервер отвечает 200 и картинкой
+     нужного размера, поэтому ни Leaflet, ни проверки ничего не замечают, —
+     а на самой картинке поверх улиц напечатано «API KEY REQUIRED». Схема
+     выглядела сломанной ровно там, где её включают: на показе.
+
+     OSM отдаёт тайлы без ключа и, что важнее, с подписями улиц на казахском
+     и русском — плотнее, чем любая из тёмных подложек Esri, у которых на
+     городском масштабе не подписано ничего, кроме названия города. Подписи
+     здесь и есть весь смысл слоя. Тёмной схема становится фильтром в CSS
+     (см. .basemap-scheme). */
   scheme: {
-    url: 'https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
-    attribution: '© OpenStreetMap · © CARTO',
+    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '© OpenStreetMap',
     label: 'Схема',
   },
 };

@@ -22,8 +22,9 @@ Telegram сам присылает обновление на адрес, и ме
 
 Нет антиспама между вызовами и журнала сообщений. Бессерверная функция не
 помнит ничего между запросами, а поднимать базу ради счётчика — менять
-одну зависимость на другую. Ограничение честнее скрытой поломки: в
-`/stats` так и написано.
+одну зависимость на другую. В `/stats` этого ограничения больше нет и не
+должно быть: команду набирают, чтобы узнать про свалки, а не про
+устройство хостинга.
 
 ── Зависимости ─────────────────────────────────────────────────────────
 
@@ -109,6 +110,58 @@ def spaced(value: int) -> str:
     Тест показал это на первом же вызове.
     """
     return f"{value:,}".replace(",", NBSP)
+
+
+def kzt(value: float) -> str:
+    """Деньги в том же виде, что на сайте: «8,3 млн ₸».
+
+    Запятая, а не точка: рядом с «1,7 га» в том же сообщении «8.3 млн»
+    читается как опечатка.
+    """
+    if abs(value) >= 1e9:
+        return f"{value / 1e9:.1f}".replace(".", ",") + f"{NBSP}млрд{NBSP}₸"
+    if abs(value) >= 1e6:
+        return f"{value / 1e6:.1f}".replace(".", ",") + f"{NBSP}млн{NBSP}₸"
+    return spaced(round(value / 1e3)) + f"{NBSP}тыс{NBSP}₸"
+
+
+def plural(count: int, one: str, few: str, many: str) -> str:
+    """Русское склонение по числу: 1 выезд, 4 выезда, 5 выездов.
+
+    Без этого фраза верна ровно для тех значений, на которых её писали.
+    «Половину суммы закрывают 4 выезда» — правда сегодня и опечатка в
+    первой же области, где половину закроет один объект.
+    """
+    tens = count % 100
+    if 11 <= tens <= 14:
+        return many
+    ones = count % 10
+    if ones == 1:
+        return one
+    if 2 <= ones <= 4:
+        return few
+    return many
+
+
+#: Предложный падеж: «возник в мае 2024». Родительный («мая») в этой фразе
+#: читается как обрывок даты, у которой потеряли число.
+MONTHS_IN = ("январе", "феврале", "марте", "апреле", "мае", "июне",
+             "июле", "августе", "сентябре", "октябре", "ноябре", "декабре")
+
+
+def when(value: str) -> str:
+    """«2024-05-01» → «в мае 2024». Пустую дату не выдумываем."""
+    parts = str(value or "").split("-")
+    if len(parts) < 2:
+        return ""
+    try:
+        month = int(parts[1])
+        year = int(parts[0])
+    except ValueError:
+        return ""
+    if not 1 <= month <= 12:
+        return ""
+    return f"в {MONTHS_IN[month - 1]} {year}"
 
 
 def hash_sender(sender_id) -> str:
@@ -225,13 +278,80 @@ def subscribers() -> list[str]:
     return [part.strip() for part in raw.split(",") if part.strip()]
 
 
+def stats_text() -> str:
+    """Что стоит за командой /stats.
+
+    Раньше здесь стояли два числа и объяснение, почему нет третьего:
+    «счётчик сообщений жителей не ведётся, бот работает без постоянного
+    хранилища». Правда — и не та, за которой пришли. Человек спрашивает
+    про свалки, а получает отчёт об устройстве хостинга.
+
+    Теперь тут то же, что в шапке карты, и в том же порядке: сколько
+    объектов, на сколько денег, где начинать. Числа считаются из той же
+    выгрузки, что лежит на сайте, — расходиться им не на чем.
+
+    Отвергнутые проверкой объекты в деньги и площадь не входят: на сайте
+    сумма считается так же, и два разных «сколько всего» на один вопрос
+    хуже, чем отсутствие второго.
+    """
+    items = candidates()
+    if not items:
+        return "Выгрузка объектов сейчас недоступна. Попробуйте позже."
+
+    real = [i for i in items if i.get("visual_check") != "not_landfill"]
+    confirmed = sum(1 for i in items if i.get("visual_check") == "landfill")
+    damage = sum(float(i.get("damage_p50") or 0) for i in real)
+    area = sum(float(i.get("area_m2") or 0) for i in real)
+
+    by_damage = sorted(real, key=lambda i: float(i.get("damage_p50") or 0), reverse=True)
+
+    # Сколько выездов закрывают половину суммы. То же число, что на карте
+    # в панели «С чего начать», и считается тем же способом.
+    half, running = 0, 0.0
+    for item in by_damage:
+        if running >= damage / 2:
+            break
+        running += float(item.get("damage_p50") or 0)
+        half += 1
+
+    hectares = f"{area / 10000:.1f}".replace(".", ",")
+    lines = [
+        f"Объектов в реестре: <b>{len(items)}</b>",
+        f"Опознаны как свалка: <b>{confirmed}</b>",
+        f"Общая площадь: <b>{hectares} га</b>",
+        "",
+        f"Ущерб: <b>{kzt(damage)}</b>",
+    ]
+
+    if by_damage:
+        top = by_damage[0]
+        appeared = when(top.get("break_date"))
+        lines.append(
+            f"Самый дорогой: <b>{top['id']}</b> — {kzt(float(top.get('damage_p50') or 0))}"
+            f", {spaced(int(top.get('area_m2') or 0))} м²"
+            + (f", возник {appeared}" if appeared else "")
+        )
+    if half and damage:
+        lines.append(
+            f"Половину суммы закрывают <b>{half}</b> "
+            + plural(half, "выезд", "выезда", "выездов")
+        )
+
+    dates = sorted(str(i.get("break_date") or "") for i in real if i.get("break_date"))
+    if dates:
+        lines += ["", f"Самый ранний возник {when(dates[0])}, самый свежий — {when(dates[-1])}."]
+
+    lines += ["", "Пришлите геопозицию — скажу, знаком ли системе объект в этом месте."]
+    return "\n".join(lines)
+
+
 HELP = (
     "<b>Vantage AI</b> — свалки из космоса.\n\n"
     "Пришлите <b>геопозицию</b> (скрепка → Геопозиция), и я скажу, "
     "знаком ли системе объект в этом месте.\n\n"
     "Спутник не видит кучи меньше тридцати квадратных метров — "
     "их видите только вы.\n\n"
-    "/stats — сколько объектов найдено"
+    "/stats — объекты, площадь и ущерб по области"
 )
 
 #: Что известно об объекте после проверки по снимку высокого разрешения.
@@ -308,15 +428,7 @@ def on_update(update: dict) -> None:
     if text.startswith(("/start", "/help")):
         send(chat_id, HELP)
     elif text.startswith("/stats"):
-        items = candidates()
-        confirmed = sum(1 for item in items if item.get("visual_check") == "landfill")
-        send(
-            chat_id,
-            f"Найдено объектов: <b>{len(items)}</b>\n"
-            f"Подтверждено проверкой по снимку: <b>{confirmed}</b>\n\n"
-            "Счётчик сообщений жителей не ведётся: бот работает без "
-            "постоянного хранилища.",
-        )
+        send(chat_id, stats_text())
     elif message.get("photo"):
         send(
             chat_id,
