@@ -48,6 +48,7 @@ import hashlib
 import json
 import math
 import os
+import urllib.parse
 import urllib.request
 from http.server import BaseHTTPRequestHandler
 from pathlib import Path
@@ -119,20 +120,35 @@ def hash_sender(sender_id) -> str:
     return hashlib.sha256(f"{salt}:{sender_id}".encode()).hexdigest()[:16]
 
 
-def call(method: str, payload: dict) -> None:
-    """Вызов Telegram."""
+def ask(method: str, payload: dict | None = None) -> dict:
+    """Вызов Telegram с возвратом ответа.
+
+    Нужен там, где ответ важен: проверка состояния вебхука и его
+    регистрация. Для отправки сообщений есть `call`, который ответ
+    выбрасывает.
+    """
     token = os.environ.get("VANTAGE_BOT_TOKEN")
     if not token:
-        return
+        return {"ok": False, "description": "VANTAGE_BOT_TOKEN не задан"}
     request = urllib.request.Request(
         API.format(token=token, method=method),
-        data=json.dumps(payload).encode("utf-8"),
+        data=json.dumps(payload or {}).encode("utf-8"),
         headers={"Content-Type": "application/json"},
     )
-    # Telegram недоступен — повторять нечем и некогда: функция живёт доли
-    # секунды, а житель уже отправил сообщение.
+    try:
+        return json.loads(urllib.request.urlopen(request, timeout=10).read())
+    except Exception as error:  # текст ошибки и есть ответ
+        return {"ok": False, "description": str(error)}
+
+
+def call(method: str, payload: dict) -> None:
+    """Вызов Telegram без разбора ответа.
+
+    Telegram недоступен — повторять нечем и некогда: функция живёт доли
+    секунды, а житель уже отправил сообщение.
+    """
     with contextlib.suppress(Exception):
-        urllib.request.urlopen(request, timeout=8).read()
+        ask(method, payload)
 
 
 def send(chat_id, text: str) -> None:
@@ -264,12 +280,58 @@ class handler(BaseHTTPRequestHandler):
         self.wfile.write(b"ok")
 
     def do_GET(self) -> None:
-        """Проверка живости: открыть адрес в браузере и увидеть ответ."""
+        """Состояние бота и, по запросу, регистрация вебхука.
+
+        Раньше здесь было только «функция жива». Этого мало: когда бот
+        молчит, причина почти всегда в вебхуке — он не зарегистрирован,
+        или зарегистрирован на другой адрес, или секрет не совпал и все
+        обновления отбиваются с 403. Снаружи все три случая выглядят
+        одинаково: тишина.
+
+        Спросить у Telegram может сама функция — токен у неё есть. Одна
+        страница вместо переписки «а что вы вводили».
+        """
+        query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+        secret = os.environ.get("VANTAGE_BOT_SECRET", "")
+        lines: list[str] = []
+
+        # Регистрация вебхука прямо отсюда. Секрет обязателен: без него
+        # любой прохожий переключил бы бота на свой адрес.
+        if query.get("action") == ["set"]:
+            if not secret or query.get("secret") != [secret]:
+                lines.append("Регистрация отклонена: не совпал secret.")
+            else:
+                host = self.headers.get("X-Forwarded-Host") or self.headers.get("Host") or ""
+                url = f"https://{host}/api/telegram"
+                result = ask("setWebhook", {"url": url, "secret_token": secret})
+                lines.append(
+                    f"Регистрация вебхука на {url}: "
+                    f"{'успешно' if result.get('ok') else result.get('description')}"
+                )
+
+        info = ask("getWebhookInfo").get("result", {})
+        lines += [
+            "Vantage AI bot",
+            f"Объектов в указателе: {len(candidates())}",
+            f"Токен задан: {'да' if os.environ.get('VANTAGE_BOT_TOKEN') else 'НЕТ'}",
+            f"Секрет задан: {'да' if secret else 'НЕТ'}",
+            f"Подписчиков: {len(subscribers()) or 'НЕТ'}",
+            "",
+            f"Вебхук: {info.get('url') or 'НЕ ЗАРЕГИСТРИРОВАН'}",
+            f"Секрет у вебхука: {'да' if info.get('has_custom_certificate') is not None and info.get('url') else '—'}",
+            f"Необработанных обновлений: {info.get('pending_update_count', '—')}",
+            f"Последняя ошибка: {info.get('last_error_message') or 'нет'}",
+        ]
+
+        if not info.get("url"):
+            lines += [
+                "",
+                "Вебхук не зарегистрирован — поэтому бот молчит.",
+                "Откройте этот же адрес с параметрами:",
+                "  ?action=set&secret=ВАШ_СЕКРЕТ",
+            ]
+
         self.send_response(200)
         self.send_header("Content-Type", "text/plain; charset=utf-8")
         self.end_headers()
-        ready = "да" if os.environ.get("VANTAGE_BOT_TOKEN") else "нет"
-        self.wfile.write(
-            f"Vantage AI bot. Объектов в указателе: {len(candidates())}. "
-            f"Токен задан: {ready}.".encode()
-        )
+        self.wfile.write(chr(10).join(lines).encode())
