@@ -213,3 +213,83 @@ class TestSensitivity:
         result = sensitivity(5_000, econ, iterations=5_000, seed=25)
         assert abs(result["depth"]) > abs(result["carbon_price"])
         assert abs(result["density"]) > abs(result["carbon_price"])
+
+
+class TestAgeEntersTheMethaneModel:
+    """Возраст объекта обязан входить в расчёт метана.
+
+    Разложение по IPCC FOD идёт от момента захоронения. Без возраста
+    свалка 2019 года получала ту же оценку, что свалка 2024-го, — а весь
+    рассказ продукта держится на обратном: «каждый год ожидания — это
+    выброс, которого уже не вернуть». Утверждение было верным по физике и
+    никак не посчитанным.
+    """
+
+    def _economics(self):
+        from vantage.config import load_economics
+
+        return load_economics()
+
+    def test_older_object_has_released_more(self):
+        from vantage.money import assess
+
+        e = self._economics()
+        young = assess(3000.0, e, age_years=1.0)
+        old = assess(3000.0, e, age_years=10.0)
+        assert old.co2e_emitted_t.p50 > young.co2e_emitted_t.p50
+
+    def test_emitted_plus_preventable_equals_total(self):
+        """Уже ушедшее и предотвратимое в сумме дают полный горизонт.
+
+        Проверяется по среднему, а не по медиане: перцентили не
+        складываются. Медиана суммы не равна сумме медиан, если слагаемые
+        не связаны строго монотонно, — а здесь предотвратимое считается
+        как остаток и переупорядочивает выборку. Первая версия теста
+        сравнивала медианы и падала на разнице в 0,1%, что было ошибкой
+        теста, а не модели.
+        """
+        from vantage.money import assess
+
+        a = assess(3000.0, self._economics(), age_years=6.0)
+        total = a.co2e_emitted_t.mean + a.co2e_preventable_t.mean
+        assert abs(total - a.co2e_t.mean) < 1e-6 * max(1.0, a.co2e_t.mean)
+
+    def test_without_age_nothing_is_written_off(self):
+        """Возраст не передан — значит «свежая свалка», и ушедшего нет.
+
+        Молча приписать объекту возраст было бы хуже, чем не считать его:
+        число выглядело бы посчитанным.
+        """
+        from vantage.money import assess
+
+        a = assess(3000.0, self._economics())
+        assert a.co2e_emitted_t.p50 == 0.0
+        assert abs(a.co2e_preventable_t.mean - a.co2e_t.mean) < 1e-9
+
+    def test_decay_is_front_loaded(self):
+        """Первые годы дают больше, чем последние, — иначе это не FOD.
+
+        Из этого следует вывод, ради которого всё и считается: убирать
+        свалку поздно — не фигура речи.
+        """
+        from vantage.money import assess
+
+        # Отрезки обязаны быть равными. Первая версия сравнивала первые
+        # три года со следующими семью и падала: семь лет дают больше трёх
+        # даже при убывающей скорости. Это была ошибка теста, а не модели.
+        e = self._economics()
+        at3 = assess(3000.0, e, age_years=3.0).co2e_emitted_t.mean
+        at6 = assess(3000.0, e, age_years=6.0).co2e_emitted_t.mean
+        at9 = assess(3000.0, e, age_years=9.0).co2e_emitted_t.mean
+        first, second, third = at3, at6 - at3, at9 - at6
+        assert first > second > third, (
+            f"по трёхлетиям: {first:.0f}, {second:.0f}, {third:.0f} т — "
+            "разложение должно замедляться, а не ускоряться"
+        )
+
+    def test_age_never_makes_preventable_negative(self):
+        """Объект старше горизонта не должен давать отрицательный остаток."""
+        from vantage.money import assess
+
+        a = assess(3000.0, self._economics(), age_years=40.0)
+        assert a.co2e_preventable_t.p50 >= 0.0

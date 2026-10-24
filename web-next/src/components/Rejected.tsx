@@ -42,8 +42,8 @@ function signalLine(p: Record<string, unknown>): string {
   const parts: string[] = [];
   const drop = num(p.ndvi_drop);
   const bsi = num(p.bsi_rise);
-  if (drop !== null) parts.push(`растительность −${drop.toFixed(2)}`);
-  if (bsi !== null) parts.push(`открытый грунт +${bsi.toFixed(2)}`);
+  if (drop !== null) parts.push(`растительность −${drop.toFixed(2).replace('.', ',')}`);
+  if (bsi !== null) parts.push(`открытый грунт +${bsi.toFixed(2).replace('.', ',')}`);
   return parts.join(', ');
 }
 

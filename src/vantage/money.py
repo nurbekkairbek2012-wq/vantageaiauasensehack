@@ -80,6 +80,12 @@ class DamageAssessment:
     recyclable_value_kzt: Percentiles
     ch4_t: Percentiles
     co2e_t: Percentiles
+    #: Сколько CO₂-экв уже ушло за годы, что объект лежит. Ноль, если
+    #: возраст не передан: тогда оценка отвечает на вопрос «сколько выбросит
+    #: свежая свалка такой массы», и это надо называть вслух.
+    co2e_emitted_t: Percentiles
+    #: Что ещё можно предотвратить уборкой сейчас.
+    co2e_preventable_t: Percentiles
     climate_cost_kzt: Percentiles
     net_damage_kzt: Percentiles
 
@@ -88,6 +94,11 @@ class DamageAssessment:
     penalty_article: str
 
     iterations: int = field(default=0)
+    #: Возраст объекта в годах на момент расчёта. Ноль означает «возраст
+    #: не передан», и тогда co2e_emitted_t тоже ноль — оценка отвечает на
+    #: вопрос «сколько выбросит свежая свалка такой массы».
+    age_years: float = 0.0
+
 
     def summary_lines(self) -> list[str]:
         """Готовые строки для панели интерфейса и для слайда."""
@@ -116,6 +127,7 @@ def assess(
     distance_to_landfill_km: float = 15.0,
     violator: ViolatorClass = "individual",
     article: str | None = None,
+    age_years: float = 0.0,
     iterations: int | None = None,
     seed: int | None = None,
 ) -> DamageAssessment:
@@ -175,7 +187,43 @@ def assess(
     )
     co2e_t = ch4_model.to_co2e(ch4_t, float(methane_cfg["gwp_ch4_20yr"]))
     carbon_price = economics.triangular("carbon_price_kzt_per_t_co2e").sample(rng, n)
+    # Климатический ущерб считается по ПОЛНОМУ горизонту, а не по остатку.
+    #
+    # Выбор осознанный, и на защите его спросят. Ущерб — это вред, который
+    # объект наносит, а не только тот, который ещё можно предотвратить:
+    # метан, ушедший за годы лежания, никуда не делся из атмосферы.
+    # Считать по остатку значило бы, что чем дольше свалка лежит, тем
+    # меньше с неё спрос, — а это ровно наоборот.
+    #
+    # Разделение на ушедшее и предотвратимое считается отдельно (ниже) и
+    # показывается рядом: оно отвечает на другой вопрос — «что даст уборка
+    # сейчас».
     climate_cost = co2e_t * carbon_price
+
+    # Сколько метана уже ушло за годы, что объект лежит.
+    #
+    # Модель FOD считает выброс от момента захоронения, и без возраста
+    # свалка 2019 года и свалка 2024-го получали одинаковую оценку. При
+    # этом весь рассказ на сайте держится на обратном: «каждый год
+    # ожидания — это выброс, которого уже не вернуть». Утверждение было
+    # верным по физике и никак не посчитанным.
+    #
+    # Разложение экспоненциальное, и это важно для вывода: первые годы
+    # дают больше всего. Свалка, пролежавшая пять лет, уже отдала заметную
+    # долю того, что могла, — и убирать её поздно не в переносном смысле.
+    emitted_ch4 = ch4_model.cumulative_ch4(
+        mass * organic_share,
+        doc_fraction=doc,
+        doc_f=float(methane_cfg["doc_f"]),
+        mcf=float(methane_cfg["methane_correction_factor"]),
+        f_ch4=float(methane_cfg["f_ch4_in_gas"]),
+        oxidation=float(methane_cfg["oxidation_factor"]),
+        k=k,
+        years=max(0.0, float(age_years)),
+    ) if age_years and age_years > 0 else ch4_t * 0.0
+    co2e_emitted_t = ch4_model.to_co2e(emitted_ch4, float(methane_cfg["gwp_ch4_20yr"]))
+    # Предотвратимое — то, что ещё не ушло: остаток от полного горизонта.
+    co2e_preventable_t = np.maximum(co2e_t - co2e_emitted_t, 0.0)
 
     # --- 5. Чистый ущерб -------------------------------------------------- #
     # Извлекаемое сырьё вычитается: оно частично компенсирует уборку.
@@ -198,6 +246,9 @@ def assess(
         recyclable_value_kzt=Percentiles.of(recyclable_value, percentiles),
         ch4_t=Percentiles.of(ch4_t, percentiles),
         co2e_t=Percentiles.of(co2e_t, percentiles),
+        co2e_emitted_t=Percentiles.of(co2e_emitted_t, percentiles),
+        co2e_preventable_t=Percentiles.of(co2e_preventable_t, percentiles),
+        age_years=float(age_years),
         climate_cost_kzt=Percentiles.of(climate_cost, percentiles),
         net_damage_kzt=Percentiles.of(net_damage, percentiles),
         penalty_mrp=penalty_mrp,

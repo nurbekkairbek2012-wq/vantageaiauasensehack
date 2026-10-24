@@ -137,6 +137,11 @@ class ActDraft:
 
     verification_providers: int = 0
     verification_texture: float | None = None
+    #: Сколько CO₂-экв уже ушло в атмосферу за годы, что объект лежит.
+    #: В акте это отдельная строка: вред уже причинённый и вред, который
+    #: ещё можно предотвратить, — разные основания, и путать их нельзя.
+    co2e_emitted_t_p50: float = 0.0
+    age_years: float = 0.0
 
     approval: Approval | None = None
     created_at: datetime = field(default_factory=datetime.now)
@@ -210,6 +215,8 @@ class ActDraft:
             damage_p90_kzt=assessment.net_damage_kzt.p90,
             mass_t_p50=assessment.mass_t.p50,
             co2e_t_p50=assessment.co2e_t.p50,
+            co2e_emitted_t_p50=assessment.co2e_emitted_t.p50,
+            age_years=assessment.age_years,
             penalty_article=str(article["article"]),
             penalty_article_title=str(article["title"]),
             penalty_mrp=int(assessment.penalty_mrp),
@@ -358,6 +365,16 @@ def render_pdf(act: ActDraft, path: str | Path, *, allow_draft: bool = True) -> 
     line("3. ОЦЕНКА УЩЕРБА", size=11, bold=True, gap=7 * mm)
     field_row("Диапазон оценки", act.damage_text())
     field_row("Эмиссия за 20 лет", f"{act.co2e_t_p50:,.0f} т CO₂-экв.".replace(",", " "))
+    if act.co2e_emitted_t_p50 > 0:
+        # Строка про уже причинённый вред стоит отдельно от прогнозной.
+        # Для акта это принципиально: возмещению подлежит причинённый вред,
+        # а не предотвращённый, и должностное лицо должно видеть их порознь.
+        share = act.co2e_emitted_t_p50 / act.co2e_t_p50 * 100 if act.co2e_t_p50 else 0
+        field_row(
+            "Из них уже выброшено",
+            f"{act.co2e_emitted_t_p50:,.0f} т CO₂-экв. — {share:.0f}% "
+            f"за {act.age_years:.1f} года с момента возникновения".replace(",", " "),
+        )
     line(
         "Диапазон отражает неопределённость исходных допущений и получен методом Монте-Карло.",
         size=8, gap=6 * mm, color=colors.HexColor("#555555"),

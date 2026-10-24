@@ -380,14 +380,31 @@ class Pipeline:
         if candidates.empty:
             return candidates
 
+        import pandas as pd
+
         result = candidates.copy()
+        # Возраст объекта входит в расчёт метана.
+        #
+        # Разложение по IPCC FOD идёт от момента захоронения, и без возраста
+        # свалка 2019 года получала ту же оценку, что свалка 2024-го. Весь
+        # рассказ продукта при этом держится на обратном: «каждый год
+        # ожидания — это выброс, которого уже не вернуть». Утверждение было
+        # верным по физике и никак не посчитанным.
+        today = pd.Timestamp.today()
+        dates = pd.to_datetime(result.get("break_date"), errors="coerce")             if "break_date" in result.columns else None
+
         rows = []
-        for _, row in result.iterrows():
+        for i, (_, row) in enumerate(result.iterrows()):
             area = float(row.get("area_m2", 0.0))
             if area <= 0:
                 rows.append({})
                 continue
-            assessment = assess(area, self.economics)
+            age = 0.0
+            if dates is not None:
+                when = dates.iat[i]
+                if pd.notna(when):
+                    age = max(0.0, (today - when).days / 365.25)
+            assessment = assess(area, self.economics, age_years=age)
             rows.append(
                 {
                     "damage_p10": assessment.net_damage_kzt.p10,
@@ -395,11 +412,15 @@ class Pipeline:
                     "damage_p90": assessment.net_damage_kzt.p90,
                     "mass_t": assessment.mass_t.p50,
                     "co2e_t": assessment.co2e_t.p50,
+                    "co2e_emitted_t": assessment.co2e_emitted_t.p50,
+                    "co2e_preventable_t": assessment.co2e_preventable_t.p50,
+                    "age_years": round(age, 1),
                     "penalty_kzt": assessment.penalty_kzt,
                     "penalty_article": assessment.penalty_article,
                 }
             )
         for key in ("damage_p10", "damage_p50", "damage_p90", "mass_t", "co2e_t",
+                    "co2e_emitted_t", "co2e_preventable_t", "age_years",
                     "penalty_kzt", "penalty_article"):
             result[key] = [row.get(key) for row in rows]
         return result

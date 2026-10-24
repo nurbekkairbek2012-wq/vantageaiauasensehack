@@ -87,3 +87,45 @@ def test_optional_fields_are_documented(properties):
     # незачем — проверяем только то, что тест знает про свои.
     assert set(REQUIRED) & seen or not seen, "выгрузка не содержит ни одного известного поля"
     assert isinstance(unknown, list)
+
+
+class TestDecimalSeparator:
+    """Дроби на сайте пишутся через запятую — везде, без исключений.
+
+    Проверка не про педантизм. На одном экране стояли «59,7 млн ₸» и
+    «0.489», в акте — «8.3 млн ₸» при «8,3 млн ₸» на карте того же
+    объекта. Две записи одного числа в документе, который подписывает
+    должностное лицо, — повод для вопроса, а на слайде с метрикой
+    небрежность в записи заставляет усомниться и в самом числе.
+
+    Ловится это только на собранной странице: в исходниках дробь получается
+    из toFixed и в коде выглядит невинно.
+    """
+
+    def test_no_component_formats_decimals_with_a_dot(self):
+        import re
+
+        src = ROOT / "web-next/src"
+        if not src.exists():
+            pytest.skip("нет исходников сайта")
+
+        # toFixed без последующего replace — источник точки в тексте.
+        bad = re.compile(r"toFixed\(\s*\d\s*\)(?!\s*\.replace)")
+        offenders = []
+        for path in sorted(src.rglob("*.tsx")):
+            for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+                code = line.split("//", 1)[0]
+                if not bad.search(code):
+                    continue
+                # Координаты SVG — не текст для читателя.
+                if any(k in code for k in ("d +=", "x(", "y(", "cx", "cy", "path")):
+                    continue
+                # Географические координаты — законное исключение: «51,16514,
+                # 71,51711» не прочитает ни один навигатор, а вставляют их
+                # именно копированием.
+                if any(k in code for k in ("center[", "Координаты", "lat", "lon", "WGS84")):
+                    continue
+                offenders.append(f"{path.name}:{i}: {code.strip()[:70]}")
+        assert not offenders, (
+            "дробь печатается с точкой:" + chr(10) + chr(10).join(offenders)
+        )

@@ -51,11 +51,27 @@ export function HowLong({ features }: { features: Feature[] }) {
   const mass = real.reduce((s, f) => s + (num(f.properties.mass_t) ?? 0), 0);
   const old = ages.filter((a) => a > 5).length;
 
+  /* Метан, уже ушедший за годы лежания.
+     Раньше абзац ниже утверждал «каждый год ожидания — это выброс, которого
+     уже не вернуть», а посчитано это не было: модель разложения IPCC FOD
+     считала выброс от момента захоронения одинаково для свалки 2019 года и
+     2024-го. Теперь возраст входит в расчёт, и утверждение подкреплено
+     числом. */
+  const total = real.reduce((s, f) => s + (num(f.properties.co2e_t) ?? 0), 0);
+  const gone = real.reduce((s, f) => s + (num(f.properties.co2e_emitted_t) ?? 0), 0);
+  const goneShare = total > 0 ? Math.round((gone / total) * 100) : 0;
+
   const stats: [string, string][] = [
     ['лет лежит средний объект', median(ages).toFixed(1).replace('.', ',')],
     ['из ' + ages.length + ' — дольше пяти лет', String(old)],
     ['тонн отходов в списке', Math.round(mass).toLocaleString('ru-RU')],
   ];
+  if (gone > 0) {
+    stats.push([
+      `% метана уже ушло безвозвратно`,
+      String(goneShare),
+    ]);
+  }
 
   /* Заголовок берёт то же число, что и плитка под ним.
      Раньше в нём стояло «Шесть лет» словами, а плитка считалась из данных.
@@ -78,9 +94,20 @@ export function HowLong({ features }: { features: Feature[] }) {
         {said} — столько объект лежит, пока его никто не считает
       </h2>
 
-      <dl className="mt-8 grid gap-8 sm:grid-cols-3">
+      <dl className="mt-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map(([label, value], i) => (
-          <div key={label} className={i > 0 ? 'sm:border-l sm:border-grid sm:pl-8' : ''}>
+          <div
+            key={label}
+            className={
+              /* Разделитель — только между соседями в строке. При четырёх
+                 колонках на двухколоночной раскладке он иначе повисает
+                 слева у третьей плитки, в начале второй строки. */
+              i > 0 ? 'sm:border-l sm:border-grid sm:pl-8 [&:nth-child(odd)]:sm:border-l-0'
+                    + ' [&:nth-child(odd)]:sm:pl-0 lg:border-l lg:pl-8'
+                    + ' [&:nth-child(odd)]:lg:border-l [&:nth-child(odd)]:lg:pl-8'
+                : ''
+            }
+          >
             <dd className="tabular font-display text-[clamp(2rem,4vw,3rem)] leading-none text-violet-lit">
               {value}
             </dd>
@@ -90,11 +117,23 @@ export function HowLong({ features }: { features: Feature[] }) {
       </dl>
 
       <p className="mt-8 max-w-[62ch] leading-relaxed text-muted">
-        Это не метафора про «непорядок». Отходы разлагаются и дают метан —
-        наша оценка ущерба считает его на двадцать лет вперёд по методике
-        IPCC. Каждый год ожидания — это выброс, которого уже не вернуть, и
-        лишние тонны, которые придётся вывозить. Убрать сто тонн дешевле, чем
-        тысячу; вопрос только в том, кто заметит раньше.
+        Это не метафора про «непорядок». Отходы разлагаются и дают метан, и
+        мы считаем его по методике IPCC от даты возникновения каждого
+        объекта, а не от сегодняшнего дня. Разложение экспоненциальное:
+        первые годы дают больше всего, и потому счёт идёт не с момента, когда
+        свалку заметили.{' '}
+        {gone > 0 && (
+          <>
+            По списку это{' '}
+            <b className="font-normal text-line">
+              {Math.round(gone).toLocaleString('ru-RU')} тонн CO₂-эквивалента
+            </b>
+            , которые уже ушли в атмосферу и которых не вернуть, — {goneShare}%
+            всего, что эти объекты отдадут за двадцать лет. Убрать их сейчас
+            значит предотвратить остальные{' '}
+            {Math.round(total - gone).toLocaleString('ru-RU')} тонн.
+          </>
+        )}
       </p>
       <p className="mt-4 max-w-[62ch] leading-relaxed text-muted">
         Спутник заметил эти объекты через годы после появления — раньше было

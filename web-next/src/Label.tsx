@@ -70,6 +70,13 @@ function humanDate(v?: string) {
   return Number.isNaN(d.getTime()) ? v : `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+/* Десятичный разделитель — запятая, как на остальных страницах.
+   Значения признаков приходят числами и печатались как «0.347». */
+const dec = (v: unknown, digits = 3) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n.toFixed(digits).replace('.', ',') : '—';
+};
+
 export default function Label() {
   const [chips, setChips] = useState<Chip[]>([]);
   const [span, setSpan] = useState(280);
@@ -302,11 +309,11 @@ python scripts/export_chips.py
               </div>
               <div className="flex gap-2">
                 <dt>Падение NDVI</dt>
-                <dd className="tabular text-line">{current?.ndvi_drop ?? '—'}</dd>
+                <dd className="tabular text-line">{dec(current?.ndvi_drop)}</dd>
               </div>
               <div className="flex gap-2">
                 <dt>Рост BSI</dt>
-                <dd className="tabular text-line">{current?.bsi_rise ?? '—'}</dd>
+                <dd className="tabular text-line">{dec(current?.bsi_rise)}</dd>
               </div>
               {labels[current?.id ?? ''] && (
                 <div className="flex gap-2">

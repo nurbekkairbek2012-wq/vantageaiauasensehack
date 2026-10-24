@@ -115,7 +115,7 @@ export function Tape({ data }: { data: Series }) {
               <text key={yr} x={yearAt(yr) + 6} y={H - 8}>{yr}</text>
             ))}
           {[0, 0.4, 0.8].map((v) => (
-            <text key={v} x={4} y={y(v) + label * 0.34}>{v.toFixed(1)}</text>
+            <text key={v} x={4} y={y(v) + label * 0.34}>{v.toFixed(1).replace('.', ',')}</text>
           ))}
         </g>
 
@@ -160,8 +160,13 @@ export function Tape({ data }: { data: Series }) {
           <span className="text-line tabular">{data.area_m2.toLocaleString('ru-RU')} м²</span>
         </span>
         <span>
-          Вегетация упала с <span className="text-line tabular">{data.ndvi_before}</span> до{' '}
-          <span className="text-line tabular">{data.ndvi_after}</span> и не вернулась
+          {/* Значения приходят из JSON числами и печатались как «0.489».
+              На той же странице рядом стоят «59,7 млн ₸» и «0,670» — две
+              записи дробей в одном экране читаются как небрежность. */}
+          Вегетация упала с{' '}
+          <span className="text-line tabular">{String(data.ndvi_before).replace('.', ',')}</span> до{' '}
+          <span className="text-line tabular">{String(data.ndvi_after).replace('.', ',')}</span> и
+          не вернулась
         </span>
         <span className="text-muted-2">{data.source}</span>
       </figcaption>

@@ -49,6 +49,11 @@ const num = (v: number, d = 0) =>
  *  число приходит из данных, а окончание было вписано одно на всех.
  *  Такое читатель замечает раньше содержания и справедливо переносит
  *  небрежность на числа рядом. */
+/* Десятичный разделитель — запятая. Страница показывает рядом «не хуже
+   ×64» и «0,43–0,92»; точка в одном из чисел читается как небрежность там,
+   где рядом стоит интервал по бутстрэпу. */
+const dec = (v: number, digits: number) => v.toFixed(digits).replace('.', ',');
+
 const plural = (count: number, one: string, few: string, many: string) => {
   const mod100 = Math.abs(Math.round(count)) % 100;
   if (mod100 >= 11 && mod100 <= 14) return many;
@@ -279,9 +284,9 @@ export default function Forecast() {
                 {[
                   ['PR-AUC на будущем',
                     metrics.pr_auc_low !== undefined && metrics.pr_auc_high !== undefined
-                      ? `${metrics.pr_auc_low.toFixed(2)}–${metrics.pr_auc_high.toFixed(2)}`
-                      : metrics.pr_auc_future.toFixed(3)],
-                  ['Базовая частота', metrics.base_rate_future.toFixed(4)],
+                      ? `${dec(metrics.pr_auc_low, 2)}–${dec(metrics.pr_auc_high, 2)}`
+                      : dec(metrics.pr_auc_future, 3)],
+                  ['Базовая частота', dec(metrics.base_rate_future, 4)],
                   ['Выигрыш над случайным',
                     metrics.lift_low ? `не хуже ×${Math.round(metrics.lift_low)}` : `×${Math.round(metrics.lift)}`],
                 ].map(([k, v]) => (

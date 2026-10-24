@@ -628,7 +628,7 @@ function ObjectCard({ f }: { f: Feature }) {
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-xs text-muted-2">Модель по снимку 0,4–0,8 м</span>
             <span className="tabular text-sm text-muted">
-              {p.highres_score.toFixed(2)}
+              {p.highres_score.toFixed(2).replace('.', ',')}
             </span>
           </div>
           <p className="mt-1.5 text-xs leading-snug text-muted-2">
