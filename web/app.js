@@ -31,6 +31,36 @@ const WAYBACK = {
 const waybackUrl = (release, z, x, y) =>
   `https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/${release}/${z}/${y}/${x}`;
 
+/* Тепловая плотность объектов.
+ *
+ * Радиус влияния задан в МЕТРАХ, а не в пикселях. Пиксельный радиус
+ * означал бы, что при отдалении карты пятна расплываются на десятки
+ * километров, и «плотность» показывала бы масштаб просмотра, а не
+ * положение дел на земле.
+ *
+ * 1200 м выбраны по смыслу задачи: свалки образуются группами вдоль
+ * подъездных дорог, и пятно такого размера показывает именно очаг, а не
+ * отдельный объект — для отдельных объектов есть точки и полигоны. */
+const HEAT_RADIUS_M = 1200;
+const HEAT_MIN_PX = 10;
+const HEAT_MAX_PX = 260;
+
+/* Выше этого зума слой не рисуется. Причина не в скорости: радиус пятна
+   упирается в потолок в пикселях, и поверхность начинает показывать
+   охват меньше настоящего — то есть врать. На таком приближении смотрят
+   на отдельный объект, а для него есть полигон и карточка. */
+const HEAT_MAX_ZOOM = 15;
+
+/* Палитра плотности: от прозрачного через охру к красному. Совпадает с
+   палитрой слоя риска, чтобы два слоя читались как одна шкала. */
+const HEAT_PALETTE = [
+  [0.00, [0, 0, 0, 0]],
+  [0.25, [176, 122, 18, 90]],
+  [0.55, [201, 106, 28, 160]],
+  [0.80, [184, 74, 31, 205]],
+  [1.00, [224, 96, 58, 235]],
+];
+
 const MIN_ZOOM = 8;
 const MAX_ZOOM = 18;
 const CLUSTER_ZOOM = 13;      // ниже этого масштаба точки объединяются
@@ -95,8 +125,8 @@ const TOUR = [
     text: 'В карточке объекта — два спутниковых снимка разных лет с перетаскиваемой шторкой. Это архив Esri Wayback: реальная съёмка, а не рисунок.',
     before: () => { const f = state.list[0]; if (f) selectObject(f, true); },
     spot: '#panel-right' },
-  { title: 'Таймлайн',
-    text: 'Ползунок под картой показывает, как объекты появлялись год за годом. Нажмите «играть» — за восемь секунд видно, как их становится больше.',
+  { title: 'Таймлайн и плотность',
+    text: 'Ползунок показывает, как объекты появлялись год за годом, а тепловой слой — как разрастались очаги. Нажмите «играть»: в конце поверх накопленного прошлого ляжет прогноз на год вперёд.',
     before: () => { closeObject(); showTimeline(true); },
     spot: '#timeline' },
   { title: 'Прогноз',
@@ -122,7 +152,7 @@ const state = {
   baYears: [2019, 2026],
 };
 
-let map, layerCandidates, layerRisk, layerRegistry, layerClusters;
+let map, layerCandidates, layerRisk, layerRegistry, layerClusters, layerHeat;
 const markers = new Map();
 const el = (id) => document.getElementById(id);
 
@@ -197,6 +227,127 @@ function trackHtml(pct) {
 
 // ═════════════════════════ Карта ═════════════════════════
 
+/** Растровый слой накопительной плотности.
+ *
+ * Реализован через L.GridLayer, а не отдельным canvas поверх карты:
+ * GridLayer сам занимается панорамированием, зумом и выгрузкой невидимых
+ * тайлов. Слой поверх карты пришлось бы синхронизировать вручную, и он
+ * отставал бы на каждом перетаскивании.
+ *
+ * Рисование в два прохода. Сначала копятся полупрозрачные пятна в режиме
+ * 'lighter' — там, где объектов больше, яркость выше. Потом накопленная
+ * яркость переводится в цвет по палитре. Одним проходом получилась бы
+ * не плотность, а просто набор пятен одного цвета.
+ */
+const HeatLayer = L.GridLayer.extend({
+  createTile(coords) {
+    const size = this.getTileSize();
+    const tile = L.DomUtil.create('canvas', 'leaflet-tile');
+    tile.width = size.x;
+    tile.height = size.y;
+    const ctx = tile.getContext('2d');
+
+    const points = heatPoints();
+    if (!points.length) return tile;
+
+    const origin = coords.scaleBy(size);
+    const radius = heatRadiusPx(coords.z);
+    // Пятна за краем тайла всё равно заходят внутрь: берём запас в радиус.
+    const margin = radius;
+
+    ctx.globalCompositeOperation = 'lighter';
+    for (const point of points) {
+      const projected = map.project(point.latlng, coords.z);
+      const x = projected.x - origin.x;
+      const y = projected.y - origin.y;
+      if (x < -margin || y < -margin || x > size.x + margin || y > size.y + margin) continue;
+
+      const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+      const peak = 0.10 + 0.28 * point.weight;
+      gradient.addColorStop(0, `rgba(255,255,255,${peak})`);
+      gradient.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    colourise(ctx, size.x, size.y);
+    return tile;
+  },
+});
+
+/** Радиус пятна в пикселях для данного зума.
+ *  Метры переводятся в пиксели через масштаб Web Mercator на широте
+ *  Астаны; иначе пятно жило бы своей жизнью при каждом зуме. */
+function heatRadiusPx(zoom) {
+  const metresPerPixel = (156543.03392 * Math.cos((51.15 * Math.PI) / 180)) / 2 ** zoom;
+  return Math.max(HEAT_MIN_PX, Math.min(HEAT_MAX_PX, HEAT_RADIUS_M / metresPerPixel));
+}
+
+/** Объекты, попадающие в текущий срез таймлайна.
+ *  Вес — корень из площади: свалка вдесятеро большей площади заметнее,
+ *  но не в десять раз, иначе один объект съедает всю шкалу. */
+let heatCache = { key: null, points: [] };
+
+function heatPoints() {
+  // Кеш по году среза: createTile вызывается для каждого тайла экрана, а
+  // набор точек между тайлами один и тот же. Без кеша проекция и разбор
+  // геометрии повторялись бы двадцать раз на каждое движение карты.
+  const key = `${state.timelineYear ?? 'all'}:${state.features.length}`;
+  if (heatCache.key === key) return heatCache.points;
+
+  const limit = state.timelineYear;
+  // reduce, а не Math.max(...массив): спред раскладывает массив в аргументы
+  // вызова и на тысячах объектов падает с RangeError.
+  let maxArea = 1;
+  const areas = state.features.map((f) => {
+    const value = Math.sqrt(Math.max(0, +f.properties.area_m2 || 0));
+    if (value > maxArea) maxArea = value;
+    return value;
+  });
+
+  const points = [];
+  state.features.forEach((f, i) => {
+    const year = yearOf(f.properties.break_date);
+    if (limit != null && (year == null || year > limit)) return;
+    const center = polygonCenter(f);
+    points.push({ latlng: L.latLng(center[0], center[1]), weight: areas[i] / maxArea });
+  });
+
+  heatCache = { key, points };
+  return points;
+}
+
+/** Перевести накопленную яркость в цвет по палитре. */
+function colourise(ctx, width, height) {
+  const image = ctx.getImageData(0, 0, width, height);
+  const data = image.data;
+  for (let i = 0; i < data.length; i += 4) {
+    const intensity = data[i + 3] / 255;
+    if (intensity <= 0) continue;
+    const [r, g, b, a] = paletteAt(intensity);
+    data[i] = r;
+    data[i + 1] = g;
+    data[i + 2] = b;
+    data[i + 3] = a;
+  }
+  ctx.putImageData(image, 0, 0);
+}
+
+function paletteAt(t) {
+  for (let i = 1; i < HEAT_PALETTE.length; i++) {
+    const [stopHi, colourHi] = HEAT_PALETTE[i];
+    if (t > stopHi && i < HEAT_PALETTE.length - 1) continue;
+    const [stopLo, colourLo] = HEAT_PALETTE[i - 1];
+    const k = stopHi === stopLo ? 0 : Math.min(1, (t - stopLo) / (stopHi - stopLo));
+    return colourLo.map((v, j) => Math.round(v + (colourHi[j] - v) * k));
+  }
+  return HEAT_PALETTE[HEAT_PALETTE.length - 1][1];
+}
+
+const redrawHeat = () => { if (layerHeat && map.hasLayer(layerHeat)) layerHeat.redraw(); };
+
 function initMap() {
   map = L.map('map', {
     zoomControl: true, attributionControl: true,
@@ -217,9 +368,11 @@ function initMap() {
   layerRegistry = L.layerGroup();
   layerCandidates = L.layerGroup().addTo(map);
   layerClusters = L.layerGroup().addTo(map);
+  layerHeat = new HeatLayer({ opacity: 0.85, minZoom: MIN_ZOOM, maxZoom: HEAT_MAX_ZOOM });
 
   L.control.layers(bases, {
     'Объекты': layerCandidates,
+    'Плотность по годам': layerHeat,
     'Риск': layerRisk,
     'Известные объекты': layerRegistry,
   }, { collapsed: false, position: 'topright' }).addTo(map);
@@ -534,6 +687,7 @@ function buildTimeline() {
     state.timelineYear = i >= years.length ? null : years[i];
     el('tl-year').textContent = state.timelineYear ?? 'все';
     renderList();
+    redrawHeat();
     el('tl-count').textContent = state.list.length;
   };
   el('tl-count').textContent = state.features.length;
@@ -546,6 +700,12 @@ function showTimeline(on) {
   el('timeline').classList.toggle('hidden', !on);
   el('tl-toggle').classList.toggle('on', on);
   el('tl-toggle').classList.toggle('hidden', on);
+  // Слой плотности живёт вместе с ползунком: сам по себе, без движения по
+  // годам, он показывает только итог и ничего не объясняет.
+  if (on && layerHeat && !map.hasLayer(layerHeat)) {
+    map.addLayer(layerHeat);
+    toast('Слой плотности следует за ползунком: видно, как очаги разрастаются.', '', 6000);
+  }
 }
 
 function playTimeline() {
@@ -559,6 +719,13 @@ function playTimeline() {
     if (!state.playing || i > state.years.length) {
       state.playing = false;
       el('tl-play').textContent = '▶';
+      // Последний кадр — прогноз: где объектов ещё нет, но они появятся.
+      // Ради этого перехода таймлапс и нужен: накопленное прошлое и
+      // предсказанное будущее показываются в одной шкале цветов.
+      if (state.risk?.features?.length) {
+        showRisk(true);
+        toast('Тем же цветом — прогноз на 12 месяцев вперёд.', '', 7000);
+      }
       return;
     }
     range.value = i;
@@ -831,7 +998,7 @@ function renderLegend() {
   el('map-legend').innerHTML = [
     ['#e0603a', 'Найденный объект'],
     ['#5b93c9', 'Известен публично'],
-    ['#c96a1c', 'Зона риска'],
+    ['#c96a1c', 'Плотность и прогноз'],
   ].map(([c, l]) => `<div class="lg"><span class="sw" style="background:${c}"></span>${l}</div>`).join('');
 }
 

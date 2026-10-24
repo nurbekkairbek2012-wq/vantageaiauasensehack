@@ -329,3 +329,78 @@ class TestProviderRegistry:
             if provider.scheme == "xyz":
                 for token in ("{x}", "{y}", "{z}"):
                     assert token in provider.url_template
+
+
+class TestIndependentSources:
+    """Согласие провайдеров и согласие источников — разные вещи.
+
+    На первом настоящем прогоне текстурные оценки ``esri_wayback`` и
+    ``esri_current`` совпали до третьего знака у всех шести объектов: самый
+    свежий релиз архива Esri — это и есть текущая мозаика Esri. Считать их
+    за два независимых подтверждения значит выдавать за согласие
+    источников то, что согласием не является.
+    """
+
+    def test_two_esri_providers_are_one_source(self):
+        from vantage.verify import VerificationResult
+
+        result = VerificationResult(
+            candidate_id="C1",
+            providers_ok=["esri_current", "esri_wayback"],
+            sources_ok=["esri", "esri"],
+            scores={"esri_current": 0.8, "esri_wayback": 0.8},
+        )
+        assert result.n_providers == 2
+        assert result.n_sources == 1
+
+    def test_different_organisations_count_separately(self):
+        from vantage.verify import VerificationResult
+
+        result = VerificationResult(
+            candidate_id="C1",
+            providers_ok=["esri_current", "bing"],
+            sources_ok=["esri", "bing"],
+            scores={"esri_current": 0.8, "bing": 0.7},
+        )
+        assert result.n_sources == 2
+
+    def test_confirmation_needs_independent_sources(self, verify_cfg=None):
+        from vantage.config import load_settings
+        from vantage.verify import VerificationResult
+
+        cfg = load_settings().verify
+        one_source = VerificationResult(
+            candidate_id="C1",
+            providers_ok=["esri_current", "esri_wayback"],
+            sources_ok=["esri", "esri"],
+            scores={"esri_current": 0.9, "esri_wayback": 0.9},
+        )
+        two_sources = VerificationResult(
+            candidate_id="C2",
+            providers_ok=["esri_current", "bing"],
+            sources_ok=["esri", "bing"],
+            scores={"esri_current": 0.9, "bing": 0.9},
+        )
+        assert not one_source.is_confirmed(cfg)
+        assert two_sources.is_confirmed(cfg)
+
+    def test_every_provider_declares_its_source(self):
+        from vantage.verify import PROVIDERS
+
+        assert all(provider.source for provider in PROVIDERS.values())
+        assert PROVIDERS["esri_current"].source == PROVIDERS["esri_wayback"].source
+
+    def test_wayback_url_carries_a_release(self):
+        """Без номера релиза служба отдаёт текущую мозаику, а не архив."""
+        from vantage.verify import PROVIDERS, latest_wayback_release
+
+        assert f"/{latest_wayback_release()}/" in PROVIDERS["esri_wayback"].url_template
+
+    def test_default_providers_are_independent(self):
+        """В списке доверификации не должно быть двух провайдеров одного источника."""
+        from vantage.config import load_settings
+        from vantage.verify import PROVIDERS
+
+        names = load_settings().verify.providers
+        sources = [PROVIDERS[name].source for name in names if name in PROVIDERS]
+        assert len(sources) == len(set(sources))

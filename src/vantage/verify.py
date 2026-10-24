@@ -38,10 +38,12 @@ Sentinel-2 даёт 10 метров на пиксель. Этого достат
 
 from __future__ import annotations
 
+import json
 import logging
 import math
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Protocol
 
 import numpy as np
@@ -65,18 +67,54 @@ TILE_SIZE_PX = 256
 
 @dataclass(frozen=True)
 class TileProvider:
-    """Описание источника тайлов."""
+    """Описание источника тайлов.
+
+    ``source`` отделено от ``name`` намеренно. Провайдеров три, но
+    независимых источников съёмки — два: текущая мозаика Esri и её же
+    архив это одна и та же организация и часто один и тот же снимок.
+    Считать их за два независимых подтверждения означает удваивать
+    уверенность на ровном месте — см. :meth:`VerificationResult.n_sources`.
+    """
 
     name: str
     url_template: str
     attribution: str
+    source: str = ""
     max_zoom: int = 19
     scheme: str = "xyz"  # xyz | quadkey
+
+    def __post_init__(self) -> None:
+        if not self.source:
+            object.__setattr__(self, "source", self.name)
 
     def tile_url(self, x: int, y: int, z: int) -> str:
         if self.scheme == "quadkey":
             return self.url_template.format(q=quadkey(x, y, z))
         return self.url_template.format(x=x, y=y, z=z)
+
+
+def latest_wayback_release(path: Path | None = None) -> str:
+    """Номер самого свежего релиза архива Esri Wayback.
+
+    Список релизов лежит в ``wayback_releases.json`` в корне репозитория —
+    он же используется картой. Держать его копию в коде значит однажды
+    разойтись с картой и не заметить.
+    """
+    from .config import REPO_ROOT
+
+    target = Path(path) if path else REPO_ROOT / "wayback_releases.json"
+    if not target.exists():
+        return DEFAULT_WAYBACK_RELEASE
+    payload = json.loads(target.read_text(encoding="utf-8"))
+    if not payload:
+        return DEFAULT_WAYBACK_RELEASE
+    newest = max(payload, key=lambda year: str(payload[year].get("date", year)))
+    return str(payload[newest].get("release", DEFAULT_WAYBACK_RELEASE))
+
+
+#: Релиз архива Wayback на случай, если файла со списком нет рядом.
+#: Совпадает с самым свежим релизом в wayback_releases.json.
+DEFAULT_WAYBACK_RELEASE = "26334"
 
 
 PROVIDERS: dict[str, TileProvider] = {
@@ -87,21 +125,29 @@ PROVIDERS: dict[str, TileProvider] = {
             "World_Imagery/MapServer/tile/{z}/{y}/{x}"
         ),
         attribution="Esri, Maxar, Earthstar Geographics",
+        source="esri",
         max_zoom=19,
     ),
+    # Номер релиза в пути обязателен. Без него служба отдаёт ту же
+    # мозаику, что и esri_current: на прогоне это было видно сразу —
+    # текстурные оценки двух «разных» провайдеров совпадали до третьего
+    # знака у всех шести объектов.
     "esri_wayback": TileProvider(
         name="esri_wayback",
         url_template=(
             "https://wayback.maptiles.arcgis.com/arcgis/rest/services/"
-            "World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/{z}/{y}/{x}"
+            "World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/"
+            f"{latest_wayback_release()}/" + "{z}/{y}/{x}"
         ),
         attribution="Esri World Imagery Wayback",
+        source="esri",
         max_zoom=19,
     ),
     "bing": TileProvider(
         name="bing",
         url_template="https://ecn.t3.tiles.virtualearth.net/tiles/a{q}.jpeg?g=1",
         attribution="Microsoft Bing Maps",
+        source="bing",
         max_zoom=19,
         scheme="quadkey",
     ),
@@ -310,6 +356,7 @@ class VerificationResult:
     providers_ok: list[str] = field(default_factory=list)
     providers_failed: list[str] = field(default_factory=list)
     scores: dict[str, float] = field(default_factory=dict)
+    sources_ok: list[str] = field(default_factory=list)
     vlm: dict | None = None
     ground_resolution_m: float = 0.0
 
@@ -317,14 +364,25 @@ class VerificationResult:
     def n_providers(self) -> int:
         return len(self.providers_ok)
 
+    @property
+    def n_sources(self) -> int:
+        """Сколько **независимых** источников съёмки подтвердило объект.
+
+        Не то же самое, что число ответивших провайдеров. Текущая мозаика
+        Esri и её архив — одна организация и нередко один снимок; засчитать
+        их за два независимых подтверждения значит выдать за согласие
+        источников то, что согласием не является.
+        """
+        return len(set(self.sources_ok)) if self.sources_ok else self.n_providers
+
     def is_confirmed(self, cfg: VerifyCfg, *, min_texture: float = 0.35) -> bool:
         """Подтверждён ли кандидат.
 
-        Требуется и достаточное число ответивших провайдеров, и признак
+        Требуется и достаточное число независимых источников, и признак
         визуального хаоса. Если подключена зрительная модель, её вердикт
         имеет приоритет — но только при высокой уверенности.
         """
-        if self.n_providers < cfg.min_agreeing_providers:
+        if self.n_sources < cfg.min_agreeing_providers:
             return False
         if self.vlm is not None and float(self.vlm.get("confidence", 0.0)) >= 0.7:
             return bool(self.vlm.get("is_landfill", False))
@@ -373,6 +431,7 @@ def verify_candidates(
                 )
                 result.scores[name] = texture_score(image)["texture_score"]
                 result.providers_ok.append(name)
+                result.sources_ok.append(provider.source)
                 if vlm is not None and result.vlm is None:
                     result.vlm = vlm.verify(image, VLM_PROMPT)
             except Exception as exc:
@@ -382,7 +441,10 @@ def verify_candidates(
         results.append(result)
 
     confirmed = sum(1 for r in results if r.is_confirmed(cfg))
-    log.info("Доверификация: %d из %d кандидатов подтверждены", confirmed, len(results))
+    log.info(
+        "Доверификация: %d из %d кандидатов подтверждены (минимум %d независимых источников)",
+        confirmed, len(results), cfg.min_agreeing_providers,
+    )
     return results
 
 
@@ -390,8 +452,10 @@ def attach_verification(candidates, results: list[VerificationResult], cfg: Veri
     """Добавить итоги доверификации в таблицу кандидатов."""
     by_id = {r.candidate_id: r for r in results}
     out = candidates.copy()
+    # В колонку идёт число независимых источников, а не провайдеров:
+    # именно её показывает карта как «подтверждено: N».
     out["verify_providers"] = out["candidate_id"].map(
-        lambda cid: by_id[cid].n_providers if cid in by_id else 0
+        lambda cid: by_id[cid].n_sources if cid in by_id else 0
     )
     out["verify_texture"] = out["candidate_id"].map(
         lambda cid: float(np.mean(list(by_id[cid].scores.values()) or [0.0])) if cid in by_id else np.nan
@@ -403,6 +467,7 @@ def attach_verification(candidates, results: list[VerificationResult], cfg: Veri
 
 
 __all__ = [
+    "DEFAULT_WAYBACK_RELEASE",
     "PROVIDERS",
     "REQUEST_DELAY_S",
     "TILE_SIZE_PX",
@@ -416,6 +481,7 @@ __all__ = [
     "fetch_tile",
     "fetch_tile_grid",
     "ground_resolution_m",
+    "latest_wayback_release",
     "quadkey",
     "texture_score",
     "tile2deg",
