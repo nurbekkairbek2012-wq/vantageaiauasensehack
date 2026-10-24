@@ -7,7 +7,7 @@
 
 ── Какая модель и почему именно она ────────────────────────────────────
 
-Обучена на AerialWaste (Politecnico di Milano, CC BY): 5 220 снимков,
+Обучена на AerialWaste (Politecnico di Milano, CC BY-NC-ND 4.0 — только некоммерческое использование): 5 220 снимков,
 ROC-AUC 0,858 при кросс-проверке на их данных, 0,643 на наших семнадцати
 при интервале 0,333–0,923 — перенос не доказан.
 
@@ -43,6 +43,24 @@ ROC-AUC 0,858 при кросс-проверке на их данных, 0,643 �
 подтверждённые объекты: выезд с фотоаппаратом стоит здесь больше, чем
 любая правка кода.
 
+── Смена модели 27 сентября ────────────────────────────────────────────
+
+По умолчанию теперь модель без AerialWaste: DINOv2 ViT-S/14 + логистическая
+регрессия на дроновом наборе незаконных свалок (CC-BY-4.0), казахстанском
+наборе OSM и отказах человека из других поясов
+(models/dinov2_chip_open.joblib, scripts/train_dinov2.py). Причины две:
+
+  * AerialWaste распространяется под CC BY-NC-ND 4.0 — только
+    некоммерческое использование; для платного пилота модель на нём не
+    годится (docs/LICENSES.md);
+  * новая модель точнее на нашем экзамене: внутри северного кольца
+    ROC-AUC 0,79 (0,68–0,90) против 0,63 (0,43–0,83) у старой; медиана
+    оценки у свалок 0,40, у не-свалок 0,14.
+
+Эта же оценка задаёт подсказку порядка просмотра (vantage.triage).
+
+Старая модель осталась доступна ключом --model models/aerialwaste_chip.joblib.
+
     python scripts/attach_chipmodel.py [--refresh]
 """
 
@@ -57,7 +75,7 @@ if hasattr(sys.stdout, "reconfigure"):
 
 CANDIDATES = Path("outputs_real/candidates.geojson")
 WEB = Path("web-next/public/data/candidates.geojson")
-MODEL = Path("models/aerialwaste_chip.joblib")
+MODEL = Path("models/dinov2_chip_open.joblib")
 
 # Папка прогона и модель выбираются ключами: областей стало четыре, а
 # моделей несколько, и оценивать их прибитыми путями значит держать по
@@ -91,8 +109,10 @@ def verdict(score: float) -> str:
 
 def main() -> int:
     if not MODEL.exists():
-        log.error("нет модели %s — сначала scripts/train_aerialwaste.py", MODEL)
+        log.error("нет модели %s — сначала scripts/train_dinov2.py", MODEL)
         return 1
+    if "dinov2" in MODEL.name:
+        return run_dinov2()
 
     import geopandas as gpd
     import joblib
@@ -159,6 +179,58 @@ def main() -> int:
     working.to_file(CANDIDATES, driver="GeoJSON")
     if WEB.parent.exists() and WEB.name != "nowhere":
         working.to_file(WEB, driver="GeoJSON")
+    log.info("записано в %s и %s", CANDIDATES, WEB)
+    return 0
+
+
+def run_dinov2() -> int:
+    """Оценка моделью DINOv2: тот же снимок, что на экзамене (Wayback, 190 м)."""
+    import geopandas as gpd
+    import joblib
+    from PIL import Image
+
+    from vantage import env
+
+    env.configure()
+    sys.path.insert(0, str(Path("scripts")))
+    from gemini_screen import WAYBACK, fetch, object_crop, releases
+    from train_dinov2 import CROP, load_model, predict_tta
+
+    kept = gpd.read_file(CANDIDATES).to_crs(4326)
+    release = releases()[-1][1]
+    pictures, ids = [], []
+    for row in kept.itertuples():
+        p = row.geometry.representative_point()
+        image, zoom = fetch(p.y, p.x, WAYBACK.format(release=release, x="{x}", y="{y}", z="{z}"),
+                         f"wb{release}")
+        if image is None:
+            log.warning("   %s: снимок не получен", row.candidate_id)
+            continue
+        # Окно по центру объекта, а не сетки тайлов: иначе соседние объекты
+        # получают одну картинку и одну оценку.
+        pictures.append(Image.fromarray(object_crop(image, p.y, p.x, zoom, CROP)))
+        ids.append(str(row.candidate_id))
+    if not pictures:
+        log.error("ни одного снимка")
+        return 1
+    values = predict_tta(load_model(), joblib.load(MODEL), pictures)
+    scores = {c: float(v) for c, v in zip(ids, values, strict=True)}
+
+    working = kept
+    working["highres_score"] = working["candidate_id"].astype(str).map(
+        lambda c: round(scores[c], 3) if c in scores else None)
+    working["highres_verdict"] = working["candidate_id"].astype(str).map(
+        lambda c: verdict(scores[c]) if c in scores else None)
+    log.info("оценено %d объектов моделью %s", len(scores), MODEL.name)
+    working.to_file(CANDIDATES, driver="GeoJSON")
+    if WEB.parent.exists() and WEB.name != "nowhere":
+        # На сайт — только опубликованные объекты: переносим оценку по номеру.
+        site = gpd.read_file(WEB)
+        site["highres_score"] = site["candidate_id"].astype(str).map(
+            lambda c: round(scores[c], 3) if c in scores else None)
+        site["highres_verdict"] = site["candidate_id"].astype(str).map(
+            lambda c: verdict(scores[c]) if c in scores else None)
+        site.to_file(WEB, driver="GeoJSON")
     log.info("записано в %s и %s", CANDIDATES, WEB)
     return 0
 

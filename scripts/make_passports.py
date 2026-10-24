@@ -204,7 +204,7 @@ def passport(pdf, row, econ: dict | None, gemini: dict | None, fonts, page_no: i
         if value is not None and value == value:
             evidence.append((name, f"{float(value):.3f}"))
     score = row.get("highres_score")
-    evidence.append(("Модель по снимку (AerialWaste)",
+    evidence.append(("Модель по снимку (DINOv2)",
                      f"{float(score):.0%}" if score is not None and score == score else "—"))
     checks = [("Человек по снимку", {"landfill": "свалка", "unclear": "не разобрать",
                                      "not_landfill": "не свалка"}.get(

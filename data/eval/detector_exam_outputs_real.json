@@ -1,0 +1,42 @@
+{
+ "area": "outputs_real",
+ "all": {
+  "places": 343,
+  "recall": 0.111,
+  "recall_2000m2": 0.152,
+  "year_agreement": 0.784
+ },
+ "not_crop": {
+  "places": 287,
+  "recall": 0.118,
+  "recall_2000m2": 0.157,
+  "year_agreement": 0.788
+ },
+ "by_year": {
+  "2019": {
+   "places": 69,
+   "recall": 0.203,
+   "recall_2000m2": 0.25,
+   "year_agreement": 0.929
+  },
+  "2020": {
+   "places": 60,
+   "recall": 0.167,
+   "recall_2000m2": 0.208,
+   "year_agreement": 1.0
+  },
+  "2021": {
+   "places": 74,
+   "recall": 0.108,
+   "recall_2000m2": 0.152,
+   "year_agreement": 0.5
+  },
+  "2022": {
+   "places": 140,
+   "recall": 0.043,
+   "recall_2000m2": 0.062,
+   "year_agreement": 0.5
+  }
+ },
+ "raw_confirmed_by_map": 0.195
+}

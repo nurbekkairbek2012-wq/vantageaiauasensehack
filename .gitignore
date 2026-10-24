@@ -134,3 +134,15 @@ docs/passports/
 # выше выкидывает файлы из сборки, и ссылки на живом сайте ведут в 404.
 !web-next/public/docs/*.pdf
 !web-next/public/data/export/*.pdf
+data/dinov2_*.npz
+
+# Модели, обученные на AerialWaste (CC BY-NC-ND 4.0): производные работы
+# распространять нельзя (docs/LICENSES.md). Остаются только локально,
+# для сравнения. В репозитории — модели без AerialWaste.
+models/aerialwaste_chip.joblib
+models/combined_chip.joblib
+models/dinov2_chip.joblib
+models/dinov2_chip_b.joblib
+models/dinov2_chip_own.joblib
+models/dinov2_chip_own_b.joblib
+models/dinov2_chip_open_b.joblib

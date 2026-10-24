@@ -1,0 +1,61 @@
+{
+ "rows": [
+  {
+   "area": "real",
+   "km2": 420,
+   "raw": 385,
+   "reviewed": 59,
+   "dumps": 7,
+   "unclear": 8,
+   "false_to_human": 44,
+   "false_per_100km2": 10.5,
+   "raw_per_100km2": 91.7
+  },
+  {
+   "area": "astana_east",
+   "km2": 388,
+   "raw": 139,
+   "reviewed": 33,
+   "dumps": 0,
+   "unclear": 0,
+   "false_to_human": 33,
+   "false_per_100km2": 8.5,
+   "raw_per_100km2": 35.9
+  },
+  {
+   "area": "astana_industrial_west",
+   "km2": 309,
+   "raw": 552,
+   "reviewed": 42,
+   "dumps": 0,
+   "unclear": 4,
+   "false_to_human": 38,
+   "false_per_100km2": 12.3,
+   "raw_per_100km2": 178.5
+  },
+  {
+   "area": "astana_south",
+   "km2": 246,
+   "raw": 395,
+   "reviewed": 21,
+   "dumps": 0,
+   "unclear": 0,
+   "false_to_human": 21,
+   "false_per_100km2": 8.5,
+   "raw_per_100km2": 160.3
+  },
+  {
+   "area": "astana_southeast",
+   "km2": 317,
+   "raw": 270,
+   "reviewed": 63,
+   "dumps": 0,
+   "unclear": 0,
+   "false_to_human": 63,
+   "false_per_100km2": 19.9,
+   "raw_per_100km2": 85.3
+  }
+ ],
+ "total_km2": 1680,
+ "false_per_100km2": 11.8
+}

@@ -1,0 +1,80 @@
+{
+ "generated": "2026-09-27",
+ "variant": "pair",
+ "model": "gemini-3.8-flash",
+ "all": {
+  "name": "все области",
+  "objects": 8,
+  "matrix": {
+   "dump": {
+    "landfill": 0,
+    "not_landfill": 0,
+    "unclear": 0
+   },
+   "unclear": {
+    "landfill": 0,
+    "not_landfill": 0,
+    "unclear": 0
+   },
+   "not_dump": {
+    "landfill": 1,
+    "not_landfill": 7,
+    "unclear": 0
+   }
+  },
+  "workload_removed": 1.0,
+  "rejected": 8,
+  "rejected_landfill": 1,
+  "rejected_unclear": 0,
+  "dumps": 1,
+  "dumps_called_dump": 0,
+  "negatives_called_dump": 0,
+  "roc_auc": 0.714
+ },
+ "north": {
+  "name": "северное кольцо",
+  "objects": 8,
+  "matrix": {
+   "dump": {
+    "landfill": 0,
+    "not_landfill": 0,
+    "unclear": 0
+   },
+   "unclear": {
+    "landfill": 0,
+    "not_landfill": 0,
+    "unclear": 0
+   },
+   "not_dump": {
+    "landfill": 1,
+    "not_landfill": 7,
+    "unclear": 0
+   }
+  },
+  "workload_removed": 1.0,
+  "rejected": 8,
+  "rejected_landfill": 1,
+  "rejected_unclear": 0,
+  "dumps": 1,
+  "dumps_called_dump": 0,
+  "negatives_called_dump": 0,
+  "roc_auc": 0.714
+ },
+ "blind": {
+  "objects": 2,
+  "any_not_dump": {
+   "rejected": 2,
+   "workload_removed": 1.0,
+   "rejected_landfill": 1,
+   "rejected_unclear": 0,
+   "landfills": 1
+  },
+  "strict": {
+   "rejected": 1,
+   "workload_removed": 0.5,
+   "rejected_landfill": 1,
+   "rejected_unclear": 0,
+   "landfills": 1
+  }
+ }
+}

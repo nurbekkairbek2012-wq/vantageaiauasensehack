@@ -185,6 +185,23 @@ def outline(image, geometry, lat: float, lon: float, zoom: int):
     return np.asarray(picture)
 
 
+def object_crop(image, lat: float, lon: float, zoom: int, size: int):
+    """Квадрат size × size пикселей с центром на объекте.
+
+    Сетка тайлов строится вокруг ТАЙЛА, в котором лежит точка, и объект
+    бывает смещён от центра картинки на полтайла. Центральная обрезка
+    давала двум соседним объектам одну и ту же картинку — и одну оценку.
+    """
+    cx, cy = _tile_xy(lat, lon, zoom)
+    px = (cx - (int(cx) - GRID // 2)) * 256
+    py = (cy - (int(cy) - GRID // 2)) * 256
+    h, w = image.shape[:2]
+    half = size // 2
+    left = int(min(max(px - half, 0), w - size))
+    top = int(min(max(py - half, 0), h - size))
+    return image[top:top + size, left:left + size]
+
+
 def prompt_hash(text: str) -> str:
     return hashlib.sha1(text.encode("utf-8")).hexdigest()[:8]
 
@@ -368,6 +385,9 @@ def main() -> int:
     # flash — 20 запросов в день, у облегчённых больше. Экзамен всегда
     # идёт одной моделью: смесь ответов разных моделей ничего не мерит.
     parser.add_argument("--model", default=None)
+    # Только эти объекты (через запятую): при 20 запросах в день на
+    # основную модель квоту тратят на самые важные объекты, а не по порядку.
+    parser.add_argument("--only", default=None)
     args = parser.parse_args()
 
     load_dotenv(ROOT / ".env")
@@ -381,6 +401,9 @@ def main() -> int:
     else:
         frame = gpd.read_file(SITE).to_crs(4326)
         frame["candidate_id"] = "site:" + frame["candidate_id"].astype(str)
+    if args.only:
+        wanted = set(args.only.split(","))
+        frame = frame[frame["candidate_id"].astype(str).isin(wanted)]
     print(f"── Gemini ({verifier.model}), вариант {args.variant}: {len(frame)} объектов")
     answers = screen(frame, args.variant, verifier, limit=args.limit)
 

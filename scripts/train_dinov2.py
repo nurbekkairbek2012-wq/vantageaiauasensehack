@@ -47,9 +47,22 @@ sys.path.insert(0, str(ROOT / "scripts"))
 AW = ROOT / "data/aerialwaste"
 KZ = ROOT / "data/kz_dataset"
 EVAL = ROOT / "data/eval/labeled.geojson"
+#: Архитектура -> (кэш признаков, суффикс файлов). vits14 — исходная.
+ARCHS = {"vits14": "", "vitb14": "_b"}
+ARCH = "vits14"
 CACHE = ROOT / "data/dinov2_embeddings.npz"
 OUT = ROOT / "data/eval/dinov2.json"
 MODEL_OUT = ROOT / "models/dinov2_chip.joblib"
+#: Модель для подсказки порядка: открытые наборы + отказы человека из
+#: ДРУГИХ поясов (не северного кольца, где лежат все свалки экзамена).
+MODEL_OWN = ROOT / "models/dinov2_chip_own.joblib"
+#: Модель без AerialWaste: дрон (CC-BY-4.0) + казахстанский набор + отказы.
+#: AerialWaste распространяется под CC BY-NC-ND 4.0 — только некоммерческое
+#: использование, — и для платного пилота на нём обученная модель не годится.
+#: Эта модель на экзамене ещё и лучше: 0,79 против 0,70 внутри севера.
+MODEL_OPEN = ROOT / "models/dinov2_chip_open.joblib"
+DRONE = ROOT / "data/drone_crops"
+OWN_WEIGHT = 10.0
 
 SIZE = 224
 #: Центральное окно снимка экзамена, пикселей из 768: около 190 м —
@@ -57,10 +70,10 @@ SIZE = 224
 CROP = 512
 
 
-def load_model():
+def load_model(arch: str | None = None):
     import torch
 
-    model = torch.hub.load("facebookresearch/dinov2", "dinov2_vits14", trust_repo=True,
+    model = torch.hub.load("facebookresearch/dinov2", f"dinov2_{arch or ARCH}", trust_repo=True,
                            verbose=False)
     model.eval()
     return model
@@ -93,7 +106,33 @@ def embed(model, pictures):
                 batch = []
         if batch:
             out.append(model(torch.stack(batch)).numpy())
-    return np.concatenate(out) if out else np.zeros((0, 384), dtype="float32")
+    return np.concatenate(out) if out else np.zeros((0, 0), dtype="float32")
+
+
+def predict_tta(model, classifier, pictures):
+    """Оценка, усреднённая по восьми положениям снимка.
+
+    Сверху свалка не имеет «верха»: поворот и отражение — тот же объект.
+    Усреднение убирает случайные ответы, зависящие от ориентации. На
+    экзамене северного кольца: 0,792 против 0,779 у одного положения, в
+    подсказке порядка — 0,875 против 0,859.
+    """
+    import numpy as np
+    from PIL import Image
+
+    ops = (
+        lambda im: im,
+        lambda im: im.transpose(Image.FLIP_LEFT_RIGHT),
+        lambda im: im.transpose(Image.FLIP_TOP_BOTTOM),
+        lambda im: im.rotate(90),
+        lambda im: im.rotate(180),
+        lambda im: im.rotate(270),
+        lambda im: im.rotate(90).transpose(Image.FLIP_LEFT_RIGHT),
+        lambda im: im.rotate(270).transpose(Image.FLIP_LEFT_RIGHT),
+    )
+    pictures = list(pictures)
+    return np.mean([classifier.predict_proba(embed(model, [op(im) for im in pictures]))[:, 1]
+                    for op in ops], axis=0)
 
 
 def aerialwaste():
@@ -129,10 +168,19 @@ def kz():
     return (Image.open(KZ / r["file"]) for r in rows), [int(r["label"]) for r in rows]
 
 
+def drone():
+    """Дроновый набор, уже приведённый к спутниковому масштабу (extract_drone.py)."""
+    from PIL import Image
+
+    files = ([(p, 1) for p in sorted((DRONE / "waste").glob("*.png"))]
+             + [(p, 0) for p in sorted((DRONE / "clean").glob("*.png"))])
+    return (Image.open(p) for p, _ in files), [label for _, label in files]
+
+
 def exam_pictures():
     """Свежие снимки объектов экзамена — из кэша Gemini (или сети)."""
     import geopandas as gpd
-    from gemini_screen import WAYBACK, fetch, releases
+    from gemini_screen import WAYBACK, fetch, object_crop, releases
     from PIL import Image
 
     frame = gpd.read_file(EVAL)
@@ -140,13 +188,13 @@ def exam_pictures():
     pictures, keep = [], []
     for i, row in enumerate(frame.itertuples()):
         point = row.geometry.representative_point()
-        image, _ = fetch(point.y, point.x, WAYBACK.format(release=release, x="{x}", y="{y}",
+        image, zoom = fetch(point.y, point.x, WAYBACK.format(release=release, x="{x}", y="{y}",
                                                           z="{z}"), f"wb{release}")
         if image is None:
             continue
-        h, w = image.shape[:2]
-        top, left = (h - CROP) // 2, (w - CROP) // 2
-        pictures.append(Image.fromarray(image[top:top + CROP, left:left + CROP]))
+        # Окно по центру объекта, а не сетки тайлов: иначе соседние объекты
+        # получают одну картинку и одну оценку.
+        pictures.append(Image.fromarray(object_crop(image, point.y, point.x, zoom, CROP)))
         keep.append(i)
     return frame.iloc[keep].reset_index(drop=True), pictures
 
@@ -190,6 +238,7 @@ def report(name, y, score, home):
 
 
 def main() -> int:
+    import argparse
     import warnings
 
     import joblib
@@ -199,6 +248,17 @@ def main() -> int:
     from sklearn.preprocessing import StandardScaler
 
     from vantage import env
+
+    global ARCH, CACHE, OUT, MODEL_OUT, MODEL_OWN, MODEL_OPEN
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--arch", choices=sorted(ARCHS), default="vits14")
+    args = parser.parse_args()
+    ARCH, suffix = args.arch, ARCHS[args.arch]
+    CACHE = ROOT / f"data/dinov2_embeddings{suffix}.npz"
+    OUT = ROOT / f"data/eval/dinov2{suffix}.json"
+    MODEL_OUT = ROOT / f"models/dinov2_chip{suffix}.joblib"
+    MODEL_OWN = ROOT / f"models/dinov2_chip_own{suffix}.joblib"
+    MODEL_OPEN = ROOT / f"models/dinov2_chip_open{suffix}.joblib"
 
     warnings.filterwarnings("ignore")
     env.configure()
@@ -221,6 +281,7 @@ def main() -> int:
 
     frame, pictures = exam_pictures()
     ex_x = embed(model, pictures)
+    own = ((frame["truth"] == "not_landfill") & (frame["area"] != "outputs_real")).to_numpy()
     decided = frame["truth"].isin(["landfill", "not_landfill"]).to_numpy()
     y = (frame["truth"] == "landfill").to_numpy().astype(int)[decided]
     home = (frame["area"] == "outputs_real").to_numpy()[decided]
@@ -243,6 +304,43 @@ def main() -> int:
         if name == "aw+kz":
             MODEL_OUT.parent.mkdir(parents=True, exist_ok=True)
             joblib.dump(clf, MODEL_OUT)
+
+    # Открытые наборы + отказы человека из других поясов. Проверяется ТОЛЬКО
+    # на северном кольце: отказы остальных поясов сидят в обучении.
+    X = np.vstack([aw_x, kz_x, ex_x[own]])
+    Y = np.concatenate([aw_y, kz_y, np.zeros(int(own.sum()))])
+    weights = np.ones(len(Y))
+    weights[-int(own.sum()):] = OWN_WEIGHT
+    clf = make_pipeline(StandardScaler(), LogisticRegression(
+        C=0.1, class_weight="balanced", max_iter=3000))
+    clf.fit(X, Y, logisticregression__sample_weight=weights)
+    joblib.dump(clf, MODEL_OWN)
+
+    # То же без AerialWaste — модель для продукта (лицензия, см. MODEL_OPEN).
+    drone_cache = CACHE.with_name(CACHE.stem + "_drone.npz")
+    if drone_cache.exists():
+        z = np.load(drone_cache)
+        dr_x, dr_y = z["x"], z["y"]
+    else:
+        pics, dr_y = drone()
+        dr_x, dr_y = embed(model, pics), np.asarray(dr_y)
+        np.savez_compressed(drone_cache, x=dr_x, y=dr_y)
+    Xo = np.vstack([dr_x, kz_x, ex_x[own]])
+    Yo = np.concatenate([dr_y, kz_y, np.zeros(int(own.sum()))])
+    wo = np.ones(len(Yo))
+    wo[-int(own.sum()):] = OWN_WEIGHT
+    open_clf = make_pipeline(StandardScaler(), LogisticRegression(
+        C=0.1, class_weight="balanced", max_iter=3000))
+    open_clf.fit(Xo, Yo, logisticregression__sample_weight=wo)
+    joblib.dump(open_clf, MODEL_OPEN)
+
+    north = home
+    results["aw+kz+own_north"] = report(
+        f"+ отказы, север ({int(own.sum())})", y[north],
+        clf.predict_proba(x[north])[:, 1], np.ones(int(north.sum()), dtype=bool))
+    results["drone+kz+own_north"] = report(
+        "без AerialWaste, север", y[north],
+        open_clf.predict_proba(x[north])[:, 1], np.ones(int(north.sum()), dtype=bool))
 
     # Старая модель (ResNet18 + бустинг, AerialWaste) на тех же объектах.
     old = frame["highres_score"].to_numpy(dtype="float64")[decided]
