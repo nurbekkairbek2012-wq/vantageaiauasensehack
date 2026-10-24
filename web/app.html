@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>VANTAGE — карта объектов</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#f7f4ef">
+<link rel="stylesheet" href="vendor/leaflet.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="toasts" class="toasts" aria-live="polite"></div>
+
+<!-- Обучающий тур -->
+<div id="tour" class="tour hidden">
+  <div class="tour-card">
+    <div class="tour-top">
+      <span class="tour-step"><b id="tour-n">1</b> / <span id="tour-total">6</span></span>
+      <button id="tour-skip" class="link" type="button">Пропустить</button>
+    </div>
+    <h3 id="tour-title">Заголовок</h3>
+    <p id="tour-text">Текст</p>
+    <div class="tour-nav">
+      <button id="tour-prev" class="btn ghost sm" type="button">Назад</button>
+      <button id="tour-next" class="btn solid sm" type="button">Дальше</button>
+    </div>
+  </div>
+</div>
+
+<header class="bar">
+  <a class="bar-brand" href="./">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" stroke-width="1.6" opacity=".3"/><circle cx="16" cy="16" r="7.5" fill="none" stroke="currentColor" stroke-width="1.6" opacity=".55"/><circle cx="16" cy="16" r="3" fill="currentColor"/></svg>
+    <span>VANTAGE</span>
+  </a>
+
+  <div class="tabs" role="tablist">
+    <button class="tab active" id="tab-map" role="tab" type="button">Карта</button>
+    <button class="tab" id="tab-story" role="tab" type="button">Сценарий защиты</button>
+    <button class="tab" id="tab-method" role="tab" type="button">Как это работает</button>
+  </div>
+
+  <div class="bar-right">
+    <span id="demo-flag" class="flag hidden">демо-данные</span>
+    <span id="net-flag" class="flag net">онлайн</span>
+    <button id="btn-offline" class="btn ghost sm" type="button" title="Скачать карту в кеш">Офлайн</button>
+    <button id="btn-tour" class="btn ghost sm" type="button">Тур</button>
+  </div>
+</header>
+
+<main class="cols">
+
+  <!-- ЛЕВО -->
+  <aside class="panel left" id="panel-left">
+    <div class="panel-top">
+      <div class="field">
+        <input id="q" type="search" placeholder="Найти объект" autocomplete="off">
+      </div>
+      <div class="controls">
+        <select id="sort">
+          <option value="probability">по уверенности</option>
+          <option value="damage_p50">по ущербу</option>
+          <option value="area_m2">по площади</option>
+          <option value="break_date">по дате</option>
+        </select>
+        <button id="btn-fit" class="btn ghost sm" type="button" title="Показать все">Все</button>
+      </div>
+    </div>
+    <div id="list" class="list"></div>
+    <div id="list-foot" class="panel-foot">—</div>
+  </aside>
+
+  <!-- ЦЕНТР -->
+  <section class="mapwrap">
+    <div id="map"></div>
+    <div id="map-legend" class="maplegend"></div>
+    <div id="loading" class="loading"><span class="sp"></span>Загрузка данных</div>
+  </section>
+
+  <!-- ПРАВО -->
+  <aside class="panel right" id="panel-right">
+
+    <!-- Приветствие -->
+    <section id="pane-welcome" class="pane">
+      <div class="kicker">начало</div>
+      <h2>Карта объектов</h2>
+      <p class="muted">
+        Слева — список найденных объектов. Нажмите любой, чтобы увидеть
+        доказательную цепочку, расчёт ущерба и применимую статью.
+      </p>
+      <div id="welcome-stats" class="stats"></div>
+      <button id="btn-tour-2" class="btn solid wide" type="button">Пройти тур за 5 минут</button>
+    </section>
+
+    <!-- Карточка объекта -->
+    <section id="pane-object" class="pane hidden">
+      <button id="obj-close" class="pane-x" type="button" aria-label="Закрыть">×</button>
+      <div class="kicker">объект</div>
+      <h2 id="obj-id">—</h2>
+      <div id="obj-badges" class="badges"></div>
+
+      <div id="obj-facts" class="facts"></div>
+
+      <div class="block">
+        <div class="block-title">Доказательная цепочка <span id="obj-agree" class="pill">—</span></div>
+        <div id="obj-signals"></div>
+        <p class="muted sm">
+          Свалку определяет согласие независимых признаков, а не сила одного:
+          карьер даёт мощный рост открытого грунта при молчании остальных четырёх.
+        </p>
+      </div>
+
+      <div class="block">
+        <div class="block-title">Изменение поверхности</div>
+        <div id="obj-ba" class="ba"></div>
+      </div>
+
+      <div class="block">
+        <div class="block-title">Оценка ущерба</div>
+        <div id="obj-money"></div>
+      </div>
+
+      <div class="block">
+        <div class="block-title">Правовая норма</div>
+        <div id="obj-legal" class="legal"></div>
+      </div>
+
+      <button id="obj-act" class="btn solid wide" type="button">Сформировать черновик акта</button>
+      <p class="muted sm mt">
+        Оценка вероятности, а не юридическое доказательство. Решение принимает
+        уполномоченное лицо по итогам выездной проверки.
+      </p>
+    </section>
+
+    <!-- Сценарий -->
+    <section id="pane-story" class="pane hidden">
+      <div class="progress"><i id="story-bar"></i></div>
+      <div class="kicker">сцена <b id="story-n">1</b> из <span id="story-total">7</span></div>
+      <h2 id="story-title">—</h2>
+      <blockquote id="story-line" class="quote">—</blockquote>
+      <div class="row">
+        <button id="story-prev" class="btn ghost" type="button">Назад</button>
+        <button id="story-next" class="btn solid grow" type="button">Дальше →</button>
+      </div>
+      <p class="muted sm mt"><kbd>Space</kbd> дальше · <kbd>←</kbd> <kbd>→</kbd> навигация</p>
+      <div id="story-stats" class="stats"></div>
+      <div id="story-rejects" class="hidden"></div>
+    </section>
+
+    <!-- Метод -->
+    <section id="pane-method" class="pane hidden">
+      <div class="kicker">метод</div>
+      <h2>Как это работает</h2>
+      <div class="method">
+        <div class="mstep"><b>1. Данные</b><span>Sentinel-2, Sentinel-1, Landsat 8/9 через STAC. Читаем окна по HTTP-range, не скачивая терабайты.</span></div>
+        <div class="mstep"><b>2. Признаки</b><span>Шесть спектральных индексов, радарная стабильность, тепловая аномалия.</span></div>
+        <div class="mstep"><b>3. Разрыв</b><span>Гармоническая модель снимает сезонность. Ищем необратимый разрыв тренда за 8 лет.</span></div>
+        <div class="mstep"><b>4. Отсев</b><span>OSM, дороги, кольцо от жилья. Тысячи кандидатов → десятки.</span></div>
+        <div class="mstep"><b>5. Модель</b><span>Сиамская сеть учит изменение, а не внешний вид. Работает на сотнях примеров.</span></div>
+        <div class="mstep"><b>6. Деньги</b><span>Монте-Карло по восьми допущениям. P10–P90, не точка.</span></div>
+        <div class="mstep"><b>7. Действие</b><span>Черновик акта, контроль устранения, прогноз на 12 месяцев.</span></div>
+      </div>
+      <a class="btn ghost wide" href="https://github.com/k41270075-stack/hakathon" target="_blank" rel="noopener">Исходный код</a>
+    </section>
+
+  </aside>
+</main>
+
+<script src="vendor/leaflet.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

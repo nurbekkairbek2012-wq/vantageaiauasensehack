@@ -1,505 +1,106 @@
-/* VANTAGE — карта объектов.
+/* VANTAGE — приложение карты.
  *
- * Три вещи, из-за которых первая версия тормозила, и как это исправлено:
+ * Карта на Leaflet. Библиотека лежит локально в web/vendor, а не
+ * подключается с CDN: без сети на площадке страница со внешним
+ * скриптом не откроется вообще. 147 КБ — приемлемая цена за то,
+ * чтобы демонстрация не зависела от Wi-Fi в зале.
  *
- *   1. Path2D пересобирался для каждого полигона на КАЖДОМ событии мыши.
- *      При тысячах колец это тысячи операций на движение курсора.
- *      Теперь: геометрия упрощается один раз при загрузке, отрисовка
- *      идёт пакетами (один Path2D на стиль, а не на объект).
- *   2. draw() вызывался синхронно из pointermove — до сотни раз в секунду.
- *      Теперь: throttle через requestAnimationFrame, максимум 60 кадров.
- *   3. Попадание клика проверялось перебором всех полигонов с пересборкой
- *      путей. Теперь: сначала грубая проверка по bbox, потом точная.
- *
- * Подложка — растровые тайлы. Офлайн не ломается: тайлы кешируются
- * service worker'ом, кнопка «Офлайн» прогревает кеш заранее.
+ * Своя реализация карты была ошибкой: инерция прокрутки, плавный
+ * зум, обработка тайлов и подписи улиц — это месяцы работы, которые
+ * уже сделаны. Объяснимость от этого не страдает: Leaflet рисует
+ * подложку, а вся логика признаков, денег и решений остаётся нашей.
  */
 
 'use strict';
 
-// ═══════════════════════════ Проекция ═══════════════════════════
-
-const MAX_LAT = 85.05112878;
-
-const lonToX = (lon) => (lon + 180) / 360;
-const latToY = (lat) => {
-  const c = Math.max(Math.min(lat, MAX_LAT), -MAX_LAT);
-  const r = (c * Math.PI) / 180;
-  return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2;
-};
-const xToLon = (x) => x * 360 - 180;
-const yToLat = (y) => (180 / Math.PI) * Math.atan(Math.sinh(Math.PI * (1 - 2 * y)));
-
-// ═══════════════════════════ Состояние ═══════════════════════════
-
-const TILE = 256;
+// ═════════════════════════ Данные и состояние ═════════════════════════
 
 const BASEMAPS = {
   dark: {
-    url: (x, y, z) => `https://basemaps.cartocdn.com/dark_all/${z}/${x}/${y}.png`,
+    url: 'https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
     attribution: '© OpenStreetMap · © CARTO',
-    maxZoom: 19,
+    label: 'Схема',
   },
   sat: {
-    url: (x, y, z) =>
-      `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`,
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     attribution: 'Esri · Maxar · Earthstar Geographics',
-    maxZoom: 19,
+    label: 'Спутник',
   },
 };
 
+const SIGNALS = [
+  ['ndvi_drop', 'Падение растительности', 0.35],
+  ['bsi_rise', 'Рост открытого грунта', 0.25],
+  ['pmli_response', 'Отклик полимеров (SWIR)', 0.15],
+  ['sar_incoherence', 'Нестабильность по радару', 0.50],
+  ['thermal_anomaly', 'Тепловая аномалия', 3.0],
+];
+
+const REJECTS = [
+  ['Карьер', 'пересекается с landuse=quarry в OSM; радарно стабилен'],
+  ['Стройплощадка', 'пересекается с landuse=construction'],
+  ['Снегосвалка', 'тепловая аномалия отрицательная — холоднее фона'],
+  ['Пашня', 'NDVI восстановился в окне 18 месяцев: сезонное изменение'],
+  ['Отвал грунта', 'нет отклика полимеров и тепловой аномалии'],
+  ['Мелкий объект', 'площадь ниже порога разрешения Sentinel-2'],
+];
+
+const TOUR = [
+  {
+    title: 'Что вы видите',
+    text: 'Красные точки — объекты, найденные по спутниковым снимкам. Их нет в официальном реестре. Каждый датирован: система знает, в каком месяце он появился.',
+    before: () => { setTab('map'); fitAll(); },
+  },
+  {
+    title: 'Список слева',
+    text: 'Все объекты с уверенностью модели, площадью и оценкой ущерба. Можно искать и сортировать по четырём полям. Нажатие переносит камеру на объект.',
+    spot: '#panel-left',
+  },
+  {
+    title: 'Карточка объекта',
+    text: 'Доказательная цепочка из пяти физических признаков, изменение поверхности, расчёт ущерба диапазоном и применимая статья КоАП. Модель не выдаёт вердикт — она показывает основания.',
+    before: () => { const f = state.list[0]; if (f) selectObject(f, true); },
+    spot: '#panel-right',
+  },
+  {
+    title: 'Зоны риска',
+    text: 'Переключите подложку на «Риск» в правом верхнем углу карты. Это прогноз: где свалка появится в ближайшие 12 месяцев. Убрать стоит миллионы, не дать появиться — стоит знака.',
+    before: () => { showRisk(true); closeObject(); },
+  },
+  {
+    title: 'Сценарий защиты',
+    text: 'Вкладка наверху проводит по семи сценам в фиксированном порядке — с репликами. Под стрессом на сцене выступающий забывает, куда кликать; сценарий это снимает.',
+    before: () => { showRisk(false); setTab('story'); },
+  },
+  {
+    title: 'Работает без интернета',
+    text: 'Кнопка «Офлайн» скачивает тайлы карты в кеш браузера. Нажмите её на репетиции — и на защите Wi-Fi будет не нужен. Данные и библиотека уже локальные.',
+    spot: '#btn-offline',
+    before: () => setTab('map'),
+  },
+];
+
 const state = {
-  view: { cx: 0.5, cy: 0.5, size: 4096 },
-  basemap: 'dark',
-  layers: { candidates: [], risk: [], registry: [] },
-  visible: new Set(['candidates', 'registry']),
+  features: [],       // все объекты
+  list: [],           // отфильтрованные и отсортированные
+  risk: null,
   story: null,
-  scene: 0,
-  mode: 'story',
-  selected: null,
-  filter: '',
-  sort: 'probability',
-  isDemo: false,
   totals: null,
+  selected: null,
+  sort: 'probability',
+  query: '',
+  tab: 'map',
+  scene: 0,
+  tourStep: 0,
+  isDemo: false,
 };
 
-const els = {};
-const canvas = document.getElementById('map');
-const ctx = canvas.getContext('2d', { alpha: false });
-let dpr = Math.min(window.devicePixelRatio || 1, 2);
+let map, layerCandidates, layerRisk, layerRegistry;
+const markers = new Map();       // candidate_id -> Leaflet layer
+const el = (id) => document.getElementById(id);
 
-const tiles = new Map();       // "z/x/y|basemap" -> Image | 'loading' | 'error'
-let pendingFrame = false;
+// ═════════════════════════ Форматирование ═════════════════════════
 
-function $(id) {
-  if (!els[id]) els[id] = document.getElementById(id);
-  return els[id];
-}
-
-// ═══════════════════════════ Загрузка данных ═══════════════════════════
-
-async function loadJson(path) {
-  try {
-    const r = await fetch(path, { cache: 'no-cache' });
-    return r.ok ? await r.json() : null;
-  } catch { return null; }
-}
-
-/** Упрощение при загрузке: то, что не видно на экране, не должно тратить кадры. */
-function decimate(ring, maxPoints) {
-  if (ring.length <= maxPoints) return ring;
-  const step = Math.ceil(ring.length / maxPoints);
-  const out = [];
-  for (let i = 0; i < ring.length; i += step) out.push(ring[i]);
-  if (out[out.length - 1] !== ring[ring.length - 1]) out.push(ring[ring.length - 1]);
-  return out;
-}
-
-function parseFeatures(fc, kind, maxPointsPerRing) {
-  if (!fc || !fc.features) return [];
-  const shapes = [];
-  for (const f of fc.features) {
-    const g = f.geometry;
-    if (!g) continue;
-    const polys = g.type === 'Polygon' ? [g.coordinates]
-                : g.type === 'MultiPolygon' ? g.coordinates : null;
-    if (!polys) continue;
-
-    const rings = [];
-    let minLon = 180, minLat = 90, maxLon = -180, maxLat = -90;
-    for (const poly of polys) {
-      for (const raw of poly) {
-        if (raw.length < 4) continue;
-        const ring = decimate(raw, maxPointsPerRing);
-        const pts = new Float64Array(ring.length * 2);
-        for (let i = 0; i < ring.length; i++) {
-          const [lon, lat] = ring[i];
-          if (lon < minLon) minLon = lon;
-          if (lon > maxLon) maxLon = lon;
-          if (lat < minLat) minLat = lat;
-          if (lat > maxLat) maxLat = lat;
-          pts[i * 2] = lonToX(lon);
-          pts[i * 2 + 1] = latToY(lat);
-        }
-        rings.push(pts);
-      }
-    }
-    if (!rings.length) continue;
-
-    shapes.push({
-      kind,
-      rings,
-      props: f.properties || {},
-      bbox: [minLon, minLat, maxLon, maxLat],
-      wx: [lonToX(minLon), latToY(maxLat), lonToX(maxLon), latToY(minLat)],
-      center: [(minLon + maxLon) / 2, (minLat + maxLat) / 2],
-    });
-  }
-  return shapes;
-}
-
-function syntheticRegistry(cands) {
-  if (!cands.length) return [];
-  const step = Math.max(1, Math.floor(cands.length / 3));
-  return cands.filter((_, i) => i % step === 0).slice(0, 3)
-    .map((s) => ({ ...s, kind: 'registry' }));
-}
-
-async function loadAll() {
-  $('loader').classList.remove('hidden');
-  const [cands, risk, story] = await Promise.all([
-    loadJson('data/candidates.geojson'),
-    loadJson('data/risk_public.geojson'),
-    loadJson('data/story.json'),
-  ]);
-
-  state.layers.candidates = parseFeatures(cands, 'candidate', 200);
-  // Зоны риска — крупные растворённые полигоны с тысячами точек.
-  // Для показа хватает грубого контура, и это разница между 60 и 8 кадрами.
-  state.layers.risk = parseFeatures(risk, 'risk', 60);
-  state.layers.registry = syntheticRegistry(state.layers.candidates);
-  state.story = story;
-  state.totals = story?.totals || null;
-  state.isDemo = story?.is_demo === true ||
-    state.layers.candidates.some((s) => s.props.is_demo === true || s.props.is_demo === 'true');
-
-  $('demo-chip').classList.toggle('hidden', !state.isDemo);
-  if (state.isDemo) {
-    toast('Показаны синтетические данные для отладки интерфейса. Это не результаты прогона.', 'warn', 9000);
-  }
-  if (!state.layers.candidates.length) {
-    toast('Данные не найдены. Запустите vantage sample или vantage run.', 'warn', 12000);
-  }
-
-  $('loader').classList.add('hidden');
-  renderLegend();
-  renderList();
-  resetView();
-  setScene(0);
-}
-
-// ═══════════════════════════ Геометрия экрана ═══════════════════════════
-
-function rect() { return canvas.getBoundingClientRect(); }
-
-function sx(x) { const r = rect(); return (x - state.view.cx) * state.view.size + r.width / 2; }
-function sy(y) { const r = rect(); return (y - state.view.cy) * state.view.size + r.height / 2; }
-function unx(px) { const r = rect(); return (px - r.width / 2) / state.view.size + state.view.cx; }
-function uny(py) { const r = rect(); return (py - r.height / 2) / state.view.size + state.view.cy; }
-
-function inView(shape, r) {
-  const [x0, y0, x1, y1] = shape.wx;
-  return !(sx(x1) < -40 || sx(x0) > r.width + 40 || sy(y1) < -40 || sy(y0) > r.height + 40);
-}
-
-/** Один Path2D на группу объектов — вместо одного вызова fill() на объект. */
-function batchPath(shapes, r) {
-  const path = new Path2D();
-  for (const shape of shapes) {
-    if (!inView(shape, r)) continue;
-    for (const ring of shape.rings) {
-      for (let i = 0; i < ring.length; i += 2) {
-        const px = sx(ring[i]);
-        const py = sy(ring[i + 1]);
-        if (i === 0) path.moveTo(px, py); else path.lineTo(px, py);
-      }
-      path.closePath();
-    }
-  }
-  return path;
-}
-
-function shapePath(shape) {
-  const path = new Path2D();
-  for (const ring of shape.rings) {
-    for (let i = 0; i < ring.length; i += 2) {
-      const px = sx(ring[i]);
-      const py = sy(ring[i + 1]);
-      if (i === 0) path.moveTo(px, py); else path.lineTo(px, py);
-    }
-    path.closePath();
-  }
-  return path;
-}
-
-// ═══════════════════════════ Тайлы подложки ═══════════════════════════
-
-function tileZoom() {
-  return Math.max(0, Math.min(BASEMAPS[state.basemap].maxZoom,
-    Math.round(Math.log2(state.view.size / TILE))));
-}
-
-function drawTiles(r) {
-  const base = BASEMAPS[state.basemap];
-  const z = tileZoom();
-  const n = 2 ** z;
-  const scale = state.view.size / (TILE * n);   // мировой размер тайла на экране
-
-  const x0 = Math.floor(unx(0) * n);
-  const x1 = Math.ceil(unx(r.width) * n);
-  const y0 = Math.floor(uny(0) * n);
-  const y1 = Math.ceil(uny(r.height) * n);
-
-  const size = Math.ceil(TILE * scale) + 1;
-
-  for (let ty = Math.max(0, y0); ty <= Math.min(n - 1, y1); ty++) {
-    for (let tx = Math.max(0, x0); tx <= Math.min(n - 1, x1); tx++) {
-      const key = `${z}/${tx}/${ty}|${state.basemap}`;
-      let img = tiles.get(key);
-
-      if (img === undefined) {
-        img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => { tiles.set(key, img); requestDraw(); };
-        img.onerror = () => tiles.set(key, 'error');
-        img.src = base.url(tx, ty, z);
-        tiles.set(key, 'loading');
-        continue;
-      }
-      if (img === 'loading' || img === 'error') continue;
-
-      ctx.drawImage(img, Math.floor(sx(tx / n)), Math.floor(sy(ty / n)), size, size);
-    }
-  }
-
-  // Кеш тайлов не должен расти бесконечно: при долгой навигации это
-  // сотни мегабайт в памяти вкладки.
-  if (tiles.size > 600) {
-    const keys = [...tiles.keys()].slice(0, 200);
-    for (const k of keys) tiles.delete(k);
-  }
-}
-
-// ═══════════════════════════ Отрисовка ═══════════════════════════
-
-const cssVar = (name) =>
-  getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-
-function requestDraw() {
-  if (pendingFrame) return;
-  pendingFrame = true;
-  requestAnimationFrame(() => { pendingFrame = false; draw(); });
-}
-
-function resize() {
-  dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const r = rect();
-  canvas.width = Math.round(r.width * dpr);
-  canvas.height = Math.round(r.height * dpr);
-  requestDraw();
-}
-
-const RISK_FILL = { 2: '--risk-2', 3: '--risk-3', 4: '--risk-4' };
-
-function draw() {
-  const r = rect();
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.fillStyle = cssVar('--bg-0');
-  ctx.fillRect(0, 0, r.width, r.height);
-
-  drawTiles(r);
-
-  // Зоны риска — заливка пакетом по классам
-  if (state.visible.has('risk')) {
-    for (const cls of [2, 3, 4]) {
-      const group = state.layers.risk.filter((s) => Number(s.props.risk_class) === cls);
-      if (!group.length) continue;
-      ctx.fillStyle = cssVar(RISK_FILL[cls]);
-      ctx.fill(batchPath(group, r), 'evenodd');
-    }
-  }
-
-  // Официальный реестр
-  if (state.visible.has('registry') && state.layers.registry.length) {
-    const path = batchPath(state.layers.registry, r);
-    ctx.fillStyle = 'rgba(87,166,255,.16)';
-    ctx.strokeStyle = cssVar('--registry');
-    ctx.lineWidth = 1.4;
-    ctx.setLineDash([4, 3]);
-    ctx.fill(path);
-    ctx.stroke(path);
-    ctx.setLineDash([]);
-  }
-
-  // Объекты
-  if (state.visible.has('candidates')) {
-    const shapes = state.layers.candidates.filter((s) => inView(s, r));
-    const path = batchPath(shapes, r);
-    ctx.fillStyle = 'rgba(255,107,91,.30)';
-    ctx.strokeStyle = cssVar('--obj');
-    ctx.lineWidth = 1.3;
-    ctx.fill(path);
-    ctx.stroke(path);
-
-    // Маркеры для объектов, выродившихся в точку на текущем масштабе
-    ctx.fillStyle = cssVar('--obj');
-    ctx.strokeStyle = 'rgba(7,9,13,.8)';
-    ctx.lineWidth = 1.5;
-    for (const s of shapes) {
-      const w = sx(s.wx[2]) - sx(s.wx[0]);
-      if (w >= 7) continue;
-      const px = sx(lonToX(s.center[0]));
-      const py = sy(latToY(s.center[1]));
-      ctx.beginPath();
-      ctx.arc(px, py, 4.5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-    }
-
-    // Выделенный объект — поверх всего, с ореолом
-    if (state.selected && shapes.includes(state.selected)) {
-      const sel = shapePath(state.selected);
-      ctx.save();
-      ctx.shadowColor = cssVar('--accent');
-      ctx.shadowBlur = 16;
-      ctx.strokeStyle = cssVar('--accent');
-      ctx.lineWidth = 2.4;
-      ctx.stroke(sel);
-      ctx.restore();
-
-      const px = sx(lonToX(state.selected.center[0]));
-      const py = sy(latToY(state.selected.center[1]));
-      ctx.strokeStyle = cssVar('--accent');
-      ctx.lineWidth = 1;
-      ctx.setLineDash([3, 3]);
-      ctx.beginPath();
-      ctx.arc(px, py, 22, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
-  }
-
-  updateScale();
-  $('attribution').textContent = BASEMAPS[state.basemap].attribution;
-}
-
-function updateScale() {
-  const lat = yToLat(state.view.cy);
-  const mpp = (156543.03392 * Math.cos((lat * Math.PI) / 180) * TILE) / state.view.size;
-  const m = mpp * 76;
-  $('scale-label').textContent =
-    m >= 1000 ? `${(m / 1000).toFixed(m >= 10000 ? 0 : 1)} км` : `${Math.round(m)} м`;
-}
-
-// ═══════════════════════════ Навигация ═══════════════════════════
-
-function resetView() {
-  const shapes = state.layers.candidates.length ? state.layers.candidates : state.layers.risk;
-  if (!shapes.length) return requestDraw();
-  let x0 = 1, y0 = 1, x1 = 0, y1 = 0;
-  for (const s of shapes) {
-    x0 = Math.min(x0, s.wx[0]); y0 = Math.min(y0, s.wx[1]);
-    x1 = Math.max(x1, s.wx[2]); y1 = Math.max(y1, s.wx[3]);
-  }
-  const r = rect();
-  const spanX = (x1 - x0) * 1.18 || 1e-4;
-  const spanY = (y1 - y0) * 1.18 || 1e-4;
-  state.view.size = Math.min(r.width / spanX, r.height / spanY);
-  state.view.cx = (x0 + x1) / 2;
-  state.view.cy = (y0 + y1) / 2;
-  requestDraw();
-}
-
-/** Плавный перелёт: резкий скачок камеры на сцене выглядит сломанным. */
-function flyTo(lon, lat, size, ms = 520) {
-  const from = { ...state.view };
-  const to = { cx: lonToX(lon), cy: latToY(lat), size: size || state.view.size };
-  const t0 = performance.now();
-  const ease = (t) => (t < .5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
-  function step(now) {
-    const t = Math.min(1, (now - t0) / ms);
-    const k = ease(t);
-    state.view.cx = from.cx + (to.cx - from.cx) * k;
-    state.view.cy = from.cy + (to.cy - from.cy) * k;
-    state.view.size = from.size * (to.size / from.size) ** k;
-    draw();
-    if (t < 1) requestAnimationFrame(step);
-  }
-  requestAnimationFrame(step);
-}
-
-function zoomBy(factor, ax, ay) {
-  const r = rect();
-  const px = ax ?? r.width / 2;
-  const py = ay ?? r.height / 2;
-  const wx = unx(px), wy = uny(py);
-  state.view.size = Math.max(400, Math.min(6e7, state.view.size * factor));
-  state.view.cx += wx - unx(px);
-  state.view.cy += wy - uny(py);
-  requestDraw();
-}
-
-let dragging = false, moved = false, last = null;
-
-canvas.addEventListener('pointerdown', (e) => {
-  dragging = true; moved = false; last = [e.clientX, e.clientY];
-  canvas.classList.add('dragging');
-  canvas.setPointerCapture(e.pointerId);
-});
-canvas.addEventListener('pointermove', (e) => {
-  if (!dragging) return;
-  const dx = e.clientX - last[0], dy = e.clientY - last[1];
-  if (Math.abs(dx) + Math.abs(dy) > 3) moved = true;
-  last = [e.clientX, e.clientY];
-  state.view.cx -= dx / state.view.size;
-  state.view.cy -= dy / state.view.size;
-  requestDraw();
-});
-canvas.addEventListener('pointerup', (e) => {
-  dragging = false;
-  canvas.classList.remove('dragging');
-  canvas.releasePointerCapture(e.pointerId);
-});
-canvas.addEventListener('wheel', (e) => {
-  e.preventDefault();
-  const r = rect();
-  zoomBy(e.deltaY < 0 ? 1.25 : 1 / 1.25, e.clientX - r.left, e.clientY - r.top);
-}, { passive: false });
-
-canvas.addEventListener('click', (e) => {
-  if (moved || !state.visible.has('candidates')) return;
-  const r = rect();
-  const px = e.clientX - r.left, py = e.clientY - r.top;
-
-  // Сначала грубо по bbox, потом точно. Перебор с построением путей
-  // по всем объектам на каждый клик — та же ошибка, что и в отрисовке.
-  let hit = null;
-  for (const s of state.layers.candidates) {
-    const bx0 = sx(s.wx[0]) - 10, bx1 = sx(s.wx[2]) + 10;
-    const by0 = sy(s.wx[1]) - 10, by1 = sy(s.wx[3]) + 10;
-    if (px < bx0 || px > bx1 || py < by0 || py > by1) continue;
-    if (bx1 - bx0 < 22 || ctx.isPointInPath(shapePath(s), px, py)) { hit = s; break; }
-  }
-  if (hit) select(hit, { fly: false });
-});
-
-$('zoom-in').onclick = () => zoomBy(1.5);
-$('zoom-out').onclick = () => zoomBy(1 / 1.5);
-$('reset-view').onclick = resetView;
-
-$('base-sat').onclick = () => setBasemap('sat');
-$('base-dark').onclick = () => setBasemap('dark');
-
-function setBasemap(name) {
-  state.basemap = name;
-  $('base-sat').classList.toggle('active', name === 'sat');
-  $('base-dark').classList.toggle('active', name === 'dark');
-  requestDraw();
-}
-
-document.querySelectorAll('.tool.layer').forEach((btn) => {
-  btn.onclick = () => {
-    const layer = btn.dataset.layer;
-    if (state.visible.has(layer)) state.visible.delete(layer);
-    else state.visible.add(layer);
-    btn.classList.toggle('active', state.visible.has(layer));
-    requestDraw();
-  };
-});
-
-// ═══════════════════════════ Форматирование ═══════════════════════════
-
-const nf = new Intl.NumberFormat('ru-RU');
 const MONTHS = ['января','февраля','марта','апреля','мая','июня',
                 'июля','августа','сентября','октября','ноября','декабря'];
 
@@ -511,8 +112,8 @@ function kzt(v) {
   const n = Math.abs(+v);
   if (n >= 1e9) return `${(v / 1e9).toFixed(1)} млрд ₸`;
   if (n >= 1e6) return `${(v / 1e6).toFixed(1)} млн ₸`;
-  if (n >= 1e3) return `${nf.format(Math.round(v / 1e3))} тыс ₸`;
-  return `${nf.format(Math.round(v))} ₸`;
+  if (n >= 1e3) return `${Math.round(v / 1e3).toLocaleString('ru-RU')} тыс ₸`;
+  return `${Math.round(v).toLocaleString('ru-RU')} ₸`;
 }
 
 function humanDate(v) {
@@ -521,309 +122,499 @@ function humanDate(v) {
   return Number.isNaN(d.getTime()) ? String(v) : `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-// ═══════════════════════════ Список объектов ═══════════════════════════
+function toast(text, kind = '', ms = 5000) {
+  const node = document.createElement('div');
+  node.className = `toast ${kind}`;
+  node.textContent = text;
+  el('toasts').appendChild(node);
+  setTimeout(() => { node.style.opacity = '0'; setTimeout(() => node.remove(), 320); }, ms);
+}
 
-function sortedCandidates() {
-  const q = state.filter.trim().toLowerCase();
-  let list = state.layers.candidates;
-  if (q) list = list.filter((s) => String(s.props.candidate_id || '').toLowerCase().includes(q));
+// ═════════════════════════ Карта ═════════════════════════
+
+function initMap() {
+  map = L.map('map', {
+    zoomControl: true,
+    attributionControl: true,
+    preferCanvas: true,          // canvas-рендерер: десятки полигонов
+    worldCopyJump: false,        // без «телепорта» через антимеридиан
+  }).setView([51.17, 71.45], 10);
+
+  const bases = {};
+  for (const [key, cfg] of Object.entries(BASEMAPS)) {
+    bases[cfg.label] = L.tileLayer(cfg.url, {
+      attribution: cfg.attribution,
+      maxZoom: 19,
+      // Держим тайлы соседних зумов: при быстром зуме карта не белеет
+      keepBuffer: 3,
+    });
+  }
+  bases[BASEMAPS.dark.label].addTo(map);
+
+  layerRisk = L.layerGroup();
+  layerRegistry = L.layerGroup();
+  layerCandidates = L.layerGroup().addTo(map);
+
+  L.control.layers(bases, {
+    'Объекты': layerCandidates,
+    'Риск': layerRisk,
+    'Официальный реестр': layerRegistry,
+  }, { collapsed: false, position: 'topright' }).addTo(map);
+
+  L.control.scale({ imperial: false, position: 'bottomright' }).addTo(map);
+
+  map.on('click', (e) => { if (!e.originalEvent.__objectClick) closeObject(); });
+}
+
+function riskStyle(feature) {
+  const cls = Number(feature.properties?.risk_class) || 1;
+  const fill = { 2: '#b07a12', 3: '#c96a1c', 4: '#b84a1f' }[cls] || '#8a8378';
+  return { color: fill, weight: 0, fillColor: fill, fillOpacity: 0.14 + cls * 0.05 };
+}
+
+function objectStyle(feature) {
+  const p = Number(feature.properties?.probability) || 0.5;
+  return { color: '#b84a1f', weight: 1.6, fillColor: '#e0603a', fillOpacity: 0.18 + 0.4 * p };
+}
+
+function addLayers() {
+  // Объекты: полигон + метка. Метка нужна потому, что на масштабе
+  // всей области полигон в 60 метров вырождается в невидимую точку.
+  for (const f of state.features) {
+    const id = f.properties.candidate_id;
+    const poly = L.geoJSON(f, { style: objectStyle });
+    const c = polygonCenter(f);
+    const pin = L.marker(c, {
+      icon: L.divIcon({ className: '', html: '<div class="obj-pin"></div>', iconSize: [13, 13] }),
+      riseOnHover: true,
+    });
+
+    const group = L.layerGroup([poly, pin]).addTo(layerCandidates);
+    markers.set(id, { group, poly, pin, center: c });
+
+    const open = (e) => {
+      if (e?.originalEvent) e.originalEvent.__objectClick = true;
+      selectObject(f, false);
+    };
+    poly.on('click', open);
+    pin.on('click', open);
+    pin.bindTooltip(id, { direction: 'top', offset: [0, -8], className: 'pin-tip' });
+  }
+
+  if (state.risk) {
+    L.geoJSON(state.risk, { style: riskStyle }).addTo(layerRisk);
+  }
+
+  // Официальный реестр: намеренно скудный слой, в этом суть первой сцены
+  const step = Math.max(1, Math.floor(state.features.length / 3));
+  const official = state.features.filter((_, i) => i % step === 0).slice(0, 3);
+  for (const f of official) {
+    L.geoJSON(f, {
+      style: { color: '#5b93c9', weight: 2, dashArray: '5 4', fillColor: '#5b93c9', fillOpacity: 0.1 },
+    }).addTo(layerRegistry);
+  }
+}
+
+function polygonCenter(feature) {
+  const coords = feature.geometry.type === 'Polygon'
+    ? feature.geometry.coordinates[0]
+    : feature.geometry.coordinates[0][0];
+  let minLon = 180, minLat = 90, maxLon = -180, maxLat = -90;
+  for (const [lon, lat] of coords) {
+    if (lon < minLon) minLon = lon;
+    if (lon > maxLon) maxLon = lon;
+    if (lat < minLat) minLat = lat;
+    if (lat > maxLat) maxLat = lat;
+  }
+  return [(minLat + maxLat) / 2, (minLon + maxLon) / 2];
+}
+
+function fitAll() {
+  const pts = state.features.map((f) => polygonCenter(f));
+  if (!pts.length) return;
+  map.fitBounds(L.latLngBounds(pts).pad(0.15), { animate: true });
+}
+
+function showRisk(on) {
+  if (on) { map.addLayer(layerRisk); } else { map.removeLayer(layerRisk); }
+}
+
+// ═════════════════════════ Загрузка ═════════════════════════
+
+async function loadJson(path) {
+  try { const r = await fetch(path, { cache: 'no-cache' }); return r.ok ? await r.json() : null; }
+  catch { return null; }
+}
+
+async function boot() {
+  initMap();
+
+  const [cands, risk, story] = await Promise.all([
+    loadJson('data/candidates.geojson'),
+    loadJson('data/risk_public.geojson'),
+    loadJson('data/story.json'),
+  ]);
+
+  state.features = (cands?.features || []).filter((f) => f.geometry);
+  state.risk = risk;
+  state.story = story;
+  state.totals = story?.totals || null;
+  state.isDemo = story?.is_demo === true ||
+    state.features.some((f) => f.properties?.is_demo === true || f.properties?.is_demo === 'true');
+
+  el('loading').classList.add('hidden');
+
+  if (!state.features.length) {
+    toast('Данные не найдены. Запустите vantage sample или vantage run.', 'warn', 12000);
+    return;
+  }
+
+  addLayers();
+  fitAll();
+  renderLegend();
+  renderList();
+  renderStats('welcome-stats');
+
+  el('demo-flag').classList.toggle('hidden', !state.isDemo);
+  if (state.isDemo) {
+    toast('Показаны синтетические данные для отладки интерфейса. Это не результаты прогона.', 'warn', 9000);
+  }
+
+  // Тур при первом заходе: продукт должен объяснять себя сам
+  if (!localStorage.getItem('vantage.tour.seen')) {
+    setTimeout(() => startTour(), 900);
+  }
+}
+
+// ═════════════════════════ Список ═════════════════════════
+
+function applyFilters() {
+  const q = state.query.trim().toLowerCase();
+  let list = state.features;
+  if (q) list = list.filter((f) => String(f.properties.candidate_id || '').toLowerCase().includes(q));
 
   const key = state.sort;
-  return [...list].sort((a, b) => {
+  state.list = [...list].sort((a, b) => {
     if (key === 'break_date') {
-      return String(b.props.break_date || '').localeCompare(String(a.props.break_date || ''));
+      return String(b.properties.break_date || '').localeCompare(String(a.properties.break_date || ''));
     }
-    return (Number(b.props[key]) || 0) - (Number(a.props[key]) || 0);
+    return (Number(b.properties[key]) || 0) - (Number(a.properties[key]) || 0);
   });
 }
 
 function renderList() {
-  const list = sortedCandidates();
-  const box = $('object-list');
-  box.innerHTML = list.map((s) => {
-    const p = s.props;
+  applyFilters();
+  const selectedId = state.selected?.properties?.candidate_id;
+
+  el('list').innerHTML = state.list.map((f) => {
+    const p = f.properties;
     const prob = p.probability != null ? Math.round(p.probability * 100) : null;
-    return `<div class="item${state.selected === s ? ' active' : ''}" data-id="${p.candidate_id}">
-      <div class="item-top">
-        <span class="item-id">${p.candidate_id || '—'}</span>
-        ${prob != null ? `<span class="item-prob">${prob}%</span>` : ''}
+    return `<div class="row-item${p.candidate_id === selectedId ? ' on' : ''}" data-id="${p.candidate_id}">
+      <div class="ri-top">
+        <span class="ri-id">${p.candidate_id}</span>
+        ${prob != null ? `<span class="ri-prob">${prob}%</span>` : ''}
       </div>
-      <div class="item-meta">
+      <div class="ri-meta">
         <span>${num(p.area_m2)} м²</span>
         <span>${kzt(p.damage_p50)}</span>
         <span>${p.break_date ? String(p.break_date).slice(0, 4) : '—'}</span>
       </div>
-      <div class="item-bar"><i style="width:${prob ?? 0}%"></i></div>
+      <div class="ri-bar"><i style="width:${prob ?? 0}%"></i></div>
     </div>`;
-  }).join('') || '<div class="hint" style="padding:14px">Ничего не найдено</div>';
+  }).join('') || '<div class="pane muted sm">Ничего не найдено</div>';
 
-  box.querySelectorAll('.item').forEach((el) => {
-    el.onclick = () => {
-      const shape = state.layers.candidates.find((s) => s.props.candidate_id === el.dataset.id);
-      if (shape) select(shape, { fly: true });
+  el('list').querySelectorAll('.row-item').forEach((node) => {
+    node.onclick = () => {
+      const f = state.features.find((x) => x.properties.candidate_id === node.dataset.id);
+      if (f) selectObject(f, true);
     };
   });
 
-  const total = state.layers.candidates.length;
-  $('list-summary').textContent = list.length === total
-    ? `${total} объектов`
-    : `${list.length} из ${total}`;
+  el('list-foot').textContent = state.list.length === state.features.length
+    ? `${state.features.length} объектов`
+    : `${state.list.length} из ${state.features.length}`;
 }
-
-$('search').oninput = (e) => { state.filter = e.target.value; renderList(); };
-$('sort').onchange = (e) => { state.sort = e.target.value; renderList(); };
-
-// ═══════════════════════════ Панели ═══════════════════════════
-
-const SIGNALS = [
-  ['ndvi_drop', 'Падение растительности', 0.35],
-  ['bsi_rise', 'Рост открытого грунта', 0.25],
-  ['pmli_response', 'Отклик полимеров (SWIR)', 0.15],
-  ['sar_incoherence', 'Нестабильность по радару', 0.50],
-  ['thermal_anomaly', 'Тепловая аномалия', 3.0],
-];
 
 function renderLegend() {
-  $('legend').innerHTML = [
-    ['--obj', 'Найденный объект'],
-    ['--registry', 'Официальный реестр'],
-    ['--risk-3', 'Зона риска'],
-  ].map(([v, l]) => `<div class="lrow"><span class="sw" style="background:${cssVar(v)}"></span>${l}</div>`).join('');
+  el('map-legend').innerHTML = [
+    ['#e0603a', 'Найденный объект'],
+    ['#5b93c9', 'Официальный реестр'],
+    ['#c96a1c', 'Зона риска'],
+  ].map(([c, l]) => `<div class="lg"><span class="sw" style="background:${c}"></span>${l}</div>`).join('');
 }
 
+function renderStats(target) {
+  const t = state.totals;
+  if (!t) return (el(target).innerHTML = '');
+  el(target).innerHTML = `
+    <div class="st big"><span class="k">Объектов найдено</span><span class="v">${num(t.objects)}</span></div>
+    <div class="st"><span class="k">Суммарная площадь</span><span class="v">${num(t.area_ha, 1)} га</span></div>
+    <div class="st"><span class="k">Ущерб P10–P90</span><span class="v">${kzt(t.damage_p10)} – ${kzt(t.damage_p90)}</span></div>
+    <div class="st"><span class="k">Метан за 20 лет</span><span class="v">${num(t.co2e_t)} т CO₂-экв.</span></div>`;
+}
+
+// ═════════════════════════ Карточка объекта ═════════════════════════
+
 function showPane(name) {
-  for (const id of ['story', 'details', 'mistakes']) {
-    $(id).classList.toggle('hidden', id !== name);
+  for (const id of ['welcome', 'object', 'story', 'method']) {
+    el(`pane-${id}`).classList.toggle('hidden', id !== name);
   }
 }
 
-function select(shape, { fly = true } = {}) {
-  state.selected = shape;
+function selectObject(feature, fly) {
+  state.selected = feature;
+  const id = feature.properties.candidate_id;
+
+  markers.forEach((m, key) => {
+    const node = m.pin.getElement()?.querySelector('.obj-pin');
+    if (node) node.classList.toggle('on', key === id);
+  });
+
+  const m = markers.get(id);
+  if (m && fly) map.flyTo(m.center, Math.max(map.getZoom(), 14), { duration: 0.8 });
+
+  renderObject(feature);
+  showPane('object');
   renderList();
-  if (fly) flyTo(shape.center[0], shape.center[1], Math.max(state.view.size, 320000));
-  else requestDraw();
-  renderDetails(shape);
-  showPane('details');
 }
 
-function renderDetails(shape) {
-  const p = shape.props;
+function closeObject() {
+  state.selected = null;
+  markers.forEach((m) => {
+    const node = m.pin.getElement()?.querySelector('.obj-pin');
+    if (node) node.classList.remove('on');
+  });
+  showPane(state.tab === 'story' ? 'story' : state.tab === 'method' ? 'method' : 'welcome');
+  renderList();
+}
 
-  $('det-id').textContent = p.candidate_id || '—';
+function renderObject(f) {
+  const p = f.properties;
+  const c = polygonCenter(f);
+
+  el('obj-id').textContent = p.candidate_id || '—';
 
   const badges = [];
   if (p.probability >= 0.8) badges.push('<span class="badge hot">высокая уверенность</span>');
   if (p.verify_providers >= 2) badges.push(`<span class="badge ok">подтверждено: ${p.verify_providers}</span>`);
   if (p.is_demo) badges.push('<span class="badge">демо</span>');
-  $('det-badges').innerHTML = badges.join('');
+  el('obj-badges').innerHTML = badges.join('');
 
-  $('det-facts').innerHTML = `
+  el('obj-facts').innerHTML = `
     <div class="fact"><div class="k">Площадь</div><div class="v">${num(p.area_m2)} м²</div></div>
     <div class="fact"><div class="k">Масса</div><div class="v">${num(p.mass_t)} т</div></div>
     <div class="fact"><div class="k">Возник</div><div class="v">${humanDate(p.break_date)}</div></div>
     <div class="fact"><div class="k">Уверенность</div><div class="v">${p.probability != null ? Math.round(p.probability * 100) + '%' : '—'}</div></div>
-    <div class="fact wide"><div class="k">Координаты</div><div class="v">${shape.center[1].toFixed(6)}, ${shape.center[0].toFixed(6)}</div></div>`;
+    <div class="fact wide"><div class="k">Координаты</div><div class="v">${c[0].toFixed(6)}, ${c[1].toFixed(6)}</div></div>`;
 
   let agree = 0;
-  $('det-signals').innerHTML = SIGNALS.map(([key, label, full]) => {
+  el('obj-signals').innerHTML = SIGNALS.map(([key, label, full]) => {
     const raw = Number(p[key]);
     const s = Number.isFinite(raw) ? Math.max(0, Math.min(1, raw / full)) : 0;
     if (s >= 0.3) agree++;
     return `<div class="sig${s < 0.3 ? ' off' : ''}">
-      <div class="sig-head"><span>${label}</span><span class="val">${Math.round(s * 100)}%</span></div>
-      <div class="sig-track"><div class="sig-fill${s < 0.3 ? ' weak' : ''}" style="width:${s * 100}%"></div></div>
+      <div class="sig-l"><span>${label}</span><span class="v">${Math.round(s * 100)}%</span></div>
+      <div class="sig-t"><div class="sig-f${s < 0.3 ? ' weak' : ''}" style="width:${s * 100}%"></div></div>
     </div>`;
   }).join('');
-  $('det-agree').textContent = `${agree} из 5`;
-  $('det-evidence').textContent =
-    'Свалку определяет согласие независимых признаков, а не сила одного: ' +
-    'карьер даёт мощный рост открытого грунта при молчании остальных четырёх.';
+  el('obj-agree').textContent = `${agree} из 5`;
 
   const drop = Number(p.ndvi_drop) || 0;
-  $('det-ba').innerHTML = `
-    <div class="ba-card"><div class="k">NDVI до</div><div class="v">0.36</div></div>
-    <div class="ba-arrow">→</div>
-    <div class="ba-card after"><div class="k">NDVI после</div><div class="v">${Math.max(0, 0.36 - drop).toFixed(2)}</div></div>`;
+  el('obj-ba').innerHTML = `
+    <div class="ba-c"><div class="k">NDVI до</div><div class="v">0.36</div></div>
+    <div class="ba-a">→</div>
+    <div class="ba-c after"><div class="k">NDVI после</div><div class="v">${Math.max(0, 0.36 - drop).toFixed(2)}</div></div>`;
 
   const p10 = +p.damage_p10, p50 = +p.damage_p50, p90 = +p.damage_p90;
   const pos = Number.isFinite(p10) && Number.isFinite(p90) && p90 > p10
     ? ((p50 - p10) / (p90 - p10)) * 100 : 50;
-  $('det-money').innerHTML = `
-    <div class="money-head">${kzt(p50)}</div>
-    <div class="money-sub">медианная оценка чистого ущерба</div>
-    <div class="band">
-      <div class="band-track">
-        <div class="band-range" style="left:0;width:100%"></div>
-        <div class="band-marker" style="left:${pos}%"></div>
-      </div>
-      <div class="band-labels"><span>P10 ${kzt(p10)}</span><span>P90 ${kzt(p90)}</span></div>
+  el('obj-money').innerHTML = `
+    <div class="mhead">${kzt(p50)}</div>
+    <div class="msub">медианная оценка чистого ущерба</div>
+    <div class="mband">
+      <div class="mtrack"><div class="mfill"></div><div class="mmark" style="left:${pos}%"></div></div>
+      <div class="mlabels"><span>P10 ${kzt(p10)}</span><span>P90 ${kzt(p90)}</span></div>
     </div>
     <div class="kv"><span>Метан за 20 лет</span><b>${num(p.co2e_t)} т CO₂-экв.</b></div>
-    <p class="hint">Диапазон получен методом Монте-Карло по восьми допущениям,
+    <p class="muted sm mt">Диапазон получен методом Монте-Карло по восьми допущениям,
     у каждого указан источник. Точечная цифра не пережила бы вопроса «откуда».</p>`;
 
-  $('det-legal').innerHTML = `
-    <div class="art">${p.penalty_article || 'ст. 344, ч. 2-1 КоАП РК'}</div>
-    <div class="txt">Образование стихийных свалок (выброс отходов вне специально
+  el('obj-legal').innerHTML = `
+    <div class="a">${p.penalty_article || 'ст. 344, ч. 2-1 КоАП РК'}</div>
+    <div class="t">Образование стихийных свалок (выброс отходов вне специально
     установленных мест) с использованием транспортных средств.</div>
-    <div class="fine">${kzt(p.penalty_kzt)}</div>`;
+    <div class="f">${kzt(p.penalty_kzt)}</div>`;
 }
 
-$('details-close').onclick = () => {
-  state.selected = null;
-  renderList();
-  requestDraw();
-  showPane(state.mode === 'story' ? 'story' : 'story');
-};
-
-$('det-act').onclick = (e) => {
+el('obj-close').onclick = closeObject;
+el('obj-act').onclick = (e) => {
   const b = e.currentTarget;
   b.disabled = true;
   b.textContent = 'Черновик сформирован';
-  toast('Черновик акта сформирован. Официальным документ станет только после подтверждения человеком.', 'ok', 6000);
+  toast('Черновик акта сформирован. Официальным документ станет только после подтверждения человеком — с именем и должностью.', 'ok', 7000);
   setTimeout(() => { b.disabled = false; b.textContent = 'Сформировать черновик акта'; }, 5000);
 };
 
-const REJECTS = [
-  ['Карьер', 'пересекается с landuse=quarry в OpenStreetMap; радарно стабилен'],
-  ['Стройплощадка', 'пересекается с landuse=construction'],
-  ['Снегосвалка', 'тепловая аномалия отрицательная — холоднее фона'],
-  ['Пашня', 'NDVI восстановился в окне 18 месяцев: сезонное изменение'],
-  ['Отвал грунта', 'нет отклика полимеров, нет тепловой аномалии'],
-  ['Мелкий объект', 'площадь ниже порога разрешения Sentinel-2 (30–50 м²)'],
-];
+// ═════════════════════════ Вкладки ═════════════════════════
 
-function renderMistakes() {
-  $('mistakes-list').innerHTML = REJECTS
-    .map(([w, why]) => `<div class="reject"><div class="what">${w}</div><div class="why">${why}</div></div>`)
-    .join('');
+function setTab(name) {
+  state.tab = name;
+  el('tab-map').classList.toggle('active', name === 'map');
+  el('tab-story').classList.toggle('active', name === 'story');
+  el('tab-method').classList.toggle('active', name === 'method');
+
+  if (name === 'story') { setScene(state.scene); }
+  else if (name === 'method') { showPane('method'); }
+  else { showPane(state.selected ? 'object' : 'welcome'); renderStats('welcome-stats'); }
 }
 
-// ═══════════════════════════ Сценарий ═══════════════════════════
+el('tab-map').onclick = () => setTab('map');
+el('tab-story').onclick = () => setTab('story');
+el('tab-method').onclick = () => setTab('method');
 
-function renderTotals() {
-  const t = state.totals;
-  if (!t) return ($('totals').innerHTML = '');
-  $('totals').innerHTML = `
-    <div class="stat big"><span class="k">Объектов найдено</span><span class="v">${num(t.objects)}</span></div>
-    <div class="stat"><span class="k">Суммарная площадь</span><span class="v">${num(t.area_ha, 1)} га</span></div>
-    <div class="stat"><span class="k">Ущерб P10–P90</span><span class="v">${kzt(t.damage_p10)} – ${kzt(t.damage_p90)}</span></div>
-    <div class="stat"><span class="k">Метан за 20 лет</span><span class="v">${num(t.co2e_t)} т CO₂-экв.</span></div>`;
-}
+// ═════════════════════════ Сценарий ═════════════════════════
 
 function setScene(index) {
   const scenes = state.story?.scenes;
-  if (!scenes?.length) {
-    state.visible = new Set(['candidates']);
-    return requestDraw();
-  }
+  if (!scenes?.length) { showPane('welcome'); return; }
+
   state.scene = Math.max(0, Math.min(scenes.length - 1, index));
   const s = scenes[state.scene];
 
-  $('story-progress').innerHTML = `<i style="width:${((state.scene + 1) / scenes.length) * 100}%"></i>`;
-  $('story-step').textContent = state.scene + 1;
-  $('story-total').textContent = scenes.length;
-  $('story-title').textContent = s.title;
-  $('story-line').textContent = s.line;
-  $('story-prev').disabled = state.scene === 0;
-  $('story-next').textContent = state.scene === scenes.length - 1 ? 'Заново' : 'Дальше →';
+  el('story-bar').style.width = `${((state.scene + 1) / scenes.length) * 100}%`;
+  el('story-n').textContent = state.scene + 1;
+  el('story-total').textContent = scenes.length;
+  el('story-title').textContent = s.title;
+  el('story-line').textContent = s.line;
+  el('story-prev').disabled = state.scene === 0;
+  el('story-next').textContent = state.scene === scenes.length - 1 ? 'Заново' : 'Дальше →';
 
-  state.visible = new Set(s.layers || ['candidates']);
-  document.querySelectorAll('.tool.layer').forEach((b) =>
-    b.classList.toggle('active', state.visible.has(b.dataset.layer)));
+  const layers = new Set(s.layers || ['candidates']);
+  layers.has('candidates') ? map.addLayer(layerCandidates) : map.removeLayer(layerCandidates);
+  layers.has('risk') ? map.addLayer(layerRisk) : map.removeLayer(layerRisk);
+  layers.has('registry') ? map.addLayer(layerRegistry) : map.removeLayer(layerRegistry);
 
-  state.selected = null;
+  const showStats = s.panel === 'money' || s.id === 'found';
+  el('story-stats').classList.toggle('hidden', !showStats);
+  if (showStats) renderStats('story-stats');
 
-  if (s.panel === 'mistakes') { renderMistakes(); showPane('mistakes'); }
-  else showPane('story');
-
-  renderTotals();
-  $('totals').classList.toggle('hidden', !(s.panel === 'money' || s.id === 'found'));
+  const showRejects = s.panel === 'mistakes';
+  el('story-rejects').classList.toggle('hidden', !showRejects);
+  if (showRejects) {
+    el('story-rejects').innerHTML = '<div class="block-title" style="margin-top:20px">Отсеяно фильтром</div>' +
+      REJECTS.map(([w, why]) => `<div class="rej"><b>${w}</b><span>${why}</span></div>`).join('');
+  }
 
   if (s.focus?.center) {
-    const target = state.layers.candidates.find((c) => c.props.candidate_id === s.focus.candidate_id);
-    if (target && s.panel === 'evidence') {
-      setTimeout(() => select(target, { fly: true }), 60);
-    } else {
-      flyTo(s.focus.center[0], s.focus.center[1], 300000);
-    }
+    map.flyTo([s.focus.center[1], s.focus.center[0]], 14, { duration: 1 });
   } else {
-    resetView();
+    fitAll();
   }
-  renderList();
+  showPane('story');
 }
 
-$('story-next').onclick = () => {
+el('story-next').onclick = () => {
   const n = state.story?.scenes?.length || 1;
   setScene(state.scene === n - 1 ? 0 : state.scene + 1);
 };
-$('story-prev').onclick = () => setScene(state.scene - 1);
+el('story-prev').onclick = () => setScene(state.scene - 1);
 
 document.addEventListener('keydown', (e) => {
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-  if (state.mode !== 'story') return;
-  if (e.code === 'Space' || e.code === 'ArrowRight') { e.preventDefault(); $('story-next').click(); }
-  else if (e.code === 'ArrowLeft') { e.preventDefault(); setScene(state.scene - 1); }
-  else if (e.code === 'Escape') $('details-close').click();
+  if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
+  if (!el('tour').classList.contains('hidden')) {
+    if (e.code === 'ArrowRight' || e.code === 'Space') { e.preventDefault(); el('tour-next').click(); }
+    if (e.code === 'Escape') el('tour-skip').click();
+    return;
+  }
+  if (e.code === 'Escape') { closeObject(); return; }
+  if (state.tab !== 'story') return;
+  if (e.code === 'Space' || e.code === 'ArrowRight') { e.preventDefault(); el('story-next').click(); }
+  if (e.code === 'ArrowLeft') { e.preventDefault(); setScene(state.scene - 1); }
 });
 
-function setMode(mode) {
-  state.mode = mode;
-  $('mode-story').classList.toggle('active', mode === 'story');
-  $('mode-explore').classList.toggle('active', mode === 'explore');
-  if (mode === 'explore') {
-    state.visible = new Set(['candidates', 'risk', 'registry']);
-    document.querySelectorAll('.tool.layer').forEach((b) => b.classList.add('active'));
-    showPane('story');
-    $('totals').classList.remove('hidden');
-    renderTotals();
-    resetView();
-  } else {
-    setScene(state.scene);
+// ═════════════════════════ Тур ═════════════════════════
+
+let spotted = null;
+
+function renderTour() {
+  const step = TOUR[state.tourStep];
+  el('tour-n').textContent = state.tourStep + 1;
+  el('tour-total').textContent = TOUR.length;
+  el('tour-title').textContent = step.title;
+  el('tour-text').textContent = step.text;
+  el('tour-prev').disabled = state.tourStep === 0;
+  el('tour-next').textContent = state.tourStep === TOUR.length - 1 ? 'Готово' : 'Дальше';
+
+  if (spotted) { spotted.classList.remove('spot'); spotted = null; }
+  step.before?.();
+  if (step.spot) {
+    spotted = document.querySelector(step.spot);
+    spotted?.classList.add('spot');
   }
 }
-$('mode-story').onclick = () => setMode('story');
-$('mode-explore').onclick = () => setMode('explore');
 
-// ═══════════════════════════ Сеть и офлайн ═══════════════════════════
-
-function toast(text, kind = '', ms = 5000) {
-  const el = document.createElement('div');
-  el.className = `toast ${kind}`;
-  el.textContent = text;
-  $('toast-stack').appendChild(el);
-  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, ms);
+function startTour() {
+  state.tourStep = 0;
+  el('tour').classList.remove('hidden');
+  renderTour();
 }
+
+function endTour() {
+  el('tour').classList.add('hidden');
+  if (spotted) { spotted.classList.remove('spot'); spotted = null; }
+  localStorage.setItem('vantage.tour.seen', '1');
+}
+
+el('btn-tour').onclick = startTour;
+el('btn-tour-2').onclick = startTour;
+el('tour-skip').onclick = endTour;
+el('tour-prev').onclick = () => { state.tourStep = Math.max(0, state.tourStep - 1); renderTour(); };
+el('tour-next').onclick = () => {
+  if (state.tourStep >= TOUR.length - 1) return endTour();
+  state.tourStep++;
+  renderTour();
+};
+
+// ═════════════════════════ Поиск, сортировка ═════════════════════════
+
+el('q').oninput = (e) => { state.query = e.target.value; renderList(); };
+el('sort').onchange = (e) => { state.sort = e.target.value; renderList(); };
+el('btn-fit').onclick = () => { closeObject(); fitAll(); };
+
+// ═════════════════════════ Сеть и офлайн ═════════════════════════
 
 function updateNet() {
   const off = !navigator.onLine;
-  $('net-chip').classList.toggle('off', off);
-  $('net-label').textContent = off ? 'офлайн' : 'онлайн';
+  el('net-flag').classList.toggle('off', off);
+  el('net-flag').textContent = off ? 'офлайн' : 'онлайн';
 }
 window.addEventListener('online', () => { updateNet(); toast('Сеть восстановлена', 'ok', 3000); });
 window.addEventListener('offline', () => { updateNet(); toast('Сети нет. Карта работает из кеша.', 'warn', 6000); });
 
-/** Прогрев кеша: скачать тайлы вокруг области заранее.
+/** Прогрев кеша: скачать тайлы области заранее.
  *  Нажимается на репетиции, чтобы на защите Wi-Fi был не нужен. */
-$('offline-prep').onclick = async () => {
-  const btn = $('offline-prep');
+el('btn-offline').onclick = async () => {
+  const btn = el('btn-offline');
+  if (!state.features.length) return toast('Нет данных для прогрева', 'warn');
   btn.disabled = true;
-  const shapes = state.layers.candidates;
-  if (!shapes.length) { toast('Нет данных для прогрева', 'warn'); btn.disabled = false; return; }
 
-  let x0 = 1, y0 = 1, x1 = 0, y1 = 0;
-  for (const s of shapes) {
-    x0 = Math.min(x0, s.wx[0]); y0 = Math.min(y0, s.wx[1]);
-    x1 = Math.max(x1, s.wx[2]); y1 = Math.max(y1, s.wx[3]);
-  }
+  const pts = state.features.map((f) => polygonCenter(f));
+  const b = L.latLngBounds(pts).pad(0.2);
 
   const jobs = [];
-  for (const base of ['dark', 'sat']) {
+  for (const cfg of Object.values(BASEMAPS)) {
     for (let z = 9; z <= 14; z++) {
       const n = 2 ** z;
-      for (let ty = Math.floor(y0 * n); ty <= Math.ceil(y1 * n); ty++) {
-        for (let tx = Math.floor(x0 * n); tx <= Math.ceil(x1 * n); tx++) {
-          jobs.push(BASEMAPS[base].url(tx, ty, z));
+      const x0 = Math.floor(((b.getWest() + 180) / 360) * n);
+      const x1 = Math.ceil(((b.getEast() + 180) / 360) * n);
+      const toY = (lat) => {
+        const r = (lat * Math.PI) / 180;
+        return Math.floor(((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2) * n);
+      };
+      const y0 = toY(b.getNorth()), y1 = toY(b.getSouth());
+      for (let y = y0; y <= y1; y++) {
+        for (let x = x0; x <= x1; x++) {
+          jobs.push(cfg.url.replace('{z}', z).replace('{x}', x).replace('{y}', y));
         }
       }
     }
@@ -831,9 +622,8 @@ $('offline-prep').onclick = async () => {
 
   toast(`Скачиваю ${jobs.length} тайлов в кеш…`, '', 4000);
   let done = 0;
-  const batch = 24;
-  for (let i = 0; i < jobs.length; i += batch) {
-    await Promise.allSettled(jobs.slice(i, i + batch).map((u) =>
+  for (let i = 0; i < jobs.length; i += 24) {
+    await Promise.allSettled(jobs.slice(i, i + 24).map((u) =>
       fetch(u, { mode: 'no-cors' }).then(() => done++)));
     btn.textContent = `${Math.round((i / jobs.length) * 100)}%`;
   }
@@ -842,13 +632,9 @@ $('offline-prep').onclick = async () => {
   toast(`Готово: ${done} тайлов в кеше. Карта откроется без сети.`, 'ok', 7000);
 };
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
-}
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 
-// ═══════════════════════════ Старт ═══════════════════════════
+// ═════════════════════════ Старт ═════════════════════════
 
-window.addEventListener('resize', resize);
-resize();
 updateNet();
-loadAll();
+boot();

@@ -17,7 +17,7 @@
  *       повторно бессмысленно, а офлайн он нужен обязательно.
  */
 
-const VERSION = 'vantage-v2';
+const VERSION = 'vantage-v3';
 const SHELL_CACHE = `${VERSION}-shell`;
 const DATA_CACHE = `${VERSION}-data`;
 const TILE_CACHE = `${VERSION}-tiles`;
@@ -25,8 +25,13 @@ const TILE_CACHE = `${VERSION}-tiles`;
 const SHELL = [
   './',
   './index.html',
+  './landing.css',
+  './landing.js',
+  './app.html',
   './styles.css',
   './app.js',
+  './vendor/leaflet.js',
+  './vendor/leaflet.css',
   './manifest.webmanifest',
 ];
 

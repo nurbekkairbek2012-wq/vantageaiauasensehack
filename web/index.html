@@ -2,201 +2,244 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>VANTAGE — мониторинг несанкционированных свалок</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VANTAGE — свалки, которых нет ни в одном реестре</title>
+<meta name="description" content="Обнаружение несанкционированных свалок по спутниковым данным. Оценка ущерба в тенге, готовый акт для акимата, прогноз появления новых.">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#0a0d12">
-<meta name="description" content="Обнаружение несанкционированных свалок по спутниковым данным, оценка ущерба и прогноз риска. Астана.">
-<link rel="stylesheet" href="styles.css">
+<meta name="theme-color" content="#f7f4ef">
+<link rel="stylesheet" href="landing.css">
 </head>
 <body>
 
-<div id="toast-stack" class="toast-stack" aria-live="polite"></div>
-
-<header class="topbar">
-  <div class="brand">
-    <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
-      <circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".35"/>
-      <circle cx="16" cy="16" r="8"  fill="none" stroke="currentColor" stroke-width="1.5" opacity=".6"/>
-      <circle cx="16" cy="16" r="3.2" fill="currentColor"/>
-      <path d="M16 1v5M16 26v5M1 16h5M26 16h5" stroke="currentColor" stroke-width="1.5" opacity=".5"/>
-    </svg>
-    <div class="brand-text">
-      <div class="brand-name">VANTAGE</div>
-      <div class="brand-sub">мониторинг несанкционированных свалок · Астана</div>
-    </div>
-  </div>
-
-  <div class="segmented" role="tablist" aria-label="Режим">
-    <button id="mode-story" class="seg active" role="tab" type="button">
-      <svg viewBox="0 0 16 16" class="ico"><path d="M2 3h12M2 8h12M2 13h7" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
-      Сценарий
-    </button>
-    <button id="mode-explore" class="seg" role="tab" type="button">
-      <svg viewBox="0 0 16 16" class="ico"><circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-      Обзор
-    </button>
-  </div>
-
-  <div class="topbar-right">
-    <div id="demo-chip" class="chip warn hidden" title="Показаны синтетические данные">
-      <span class="pulse"></span> демо-данные
-    </div>
-    <div id="net-chip" class="chip">
-      <span class="dot"></span><span id="net-label">онлайн</span>
-    </div>
-    <button id="offline-prep" class="btn ghost sm" type="button" title="Скачать тайлы карты в кеш">
-      <svg viewBox="0 0 16 16" class="ico"><path d="M8 2v8M5 7.5L8 10.5l3-3M3 13h10" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      Офлайн
-    </button>
-  </div>
+<header class="nav">
+  <a class="nav-brand" href="./">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" stroke-width="1.6" opacity=".3"/><circle cx="16" cy="16" r="7.5" fill="none" stroke="currentColor" stroke-width="1.6" opacity=".55"/><circle cx="16" cy="16" r="3" fill="currentColor"/></svg>
+    <span>VANTAGE</span>
+  </a>
+  <nav class="nav-links">
+    <a href="#problem">Проблема</a>
+    <a href="#method">Метод</a>
+    <a href="#result">Результат</a>
+    <a href="#limits">Ограничения</a>
+  </nav>
+  <a class="btn solid" href="app.html">Открыть карту →</a>
 </header>
 
-<main class="shell">
-
-  <!-- ЛЕВАЯ КОЛОНКА: список объектов -->
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-head">
-      <div class="search">
-        <svg viewBox="0 0 16 16" class="ico"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        <input id="search" type="search" placeholder="Поиск по номеру объекта" autocomplete="off">
+<!-- ─────────────────── HERO ─────────────────── -->
+<section class="hero">
+  <div class="hero-grid">
+    <div class="hero-text">
+      <div class="tag">Future Minds Hackathon 2026 · трек EcoFin · Астана</div>
+      <h1>Свалки, которых нет<br>ни в одном реестре</h1>
+      <p class="lead">
+        Официальные реестры знают о десятках полигонов. Спутник видит объекты,
+        которых там нет. Мы находим их автоматически по всей области,
+        датируем момент возникновения и считаем, во сколько это обходится бюджету.
+      </p>
+      <div class="hero-actions">
+        <a class="btn solid lg" href="app.html">Открыть карту</a>
+        <a class="btn ghost lg" href="https://github.com/k41270075-stack/hakathon" target="_blank" rel="noopener">Исходный код</a>
       </div>
-      <div class="sort-row">
-        <label for="sort">Сортировка</label>
-        <select id="sort">
-          <option value="probability">по уверенности</option>
-          <option value="damage_p50">по ущербу</option>
-          <option value="area_m2">по площади</option>
-          <option value="break_date">по дате возникновения</option>
-        </select>
-      </div>
-    </div>
-    <div class="list" id="object-list"></div>
-    <div class="sidebar-foot" id="list-summary">—</div>
-  </aside>
-
-  <!-- ЦЕНТР: карта -->
-  <section class="stage">
-    <canvas id="map" aria-label="Карта объектов"></canvas>
-
-    <div class="map-tools tl">
-      <div class="tool-group" role="group" aria-label="Подложка">
-        <button class="tool" id="base-sat" title="Спутник">СПУТНИК</button>
-        <button class="tool active" id="base-dark" title="Схема">СХЕМА</button>
-      </div>
+      <div class="hero-note">Демонстрация занимает пять минут и работает без интернета</div>
     </div>
 
-    <div class="map-tools tr">
-      <div class="tool-group vertical">
-        <button class="tool icon" id="zoom-in" title="Приблизить">+</button>
-        <button class="tool icon" id="zoom-out" title="Отдалить">−</button>
-        <button class="tool icon" id="reset-view" title="Вся область">
-          <svg viewBox="0 0 16 16" class="ico"><path d="M2 6V2h4M14 6V2h-4M2 10v4h4M14 10v4h-4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
-        </button>
+    <div class="hero-visual">
+      <div class="scan">
+        <div class="scan-grid"></div>
+        <div class="scan-line"></div>
+        <svg class="scan-marks" viewBox="0 0 320 320" aria-hidden="true">
+          <g class="mark" style="--d:0s"><circle cx="88" cy="120" r="7"/><circle cx="88" cy="120" r="20" class="ring"/></g>
+          <g class="mark" style="--d:.5s"><circle cx="204" cy="86" r="5"/><circle cx="204" cy="86" r="16" class="ring"/></g>
+          <g class="mark" style="--d:1s"><circle cx="146" cy="212" r="9"/><circle cx="146" cy="212" r="24" class="ring"/></g>
+          <g class="mark" style="--d:1.5s"><circle cx="248" cy="198" r="6"/><circle cx="248" cy="198" r="18" class="ring"/></g>
+          <g class="mark" style="--d:2s"><circle cx="62" cy="248" r="5"/><circle cx="62" cy="248" r="15" class="ring"/></g>
+        </svg>
       </div>
-      <div class="tool-group vertical" role="group" aria-label="Слои">
-        <button class="tool icon layer active" data-layer="candidates" title="Объекты">
-          <svg viewBox="0 0 16 16" class="ico"><path d="M8 2l5 4-5 4-5-4z" fill="currentColor" opacity=".9"/><path d="M3 9.5l5 4 5-4" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>
-        </button>
-        <button class="tool icon layer" data-layer="risk" title="Зоны риска">
-          <svg viewBox="0 0 16 16" class="ico"><path d="M8 1.8l6.2 11.4H1.8z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 6v3.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="11.2" r=".9" fill="currentColor"/></svg>
-        </button>
-        <button class="tool icon layer active" data-layer="registry" title="Официальный реестр">
-          <svg viewBox="0 0 16 16" class="ico"><rect x="3" y="2.5" width="10" height="11" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M5.5 6h5M5.5 8.5h5M5.5 11h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-        </button>
+      <div class="scan-caption">Sentinel-2 · 10 м/пиксель · 2018–2026</div>
+    </div>
+  </div>
+
+  <div class="metrics">
+    <div class="metric"><div class="m-num">2392</div><div class="m-lab">снимка проанализировано</div></div>
+    <div class="metric"><div class="m-num">5</div><div class="m-lab">независимых физических признака</div></div>
+    <div class="metric"><div class="m-num">8</div><div class="m-lab">лет истории по каждому пикселю</div></div>
+    <div class="metric"><div class="m-num">495</div><div class="m-lab">тестов в репозитории</div></div>
+  </div>
+</section>
+
+<!-- ─────────────────── ПРОБЛЕМА ─────────────────── -->
+<section class="band" id="problem">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="num">01</span>
+      <h2>Невидимая статья расходов</h2>
+    </div>
+    <div class="cards-3">
+      <article class="card">
+        <h3>Её никто не считает</h3>
+        <p>Потому что её никто не видит. Обойти степь пешком невозможно, дроны не покрывают площадь. Объект обнаруживают, когда на него жалуются, — то есть поздно.</p>
+      </article>
+      <article class="card">
+        <h3>Чем позже, тем дороже</h3>
+        <p>Уборка оплачивается по тарифу за тонну. Свалка растёт всё время, пока её не нашли. Год промедления — это кратный рост счёта.</p>
+      </article>
+      <article class="card">
+        <h3>Штраф не выписывается</h3>
+        <p>Статья 344 КоАП РК предусматривает до 1000 МРП. Но применить её нельзя: объект не задокументирован, координат нет, ущерб не посчитан.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────── МЕТОД ─────────────────── -->
+<section class="band alt" id="method">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="num">02</span>
+      <h2>Пять признаков вместо одного</h2>
+      <p class="section-lead">
+        На десяти метрах свалка выглядит как серое пятно — ровно как карьер,
+        стройка и отвал грунта. Различает их не картинка, а физика.
+      </p>
+    </div>
+
+    <div class="signals-table">
+      <div class="sig-row head">
+        <div>Признак</div><div>Физика</div><div>Что отсекает</div>
+      </div>
+      <div class="sig-row">
+        <div class="sig-name"><i class="dot ndvi"></i>Падение NDVI без возврата</div>
+        <div>растительность гибнет и не восстанавливается</div>
+        <div class="cut">пашню — у неё NDVI возвращается каждую весну</div>
+      </div>
+      <div class="sig-row">
+        <div class="sig-name"><i class="dot bsi"></i>Рост BSI</div>
+        <div>доля открытого грунта и минерального мусора растёт</div>
+        <div class="cut">плотную застройку</div>
+      </div>
+      <div class="sig-row">
+        <div class="sig-name"><i class="dot pmli"></i>Отклик в SWIR</div>
+        <div>полимеры поглощают около 1730 и 2100–2300 нм</div>
+        <div class="cut">чистый грунт</div>
+      </div>
+      <div class="sig-row">
+        <div class="sig-name"><i class="dot sar"></i>Нестабильность по радару</div>
+        <div>поверхность меняется от прохода к проходу</div>
+        <div class="cut"><b>карьер</b> — его стенки стабильны неделями</div>
+      </div>
+      <div class="sig-row">
+        <div class="sig-name"><i class="dot thermal"></i>Тепловая аномалия</div>
+        <div>разложение органики греет тело свалки</div>
+        <div class="cut"><b>снегосвалку</b> — она холоднее фона</div>
       </div>
     </div>
 
-    <div class="hud-bottom">
-      <div class="legend" id="legend"></div>
-      <div class="scalebar"><div class="scalebar-line"></div><span id="scale-label">—</span></div>
-      <div class="attribution" id="attribution"></div>
+    <div class="callout">
+      <div class="callout-mark">!</div>
+      <div>
+        <b>Модель не выдаёт вердикт — она выдаёт доказательную цепочку.</b>
+        Свалку определяет согласие независимых признаков, а не сила одного.
+        Один сильный признак при молчании остальных — это обычно карьер.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────── РЕЗУЛЬТАТ ─────────────────── -->
+<section class="band" id="result">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="num">03</span>
+      <h2>Что получает служба</h2>
     </div>
 
-    <div class="loader hidden" id="loader"><div class="spin"></div><span>Загрузка данных…</span></div>
-  </section>
-
-  <!-- ПРАВАЯ КОЛОНКА -->
-  <aside class="inspector" id="inspector">
-
-    <!-- Сценарий -->
-    <section id="story" class="pane">
-      <div class="pane-head">
-        <div class="progress" id="story-progress"></div>
-        <div class="eyebrow"><span id="story-step">1</span> из <span id="story-total">7</span></div>
-        <h2 id="story-title">Официальный реестр</h2>
-      </div>
-      <blockquote class="quote" id="story-line">Это то, что государство знает.</blockquote>
-      <div class="row gap">
-        <button id="story-prev" class="btn ghost" type="button">Назад</button>
-        <button id="story-next" class="btn primary grow" type="button">Дальше →</button>
-      </div>
-      <div class="kbd-hint"><kbd>Space</kbd> дальше · <kbd>←</kbd><kbd>→</kbd> навигация</div>
-
-      <div id="totals" class="stats"></div>
-    </section>
-
-    <!-- Карточка объекта -->
-    <section id="details" class="pane hidden">
-      <button class="pane-close" id="details-close" type="button" aria-label="Закрыть">
-        <svg viewBox="0 0 16 16" class="ico"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-      </button>
-
-      <div class="pane-head">
-        <div class="eyebrow">объект</div>
-        <h2 id="det-id">—</h2>
-        <div class="badges" id="det-badges"></div>
-      </div>
-
-      <div class="facts" id="det-facts"></div>
-
-      <div class="section">
-        <div class="section-title">
-          Доказательная цепочка
-          <span class="counter" id="det-agree">—</span>
+    <div class="steps">
+      <div class="step">
+        <div class="step-n">1</div>
+        <div>
+          <h3>Координаты и дата возникновения</h3>
+          <p>Не «где-то там», а точка для навигатора и месяц, когда объект появился. Детектор находит разрыв во временном ряду за восемь лет.</p>
         </div>
-        <div class="signals" id="det-signals"></div>
-        <p class="hint" id="det-evidence"></p>
       </div>
-
-      <div class="section">
-        <div class="section-title">Изменение поверхности</div>
-        <div class="ba" id="det-ba"></div>
+      <div class="step">
+        <div class="step-n">2</div>
+        <div>
+          <h3>Ущерб как диапазон, а не как цифра</h3>
+          <p>Восемь допущений, у каждого указан источник. Метод Монте-Карло даёт P10–P90. Точечная оценка не пережила бы вопроса «откуда».</p>
+        </div>
       </div>
-
-      <div class="section">
-        <div class="section-title">Оценка ущерба</div>
-        <div class="money" id="det-money"></div>
+      <div class="step">
+        <div class="step-n">3</div>
+        <div>
+          <h3>Черновик акта с применимой статьёй</h3>
+          <p>Готовый PDF: координаты, площадь, расчёт ущерба, статья КоАП. Официальным становится только после подтверждения человеком — с именем и должностью.</p>
+        </div>
       </div>
-
-      <div class="section">
-        <div class="section-title">Правовая норма</div>
-        <div class="legal" id="det-legal"></div>
+      <div class="step">
+        <div class="step-n">4</div>
+        <div>
+          <h3>Контроль исполнения</h3>
+          <p>Убрали или засыпали грунтом? Растительность возвращается в обоих случаях. Различает только тепловой признак: он один видит сквозь присыпку.</p>
+        </div>
       </div>
+      <div class="step">
+        <div class="step-n">5</div>
+        <div>
+          <h3>Прогноз на 12 месяцев</h3>
+          <p>Убрать свалку стоит миллионы. Не дать ей появиться — стоит знака и фотоловушки. Модель показывает, куда их поставить.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
-      <button id="det-act" class="btn primary wide" type="button">Сформировать черновик акта</button>
-      <p class="disclaimer">
-        Оценка вероятности, а не юридическое доказательство. Решение принимает
-        уполномоченное лицо по итогам выездной проверки.
+<!-- ─────────────────── ОГРАНИЧЕНИЯ ─────────────────── -->
+<section class="band alt" id="limits">
+  <div class="wrap narrow">
+    <div class="section-head">
+      <span class="num">04</span>
+      <h2>Чего система не может</h2>
+      <p class="section-lead">
+        Ограничения названы здесь, а не спрятаны. Инструмент, границы которого
+        неизвестны, применять нельзя.
       </p>
-    </section>
+    </div>
+    <ul class="limits">
+      <li><b>10 метров на пиксель.</b> Объекты меньше 30–50 м² Sentinel-2 не разрешает. Компенсируется сообщениями жителей: человек видит то, чего не видит спутник.</li>
+      <li><b>Доверификация выборочная.</b> Снимки высокого разрешения подтягиваются для лучших кандидатов, а не для всего массива.</li>
+      <li><b>Прокси когерентности, а не интерферометрия.</b> Строгая обработка фазы требует парных SLC-снимков.</li>
+      <li><b>Четыре параметра экономики — инженерная оценка.</b> Морфология свалки и доли извлечения сырья не публикуются никем. Их влияние проверяется анализом чувствительности.</li>
+      <li><b>Это модель вероятности, а не юридическое доказательство.</b> Решение о статусе объекта, штрафе и факте устранения принимает уполномоченное лицо после выезда.</li>
+    </ul>
+  </div>
+</section>
 
-    <!-- Где мы ошиблись -->
-    <section id="mistakes" class="pane hidden">
-      <div class="pane-head">
-        <div class="eyebrow">прозрачность</div>
-        <h2>Где мы ошиблись</h2>
-      </div>
-      <p class="hint">
-        Кандидаты, отсеянные контекстным фильтром. Показываем намеренно:
-        явно названная граница модели убедительнее заявленной идеальной точности.
-      </p>
-      <div id="mistakes-list" class="rejects"></div>
-    </section>
+<!-- ─────────────────── CTA ─────────────────── -->
+<section class="cta">
+  <div class="wrap narrow center">
+    <h2>Пять минут, чтобы всё потрогать</h2>
+    <p>Карта открывается с обучающим туром. Каждая функция — за один клик.</p>
+    <a class="btn solid lg" href="app.html">Открыть карту</a>
+  </div>
+</section>
 
-  </aside>
-</main>
+<footer class="foot">
+  <div class="wrap foot-grid">
+    <div>
+      <div class="foot-brand">VANTAGE</div>
+      <div class="foot-sub">Future Minds Hackathon 2026 · трек EcoFin</div>
+    </div>
+    <div class="foot-links">
+      <a href="https://github.com/k41270075-stack/hakathon" target="_blank" rel="noopener">Репозиторий</a>
+      <a href="app.html">Карта</a>
+    </div>
+    <div class="foot-note">
+      Данные: Copernicus Sentinel-2 и Sentinel-1, USGS Landsat 8/9, OpenStreetMap.
+      Подложка: © OpenStreetMap, © CARTO, Esri.
+    </div>
+  </div>
+</footer>
 
-<script src="app.js"></script>
+<script src="landing.js"></script>
 </body>
 </html>

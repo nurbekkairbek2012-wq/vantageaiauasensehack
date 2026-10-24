@@ -123,6 +123,28 @@ python -m vantage.bot
 
 ---
 
+## Что не доделано
+
+Полный список — **[docs/TODO.md](docs/TODO.md)**. Он честный: включая
+то, что сделано наполовину, и то, что сейчас работает на синтетике.
+
+Коротко, что блокирует остальное:
+
+| # | Что | Где |
+|---|---|---|
+| 1 | Разметка обучающей выборки (часть берётся из OSM автоматически) | [labels.py](src/vantage/labels.py) |
+| 2 | Настоящий прогон по области вместо синтетики | [pipeline.py](src/vantage/pipeline.py) |
+| 3 | SAR и тепло посчитаны, но не заведены в решение детектора | [change.py](src/vantage/change.py) |
+| 4 | Доверификация не вызывается из пайплайна | [verify.py](src/vantage/verify.py) |
+| 5 | Контроль устранения не получает пост-историю | [removal.py](src/vantage/removal.py) |
+| 7 | Нет страницы для ручной разметки — ускорила бы п.1 в разы | — |
+| 12 | Тариф вывоза за тонну: **82% разброса оценки ущерба** | [economics](config/economics_astana.yaml) |
+
+Если вы подключаетесь к проекту — начните с [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md),
+там карта системы за десять минут, потом [docs/TODO.md](docs/TODO.md).
+
+---
+
 ## Структура
 
 ```
@@ -136,11 +158,16 @@ src/vantage/
   money · methane · risk · removal · act          экономика и действие
   pipeline · demo · cli                           оркестрация
   api/ · bot/                                     сервисы
-web/                       карта: canvas-рендерер, офлайн-first PWA
-tests/                     471 тест
+web/
+  index.html               лендинг
+  app.html                 карта на Leaflet
+  vendor/                  Leaflet локально, без CDN
+tests/                     495 тестов
 docs/
   ARCHITECTURE.md          карта системы за десять минут
+  TODO.md                  что не доделано, для новых участников
   CROSS_TRAINING.md        протокол подготовки к Q&A
+  LETTER.md                текст обращения в акимат
   examples/                образцы акта: черновик и подтверждённый
 ```
 
