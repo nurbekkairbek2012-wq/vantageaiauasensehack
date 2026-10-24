@@ -10,9 +10,11 @@
  * него高 проголосовало.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { MapView, type Basemap } from './components/MapView';
+import { MapView } from './components/MapView';
+import { BasemapSwitch } from './components/BasemapSwitch';
+import type { Basemap } from './components/basemaps';
 import { Nav } from './components/Nav';
 import { Act } from './components/Act';
 
@@ -103,13 +105,19 @@ export default function MapApp() {
   const [risk, setRisk] = useState<GeoJSON.FeatureCollection | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [sort, setSort] = useState<SortKey>('risk_of_cover');
-  const [basemap, setBasemap] = useState<Basemap>('grid');
+  const [basemap, setBasemap] = useState<Basemap>('sat');
   // Прогноз выключен по умолчанию. Он покрывает всю область сплошной
   // заливкой и на старте прячет то, ради чего карту открыли, — сами
   // найденные объекты. Задача первична, прогноз включается осознанно.
   const [showRisk, setShowRisk] = useState(false);
   const [showRegistry, setShowRegistry] = useState(true);
   const [failed, setFailed] = useState(false);
+
+  /* Список и карта — две проекции одного набора, и выбор в одной обязан
+     быть виден в другой. Клик по объекту на карте раньше подсвечивал
+     строку, до которой надо было доскроллить руками: в списке из тридцати
+     объектов подсветка вне экрана — это отсутствие ответа. */
+  const listRefs = useRef<Map<string, HTMLLIElement>>(new Map());
 
   useEffect(() => {
     const load = (name: string) =>
@@ -140,6 +148,14 @@ export default function MapApp() {
   }, [candidates, sort]);
 
   const current = rows.find((f) => f.properties.candidate_id === selected) ?? null;
+
+  useEffect(() => {
+    if (!selected) return;
+    const row = listRefs.current.get(selected);
+    // block: 'nearest' — строка уже на экране не дёргается. Прокрутка
+    // ради прокрутки читается как самопроизвольное движение страницы.
+    row?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [selected]);
 
   const totals = useMemo(() => {
     const list = candidates?.features ?? [];
@@ -184,6 +200,16 @@ export default function MapApp() {
             </select>
           </div>
 
+          {/* Проценты в строке ничего не значили без подписи: их путали с
+              вероятностью модели, которой здесь нет. Заголовок столбца
+              стоит дешевле, чем объяснение на защите. */}
+          <div className="flex shrink-0 items-baseline justify-between gap-3 border-b border-grid px-4 py-1.5 text-[11px] uppercase tracking-[0.1em] text-muted-2">
+            <span>Объект</span>
+            <span title="Сколько из пяти физических признаков сработало за объект">
+              Согласие признаков
+            </span>
+          </div>
+
           <ol className="min-h-0 flex-1 overflow-y-auto">
             {rows.map((f) => {
               const p = f.properties;
@@ -191,7 +217,13 @@ export default function MapApp() {
               const on = id === selected;
               const score = Number(p.evidence_score) || 0;
               return (
-                <li key={id}>
+                <li
+                  key={id}
+                  ref={(node) => {
+                    if (node) listRefs.current.set(id, node);
+                    else listRefs.current.delete(id);
+                  }}
+                >
                   <button
                     type="button"
                     onClick={() => setSelected(on ? null : id)}
@@ -248,23 +280,8 @@ export default function MapApp() {
           />
 
           <div className="pointer-events-none absolute left-3 top-3 z-[500] flex flex-col gap-2">
-            <div className="pointer-events-auto flex overflow-hidden rounded-sm border border-grid bg-soot/90">
-              {([['grid', 'Сетка'], ['sat', 'Снимок'], ['scheme', 'Схема']] as [Basemap, string][]).map(
-                ([key, label]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setBasemap(key)}
-                    className={`cursor-pointer px-3 py-1.5 text-xs transition-colors duration-150 ${
-                      basemap === key ? 'bg-violet text-paper' : 'text-muted hover:bg-soot-2'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ),
-              )}
-            </div>
-            <div className="pointer-events-auto flex flex-col gap-1.5 rounded-sm border border-grid bg-soot/90 px-3 py-2 text-xs">
+            <BasemapSwitch value={basemap} onChange={setBasemap} className="pointer-events-auto" />
+            <div className="pointer-events-auto flex flex-col gap-1.5 rounded-sm border border-grid bg-soot/90 px-3 py-2 text-xs backdrop-blur-sm">
               <label className="flex cursor-pointer items-center gap-2">
                 <input type="checkbox" checked={showRisk} onChange={(e) => setShowRisk(e.target.checked)} />
                 <span className="text-muted">Зоны риска</span>
@@ -274,10 +291,10 @@ export default function MapApp() {
                 <span className="text-muted">Известные объекты</span>
               </label>
             </div>
-            {basemap === 'grid' && (
+            {showRisk && (
               <p className="pointer-events-none max-w-[15rem] text-xs leading-snug text-muted-2">
-                Подложка выключена — карта работает без интернета. Снимок
-                включается кнопкой, когда сеть есть.
+                Тепло — вероятность появления новой свалки, а не найденный
+                объект. Границ у зоны нет: риск не обрывается на меже.
               </p>
             )}
           </div>

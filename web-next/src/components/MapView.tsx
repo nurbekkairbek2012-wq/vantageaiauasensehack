@@ -5,28 +5,22 @@
  * отдельные — на слои. Оборачивать каждый маркер в компонент значило бы
  * пересоздавать их на каждый рендер списка.
  *
- * Подложка по умолчанию — координатная сетка, а не спутниковые тайлы.
- * Причина не эстетическая: карта обязана открываться без интернета на
- * площадке, а тайлы это сеть. Снимок включается кнопкой, когда сеть есть,
- * и тогда становится доказательством, а не фоном.
+ * Подложка по умолчанию — спутниковый снимок. Раньше была координатная
+ * сетка ради работы без интернета, и это оказалось плохим обменом: свалка
+ * на пустом фоне не доказывает ничего, а на снимке доказывает сама себя.
+ *
+ * Зоны риска рисуются тепловой поверхностью, а не заливкой ячеек. Ячейка —
+ * это шаг расчётной сетки, и показывать её границы значит утверждать, что
+ * риск обрывается на километровой меже. Он не обрывается.
  */
 
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { createBasemapLayer, type Basemap } from './basemaps';
+import { createHeatOverlay, riskToPoints, type HeatOverlay } from './HeatOverlay';
 
-export type Basemap = 'grid' | 'sat' | 'scheme';
-
-const TILES: Record<Exclude<Basemap, 'grid'>, { url: string; attribution: string }> = {
-  sat: {
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    attribution: 'Esri · Maxar',
-  },
-  scheme: {
-    url: 'https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
-    attribution: '© OpenStreetMap · © CARTO',
-  },
-};
+export type { Basemap };
 
 type Props = {
   candidates: GeoJSON.FeatureCollection | null;
@@ -45,8 +39,10 @@ export function MapView({
   const host = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
   const tiles = useRef<L.TileLayer | null>(null);
+  const heat = useRef<HeatOverlay | null>(null);
   const layers = useRef<Record<string, L.LayerGroup>>({});
   const shapes = useRef<Map<string, L.Path>>(new Map());
+  const fitted = useRef(false);
 
   useEffect(() => {
     if (!host.current || map.current) return;
@@ -63,7 +59,6 @@ export function MapView({
     L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(m);
 
     layers.current = {
-      risk: L.layerGroup().addTo(m),
       registry: L.layerGroup().addTo(m),
       candidates: L.layerGroup().addTo(m),
     };
@@ -76,11 +71,7 @@ export function MapView({
     const m = map.current;
     if (!m) return;
     if (tiles.current) { m.removeLayer(tiles.current); tiles.current = null; }
-    if (basemap === 'grid') return;
-    const cfg = TILES[basemap];
-    tiles.current = L.tileLayer(cfg.url, {
-      attribution: cfg.attribution, minZoom: 9, maxZoom: 18, keepBuffer: 2,
-    }).addTo(m);
+    tiles.current = createBasemapLayer(basemap).addTo(m);
     tiles.current.bringToBack();
   }, [basemap]);
 
@@ -94,7 +85,7 @@ export function MapView({
 
     const layer = L.geoJSON(candidates, {
       style: () => ({
-        color: '#a78bfa', weight: 1.5, fillColor: '#7c3aed', fillOpacity: 0.35,
+        color: '#c4b5fd', weight: 1.5, fillColor: '#7c3aed', fillOpacity: 0.35,
       }),
       onEachFeature: (f, l) => {
         const id = String(f.properties?.candidate_id ?? '');
@@ -107,15 +98,22 @@ export function MapView({
     // Объекты мелкие: на масштабе области полигон в 1800 м² — доли пикселя.
     // Кольцо-указатель делает их находимыми, не притворяясь, что объект
     // больше, чем он есть: сам полигон рисуется отдельно и в своём размере.
+    //
+    // На снимке кольцо получило тёмную подложку: белая линия поверх
+    // светлого поля — например зимнего снега или бетона — исчезает.
     candidates.features.forEach((f) => {
       const b = L.geoJSON(f).getBounds();
       const id = String(f.properties?.candidate_id ?? '');
+      const halo = L.circleMarker(b.getCenter(), {
+        radius: 11, color: '#0d0918', weight: 4, fill: false, opacity: 0.55,
+      });
       const ring = L.circleMarker(b.getCenter(), {
-        radius: 11, color: '#ede9fe', weight: 2, fill: false, opacity: 0.9,
+        radius: 11, color: '#ede9fe', weight: 2, fill: false, opacity: 0.95,
       });
       const dot = L.circleMarker(b.getCenter(), {
         radius: 3.5, color: '#ede9fe', weight: 0, fillColor: '#ede9fe', fillOpacity: 1,
       });
+      group.addLayer(halo);
       [ring, dot].forEach((marker) => {
         marker.on('click', (e) => { L.DomEvent.stop(e); onSelect(id); });
         marker.bindTooltip(id, { direction: 'top', offset: [0, -12] });
@@ -123,8 +121,11 @@ export function MapView({
       });
     });
 
-    if (candidates.features.length) {
+    // Подгонка охвата — один раз. Повторная на каждое обновление слоя
+    // отменяла бы выбор объекта: карта отпрыгивала бы обратно на область.
+    if (candidates.features.length && !fitted.current) {
       m.fitBounds(L.geoJSON(candidates).getBounds().pad(0.25), { animate: false });
+      fitted.current = true;
     }
   }, [candidates, onSelect]);
 
@@ -135,7 +136,7 @@ export function MapView({
     if (!registry || !showRegistry) return;
     group.addLayer(
       L.geoJSON(registry, {
-        style: () => ({ color: '#5b93c9', weight: 1.5, dashArray: '5 4', fillOpacity: 0.1 }),
+        style: () => ({ color: '#7dd3fc', weight: 1.5, dashArray: '5 4', fillOpacity: 0.08 }),
         onEachFeature: (f, l) =>
           l.bindTooltip(`${f.properties?.name ?? 'объект обращения с отходами'} · известен публично`, {
             direction: 'top',
@@ -144,25 +145,20 @@ export function MapView({
     );
   }, [registry, showRegistry]);
 
+  // зоны риска — тепловой поверхностью
   useEffect(() => {
-    const group = layers.current.risk;
-    if (!group) return;
-    group.clearLayers();
-    if (!risk || !showRisk) return;
-    group.addLayer(
-      L.geoJSON(risk, {
-        style: (f) => {
-          const cls = Number(f?.properties?.risk_class) || 1;
-          // Верхняя граница 0.22: на скриншоте заливка в 0.3 забивала и
-          // объекты, и сетку — прогноз выглядел данными.
-          return {
-            color: '#7c3aed', weight: 0, fillColor: '#7c3aed',
-            fillOpacity: 0.05 + cls * 0.045,
-          };
-        },
-      }),
-    );
-    group.eachLayer((l) => (l as L.GeoJSON).bringToBack());
+    const m = map.current;
+    if (!m) return;
+    if (!showRisk || !risk) {
+      if (heat.current) { m.removeLayer(heat.current); heat.current = null; }
+      return;
+    }
+    if (!heat.current) {
+      heat.current = createHeatOverlay(riskToPoints(risk), { kind: 'risk', opacity: 0.72 });
+      heat.current.addTo(m);
+    } else {
+      heat.current.setPoints(riskToPoints(risk));
+    }
   }, [risk, showRisk]);
 
   // выделение
@@ -171,7 +167,7 @@ export function MapView({
       shape.setStyle(
         id === selected
           ? { color: '#ede9fe', weight: 3, fillColor: '#a78bfa', fillOpacity: 0.6 }
-          : { color: '#a78bfa', weight: 1.5, fillColor: '#7c3aed', fillOpacity: 0.35 },
+          : { color: '#c4b5fd', weight: 1.5, fillColor: '#7c3aed', fillOpacity: 0.35 },
       );
     });
     const m = map.current;
@@ -183,12 +179,8 @@ export function MapView({
     }
   }, [selected]);
 
-  // Сетка живёт на отдельном слое под картой, а не на самом контейнере
-  // Leaflet. Его CSS задаёт `background` сокращённым свойством и сбрасывает
-  // background-image вместе с цветом; спорить с этим через !important на
-  // каждое свойство — гонка, которую проигрываешь при обновлении библиотеки.
   return (
-    <div className="relative h-full w-full bg-soot map-grid">
+    <div className="relative h-full w-full bg-soot">
       <div ref={host} className="absolute inset-0" />
     </div>
   );

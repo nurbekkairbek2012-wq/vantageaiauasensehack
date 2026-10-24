@@ -14,6 +14,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Nav } from './components/Nav';
+import { BasemapSwitch } from './components/BasemapSwitch';
+import { createBasemapLayer, type Basemap } from './components/basemaps';
+import { createHeatOverlay, riskToPoints, type HeatOverlay } from './components/HeatOverlay';
 
 type Metrics = {
   pr_auc_future: number;
@@ -40,11 +43,14 @@ export default function Forecast() {
   const host = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
   const cells = useRef<Map<number, L.Path>>(new Map());
+  const tiles = useRef<L.TileLayer | null>(null);
+  const heat = useRef<HeatOverlay | null>(null);
 
   const [patrol, setPatrol] = useState<GeoJSON.FeatureCollection | null>(null);
   const [risk, setRisk] = useState<GeoJSON.FeatureCollection | null>(null);
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
+  const [basemap, setBasemap] = useState<Basemap>('sat');
 
   useEffect(() => {
     const grab = <T,>(url: string, set: (v: T) => void) =>
@@ -57,7 +63,7 @@ export default function Forecast() {
   useEffect(() => {
     if (!host.current || map.current) return;
     const m = L.map(host.current, {
-      zoomControl: false, attributionControl: false, preferCanvas: true,
+      zoomControl: false, attributionControl: true, preferCanvas: true,
       minZoom: 9, maxZoom: 16, zoomSnap: 0.5,
     }).setView([51.21, 71.5], 11);
     L.control.zoom({ position: 'bottomright' }).addTo(m);
@@ -67,13 +73,24 @@ export default function Forecast() {
 
   useEffect(() => {
     const m = map.current;
+    if (!m) return;
+    if (tiles.current) { m.removeLayer(tiles.current); tiles.current = null; }
+    tiles.current = createBasemapLayer(basemap, 16).addTo(m);
+    tiles.current.bringToBack();
+  }, [basemap]);
+
+  // Риск тепловой поверхностью, а не заливкой ячеек: граница ячейки —
+  // шаг расчётной сетки, и рисовать её значит утверждать, что риск
+  // обрывается на километровой меже.
+  useEffect(() => {
+    const m = map.current;
     if (!m || !risk) return;
-    L.geoJSON(risk, {
-      style: (f) => {
-        const cls = Number(f?.properties?.risk_class) || 1;
-        return { color: '#7c3aed', weight: 0, fillColor: '#7c3aed', fillOpacity: 0.05 + cls * 0.04 };
-      },
-    }).addTo(m);
+    if (!heat.current) {
+      heat.current = createHeatOverlay(riskToPoints(risk), { kind: 'risk', opacity: 0.75 });
+      heat.current.addTo(m);
+    } else {
+      heat.current.setPoints(riskToPoints(risk));
+    }
   }, [risk]);
 
   useEffect(() => {
@@ -122,7 +139,7 @@ export default function Forecast() {
     <div className="flex min-h-screen flex-col">
       <Nav current="forecast">
         <p className="max-w-[46ch] text-sm text-muted-2">
-          Убрать свалку стоит миллионы. Не дать ей появиться — стоит знака и
+          Убрать свалку стоит миллионы. Не дать ей появиться — знака и
           фотоловушки. Ниже координаты, куда их ставить.
         </p>
       </Nav>
@@ -136,7 +153,7 @@ export default function Forecast() {
           <div className="border-b border-grid px-5 py-4">
             <h1 className="text-xl text-line">Маршрут на ближайший месяц</h1>
             <p className="mt-2 text-sm text-muted">
-              Двадцать ячеек по 500 м, отобранных моделью из{' '}
+              Двадцать ячеек по 500 м из{' '}
               <span className="tabular text-line">19 621</span>. Порядок —
               порядок объезда.
             </p>
@@ -183,12 +200,16 @@ export default function Forecast() {
         </aside>
 
         <div className="relative min-h-[20rem]">
-          <div className="absolute inset-0 bg-soot map-grid" />
+          <div className="absolute inset-0 bg-soot" />
           <div ref={host} className="absolute inset-0" />
-          <p className="pointer-events-none absolute bottom-4 left-4 z-[500] max-w-[20rem] text-xs leading-snug text-muted-2">
-            Заливка — зоны повышенного риска. Светлые квадраты — отобранные
-            места. Точная вероятность по ячейкам не публикуется: по ней
-            восстанавливается модель.
+          <BasemapSwitch
+            value={basemap}
+            onChange={setBasemap}
+            className="absolute right-3 top-3 z-[500]"
+          />
+          <p className="pointer-events-none absolute bottom-4 left-4 z-[500] max-w-[19rem] rounded-sm bg-soot/80 px-2.5 py-1.5 text-xs leading-snug text-muted-2 backdrop-blur-sm">
+            Тепло — зоны риска, светлые квадраты — отобранные места. Точная
+            вероятность не публикуется: по ней восстанавливается модель.
           </p>
         </div>
       </div>
@@ -202,12 +223,11 @@ export default function Forecast() {
 
           {metrics ? (
             <>
-              <p className="mt-4 max-w-[70ch] text-muted">
-                Обучение шло на объектах, возникших до{' '}
+              <p className="mt-4 max-w-[68ch] text-muted">
+                Обучение — на объектах до{' '}
                 <span className="tabular text-line">{metrics.cutoff}</span>, проверка — на
-                возникших после. Ячейки, где свалка была уже до отсечки, из
-                проверки исключены: предсказывать появление там, где уже есть,
-                бессмысленно, и они завысили бы результат.
+                возникших после. Ячейки, где свалка была уже до отсечки,
+                исключены: они завысили бы результат.
               </p>
 
               <dl className="mt-7 flex flex-wrap gap-x-12 gap-y-5">
@@ -223,10 +243,9 @@ export default function Forecast() {
                 ))}
               </dl>
 
-              <p className="mt-6 max-w-[70ch] text-muted-2">
-                Прямое чтение: если объехать сто ячеек, отобранных моделью,
-                вместо ста случайных, свалок найдётся в сотни раз больше на тот
-                же бензин.
+              <p className="mt-6 max-w-[68ch] text-muted-2">
+                Читается так: сто ячеек от модели вместо ста случайных дают в
+                сотни раз больше находок на тот же бензин.
               </p>
 
               <h3 className="mt-10 text-lg text-line">Что решает</h3>
@@ -243,17 +262,16 @@ export default function Forecast() {
                   </li>
                 ))}
               </ul>
-              <p className="mt-4 max-w-[70ch] text-sm text-muted-2">
-                Расстояние до легального полигона не решает ничего — его вес
-                нулевой. Это ответ на распространённое возражение «свалки
-                возникают там, где далеко везти»: по данным области это не так,
-                решают удалённость от жилья и наличие подъезда.
+              <p className="mt-4 max-w-[68ch] text-sm text-muted-2">
+                Расстояние до легального полигона не решает ничего — вес
+                нулевой. Возражение «возникают там, где далеко везти» данными
+                не подтверждается: решают удалённость от жилья и подъезд.
               </p>
             </>
           ) : (
-            <p className="mt-4 max-w-[70ch] text-muted">
-              Метрики не загрузились. Модель обучается в прогоне; если файла
-              нет, значит прогон до неё не дошёл — и показывать здесь нечего.
+            <p className="mt-4 max-w-[68ch] text-muted">
+              Метрики не загрузились: прогон до модели не дошёл, и показывать
+              здесь нечего.
             </p>
           )}
         </div>

@@ -5,48 +5,73 @@
  * задача «куда ехать сегодня», здесь — «как дошло до сегодня». Разные
  * вопросы, разные экраны.
  *
- * Последний кадр не повторяет предпоследний: после 2026 года поверх
- * накопленного прошлого ложится прогноз на двенадцать месяцев вперёд.
- * Ради этого перехода таймлапс и нужен — иначе это просто анимация.
+ * Время здесь непрерывно, а не по кадрам. Покадровая версия переключала
+ * год целиком, и каждый шаг читался как мигание: пятна исчезали и
+ * появлялись в одном кадре. Причина была не в частоте — год как единица
+ * показа просто не бывает плавным. Теперь время это дробная величина,
+ * пятно набирает силу за неполный год, и ход получается непрерывным сам
+ * собой, без анимации отдельных элементов.
+ *
+ * Последний участок шкалы не повторяет предпоследний: после конца
+ * наблюдений поверх накопленного прошлого проступает прогноз на двенадцать
+ * месяцев вперёд. Ради этого перехода таймлапс и нужен — иначе это просто
+ * анимация.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Nav } from './components/Nav';
-import { createHeatLayer, type HeatPoint } from './components/HeatLayer';
+import { BasemapSwitch } from './components/BasemapSwitch';
+import { createBasemapLayer, type Basemap } from './components/basemaps';
+import { createHeatOverlay, riskToPoints, type HeatOverlay, type HeatPoint } from './components/HeatOverlay';
 
-const PLAY_STEP_MS = 1100;
+/** Восемь лет за столько секунд. Медленнее — скучно, быстрее — не читается. */
+const PLAY_SECONDS = 18;
 
-type Frame = number | 'forecast';
+/** Хвост шкалы за последним наблюдением, на котором проступает прогноз. */
+const FORECAST_SPAN = 1.2;
 
 export default function Timelapse() {
   const host = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
-  const heat = useRef<ReturnType<typeof createHeatLayer> | null>(null);
-  const riskLayer = useRef<L.GeoJSON | null>(null);
-  const timer = useRef<number | null>(null);
+  const tiles = useRef<L.TileLayer | null>(null);
+  const heat = useRef<HeatOverlay | null>(null);
+  const riskHeat = useRef<HeatOverlay | null>(null);
+  const raf = useRef(0);
+  const started = useRef(0);
+  const fitted = useRef(false);
 
   const [points, setPoints] = useState<HeatPoint[]>([]);
   const [risk, setRisk] = useState<GeoJSON.FeatureCollection | null>(null);
-  const [frame, setFrame] = useState<Frame>('forecast');
+  const [basemap, setBasemap] = useState<Basemap>('sat');
+  const [time, setTime] = useState<number | null>(null);
   const [playing, setPlaying] = useState(false);
 
+  /* Целые годы для подписей. Время внутри дробное — иначе не бывает
+     плавности, — но кнопка «2019.5833333333333» это не год, а протечка
+     внутреннего представления наружу. */
   const years = useMemo(() => {
     const set = new Set<number>();
-    points.forEach((p) => p.year != null && set.add(p.year));
+    points.forEach((p) => p.year != null && set.add(Math.floor(p.year)));
     return [...set].sort((a, b) => a - b);
   }, [points]);
 
-  const frames: Frame[] = useMemo(() => [...years, 'forecast'], [years]);
-  const index = frames.indexOf(frame);
+  const first = years.length ? years[0] : 2018;
+  const last = years.length ? years[years.length - 1] + 1 : 2026;
+  const end = last + FORECAST_SPAN;
 
-  const counted = useMemo(() => {
-    if (frame === 'forecast') return points.length;
-    return points.filter((p) => p.year != null && p.year <= frame).length;
-  }, [points, frame]);
+  // Пока данные не пришли, шкала стоит в конце: открывший страницу видит
+  // итог, а не пустую карту, с которой непонятно, что делать.
+  const at = time ?? end;
+  const forecastMix = Math.max(0, Math.min(1, (at - last - 0.15) / (FORECAST_SPAN - 0.15)));
 
-  // данные
+  const counted = useMemo(
+    () => points.filter((p) => p.year != null && p.year <= at).length,
+    [points, at],
+  );
+
+  // ── данные ──────────────────────────────────────────────────────────
   useEffect(() => {
     fetch('./data/candidates.geojson')
       .then((r) => r.json())
@@ -57,7 +82,13 @@ export default function Timelapse() {
           const area = Math.sqrt(Math.max(0, Number(f.properties?.area_m2) || 0));
           if (area > maxWeight) maxWeight = area;
           const date = String(f.properties?.break_date ?? '');
-          const year = /^\d{4}/.test(date) ? Number(date.slice(0, 4)) : null;
+          // Месяц важен: без него все объекты года появляются разом, и
+          // получается тот же покадровый скачок, только реже.
+          const year = /^\d{4}-\d{2}/.test(date)
+            ? Number(date.slice(0, 4)) + (Number(date.slice(5, 7)) - 1) / 12
+            : /^\d{4}/.test(date)
+              ? Number(date.slice(0, 4))
+              : null;
           return { lat: b.lat, lon: b.lng, weight: area, year };
         });
         setPoints(raw.map((p) => ({ ...p, weight: p.weight / maxWeight })));
@@ -70,11 +101,11 @@ export default function Timelapse() {
       .catch(() => setRisk(null));
   }, []);
 
-  // карта
+  // ── карта ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (!host.current || map.current) return;
     const m = L.map(host.current, {
-      zoomControl: false, attributionControl: false, preferCanvas: true,
+      zoomControl: false, attributionControl: true, preferCanvas: true,
       minZoom: 9, maxZoom: 15, zoomSnap: 0.5,
     }).setView([51.21, 71.5], 11);
     L.control.zoom({ position: 'bottomright' }).addTo(m);
@@ -84,95 +115,122 @@ export default function Timelapse() {
 
   useEffect(() => {
     const m = map.current;
+    if (!m) return;
+    if (tiles.current) { m.removeLayer(tiles.current); tiles.current = null; }
+    tiles.current = createBasemapLayer(basemap, 15).addTo(m);
+    tiles.current.bringToBack();
+  }, [basemap]);
+
+  useEffect(() => {
+    const m = map.current;
     if (!m || !points.length) return;
     if (!heat.current) {
-      heat.current = createHeatLayer({ points, year: null });
+      heat.current = createHeatOverlay(points, { kind: 'density' });
       heat.current.addTo(m);
     } else {
       heat.current.setPoints(points);
     }
-    m.fitBounds(L.latLngBounds(points.map((p) => [p.lat, p.lon])).pad(0.35), { animate: false });
+    if (!fitted.current) {
+      m.fitBounds(L.latLngBounds(points.map((p) => [p.lat, p.lon])).pad(0.35), { animate: false });
+      fitted.current = true;
+    }
   }, [points]);
 
   useEffect(() => {
-    heat.current?.setYear(frame === 'forecast' ? null : frame);
-  }, [frame]);
+    heat.current?.setTime(at);
+    heat.current?.setHeatOpacity(1 - forecastMix * 0.6);
+  }, [at, forecastMix]);
 
-  // прогноз показывается только на последнем кадре
+  // Прогноз проступает прозрачностью, а не появлением слоя целиком:
+  // включённый разом, он читается как ещё одно мигание в конце.
   useEffect(() => {
     const m = map.current;
-    if (!m) return;
-    if (riskLayer.current) { m.removeLayer(riskLayer.current); riskLayer.current = null; }
-    if (frame !== 'forecast' || !risk) return;
-    riskLayer.current = L.geoJSON(risk, {
-      style: (f) => {
-        const cls = Number(f?.properties?.risk_class) || 1;
-        return {
-          color: '#a78bfa', weight: 1, dashArray: '6 5',
-          fillColor: '#7c3aed', fillOpacity: 0.04 + cls * 0.035,
-        };
-      },
-    }).addTo(m);
-  }, [frame, risk]);
+    if (!m || !risk) return;
+    if (!riskHeat.current) {
+      riskHeat.current = createHeatOverlay(riskToPoints(risk), { kind: 'risk', opacity: 0 });
+      riskHeat.current.addTo(m);
+    }
+    riskHeat.current.setHeatOpacity(forecastMix * 0.8);
+  }, [risk, forecastMix]);
 
-  const step = useCallback(() => {
-    setFrame((current) => {
-      const list = frames;
-      const at = list.indexOf(current);
-      return at < 0 || at >= list.length - 1 ? list[0] : list[at + 1];
-    });
-  }, [frames]);
+  // ── воспроизведение ─────────────────────────────────────────────────
+  const stop = useCallback(() => {
+    if (raf.current) { cancelAnimationFrame(raf.current); raf.current = 0; }
+    setPlaying(false);
+  }, []);
 
-  useEffect(() => {
-    if (!playing || !frames.length) return;
-    timer.current = window.setInterval(() => {
-      setFrame((current) => {
-        const at = frames.indexOf(current);
-        if (at >= frames.length - 1) { setPlaying(false); return frames[frames.length - 1]; }
-        return frames[at + 1];
-      });
-    }, PLAY_STEP_MS);
-    return () => { if (timer.current) window.clearInterval(timer.current); };
-  }, [playing, frames]);
-
-  const play = () => {
-    if (playing) { setPlaying(false); return; }
-    setFrame(frames[0]);
+  const play = useCallback(() => {
+    if (playing) { stop(); return; }
+    const span = end - first;
+    if (span <= 0) return;
     setPlaying(true);
-  };
+    started.current = performance.now();
+    setTime(first);
+
+    const tick = (now: number) => {
+      const passed = (now - started.current) / 1000;
+      const next = first + (passed / PLAY_SECONDS) * span;
+      if (next >= end) {
+        setTime(end);
+        raf.current = 0;
+        setPlaying(false);
+        return;
+      }
+      setTime(next);
+      raf.current = requestAnimationFrame(tick);
+    };
+    raf.current = requestAnimationFrame(tick);
+  }, [playing, stop, first, end]);
+
+  useEffect(() => () => { if (raf.current) cancelAnimationFrame(raf.current); }, []);
+
+  const label = at > last + 0.15 ? 'прогноз' : String(Math.floor(at));
 
   return (
     <div className="flex h-screen flex-col">
       <Nav current="timelapse">
         <p className="max-w-[42ch] text-sm text-muted-2">
-          Плотность найденных объектов, накопленная год за годом. Последний
-          кадр — не 2026-й, а прогноз на двенадцать месяцев вперёд.
+          Плотность найденных объектов, накопленная год за годом. В конце
+          шкалы — прогноз на двенадцать месяцев вперёд.
         </p>
       </Nav>
 
       <div className="relative min-h-0 flex-1">
-        <div className="absolute inset-0 bg-soot map-grid" />
+        <div className="absolute inset-0 bg-soot" />
         <div ref={host} className="absolute inset-0" />
+
+        <BasemapSwitch
+          value={basemap}
+          onChange={setBasemap}
+          className="absolute right-3 top-3 z-[500]"
+        />
 
         {/* ── Год крупно: на проекторе подпись под ползунком не читается ── */}
         <div className="pointer-events-none absolute left-6 top-6 z-[500]">
-          <p className="tabular font-display text-[clamp(3rem,7vw,6rem)] leading-none text-line">
-            {frame === 'forecast' ? '2027' : frame}
+          <p
+            className="tabular font-display leading-none text-line"
+            style={{
+              fontSize: 'clamp(3rem,7vw,6rem)',
+              textShadow: '0 2px 24px rgba(13,9,24,.85), 0 0 2px rgba(13,9,24,.9)',
+            }}
+          >
+            {label}
           </p>
-          <p className="mt-1 text-sm text-muted">
-            {frame === 'forecast' ? (
-              <span className="text-violet-lit">прогноз на 12 месяцев</span>
+          <p
+            className="mt-1 text-sm text-muted"
+            style={{ textShadow: '0 1px 10px rgba(13,9,24,.9)' }}
+          >
+            {label === 'прогноз' ? (
+              <span className="text-violet-lit">на 12 месяцев вперёд</span>
             ) : (
-              <>
-                объектов к этому году: <span className="tabular text-line">{counted}</span>
-              </>
+              <>объектов к этому году: <span className="tabular text-line">{counted}</span></>
             )}
           </p>
         </div>
 
-        {frame === 'forecast' && (
-          <div className="pointer-events-none absolute right-6 top-6 z-[500] max-w-[22rem] rounded-sm border border-grid bg-soot/90 px-4 py-3">
-            <p className="text-sm text-line">Пунктиром — где свалок ещё нет</p>
+        {forecastMix > 0.35 && (
+          <div className="pointer-events-none absolute bottom-6 left-6 z-[500] max-w-[22rem] rounded-sm border border-grid bg-soot/90 px-4 py-3 backdrop-blur-sm">
+            <p className="text-sm text-line">Тепло без объектов — где свалок ещё нет</p>
             <p className="mt-1 text-xs leading-snug text-muted">
               Модель обучена на объектах до сентября 2023 и проверена на
               возникших после. Попадает в 293 раза точнее случайного выбора.
@@ -193,36 +251,41 @@ export default function Timelapse() {
 
         <input
           type="range"
-          min={0}
-          max={Math.max(0, frames.length - 1)}
-          value={index < 0 ? 0 : index}
-          onChange={(e) => { setPlaying(false); setFrame(frames[Number(e.target.value)]); }}
-          aria-label="Год"
+          min={first}
+          max={end}
+          step={0.02}
+          value={at}
+          onChange={(e) => { stop(); setTime(Number(e.target.value)); }}
+          aria-label="Время"
+          aria-valuetext={label}
           className="min-w-[12rem] flex-1 accent-violet"
         />
 
-        <div className="flex items-center gap-1 text-xs text-muted-2">
-          {frames.map((f) => (
+        <div className="flex min-w-0 flex-wrap items-center gap-1 text-xs text-muted-2">
+          {years.map((y) => (
             <button
-              key={String(f)}
+              key={y}
               type="button"
-              onClick={() => { setPlaying(false); setFrame(f); }}
+              onClick={() => { stop(); setTime(y + 0.99); }}
               className={`tabular cursor-pointer rounded-sm px-2 py-1 transition-colors duration-150 ${
-                f === frame ? 'bg-violet-deep/60 text-line' : 'hover:text-line'
+                Math.floor(at) === y && label !== 'прогноз'
+                  ? 'bg-violet-deep/60 text-line'
+                  : 'hover:text-line'
               }`}
             >
-              {f === 'forecast' ? 'прогноз' : f}
+              {y}
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => { stop(); setTime(end); }}
+            className={`cursor-pointer rounded-sm px-2 py-1 transition-colors duration-150 ${
+              label === 'прогноз' ? 'bg-violet-deep/60 text-line' : 'hover:text-line'
+            }`}
+          >
+            прогноз
+          </button>
         </div>
-
-        <button
-          type="button"
-          onClick={step}
-          className="cursor-pointer rounded-sm border border-grid px-3 py-2 text-sm text-muted transition-colors duration-150 hover:border-violet hover:text-line"
-        >
-          Шаг →
-        </button>
       </div>
     </div>
   );
