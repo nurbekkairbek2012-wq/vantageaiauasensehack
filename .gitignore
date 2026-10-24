@@ -158,3 +158,4 @@ models/dinov2_chip_open_cwld.joblib
 # Данные госмониторинга: условия не указаны, скачивает scripts/gov_waste.py
 data/gov_waste/
 data/eval/gov_diag/
+data/scan/

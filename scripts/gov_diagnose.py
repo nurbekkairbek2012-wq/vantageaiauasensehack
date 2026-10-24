@@ -75,9 +75,12 @@ def diagnose(geometry, settings, catalog) -> dict:
     cfg = settings.change
     when = pd.DatetimeIndex(dates)
     early = (when.year <= 2019) & when.month.isin([6, 7, 8])
-    before = np.nanmedian(ndvi[:, early], axis=1) if early.any() else np.full(ndvi.shape[0], np.nan)
+    # Матрица — (время, пиксели): series_to_matrix.
+    n_pix = ndvi.shape[1]
+    before = (np.nanmedian(ndvi[early, :], axis=0) if early.any()
+              else np.full(n_pix, np.nan))
     late = (when.year >= 2025) & when.month.isin([6, 7, 8])
-    after = np.nanmedian(ndvi[:, late], axis=1) if late.any() else np.full(ndvi.shape[0], np.nan)
+    after = np.nanmedian(ndvi[late, :], axis=0) if late.any() else np.full(n_pix, np.nan)
     found = result.zscore > 0
     idx = np.asarray(result.break_index)
     years = np.array([when[i].year if 0 <= i < len(when) else 0 for i in idx])

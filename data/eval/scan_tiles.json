@@ -1,0 +1,37 @@
+{
+ "bbox": [
+  71.31667,
+  51.12529,
+  71.39038,
+  51.16878
+ ],
+ "windows": 2650,
+ "gov_dumps": 31,
+ "positive_windows": 28,
+ "models": {
+  "dinov2": {
+   "roc_auc": 0.67,
+   "dumps_in_top_5pct": 7,
+   "dumps_in_top_10pct": 10,
+   "dumps_in_top_20pct": 14
+  },
+  "cwld": {
+   "roc_auc": 0.679,
+   "dumps_in_top_5pct": 5,
+   "dumps_in_top_10pct": 10,
+   "dumps_in_top_20pct": 14
+  },
+  "skyclip": {
+   "roc_auc": 0.735,
+   "dumps_in_top_5pct": 4,
+   "dumps_in_top_10pct": 8,
+   "dumps_in_top_20pct": 12
+  },
+  "среднее": {
+   "roc_auc": 0.74,
+   "dumps_in_top_5pct": 4,
+   "dumps_in_top_10pct": 14,
+   "dumps_in_top_20pct": 16
+  }
+ }
+}

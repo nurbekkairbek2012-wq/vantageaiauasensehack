@@ -33,8 +33,8 @@ const kzt = (v: unknown) => {
   // выглядели как «8.3 млн ₸» при «8,3 млн ₸» на карте того же объекта.
   // В документе, который подписывает должностное лицо, две записи одной
   // суммы — повод для вопроса.
-  if (Math.abs(n) >= 1e6) return `${(n / 1e6).toFixed(1).replace('.', ',')} млн ₸`;
-  return `${Math.round(n).toLocaleString('ru-RU')} ₸`;
+  if (Math.abs(n) >= 1e6) return `${(n / 1e6).toFixed(1).replace('.', ',')} млн ₸`;
+  return `${Math.round(n).toLocaleString('ru-RU')} ₸`;
 };
 
 const num = (v: unknown, d = 0) => {

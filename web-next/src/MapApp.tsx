@@ -225,9 +225,9 @@ const kzt = (v: unknown) => {
   // Запятая, а не точка: по-русски дробная часть отделяется запятой, и
   // «37.9 млн» рядом с «1,5 га» на той же полосе читается как опечатка.
   const one = (x: number) => x.toFixed(1).replace('.', ',');
-  if (Math.abs(n) >= 1e9) return `${one(n / 1e9)} млрд ₸`;
-  if (Math.abs(n) >= 1e6) return `${one(n / 1e6)} млн ₸`;
-  return `${Math.round(n / 1e3).toLocaleString('ru-RU')} тыс ₸`;
+  if (Math.abs(n) >= 1e9) return `${one(n / 1e9)} млрд ₸`;
+  if (Math.abs(n) >= 1e6) return `${one(n / 1e6)} млн ₸`;
+  return `${Math.round(n / 1e3).toLocaleString('ru-RU')} тыс ₸`;
 };
 
 /** Согласовать существительное с числом. «21 объектов» замечают раньше,
@@ -257,9 +257,14 @@ function humanDay(v: unknown) {
   return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+/* Месяц без числа — в именительном: «май 2024», а не «мая 2024».
+   Родительный падеж нужен только с днём («5 мая 2024», humanDay). */
+const MONTHS_NOM = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
+  'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
+
 function humanDate(v: unknown) {
   const d = new Date(String(v));
-  return Number.isNaN(d.getTime()) ? '—' : `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+  return Number.isNaN(d.getTime()) ? '—' : `${MONTHS_NOM[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 /** Слагаемые ущерба по одному объекту — из economy.json. */
@@ -1271,6 +1276,19 @@ function ObjectCard({ f, split }: { f: Feature; split?: Split }) {
                 'Из них уже выброшено',
                 `${num(p.co2e_emitted_t)} т — `
                 + `${Math.round((Number(p.co2e_emitted_t) / Number(p.co2e_t)) * 100)}%`,
+              ]] as [string, string][])
+            : []),
+          /* Сверка с открытой картой госмониторинга отходов (KazEOSat-1,
+             wasteopen.gharysh.kz; scripts/gov_waste.py). Объект, который
+             есть и там, подтверждён вторым независимым источником; которого
+             там нет — наша находка сверх государственной. */
+          ...(Number.isFinite(Number(p.gov_registry_m)) && p.gov_registry_m !== null
+            ? ([[
+                'Госмониторинг отходов',
+                Number(p.gov_registry_m) <= 100
+                  ? 'есть на его карте'
+                  : `нет на карте (ближайшая в ${(Number(p.gov_registry_m) / 1000)
+                    .toFixed(1).replace('.', ',')} км)`,
               ]] as [string, string][])
             : []),
         ].map(([k, v]) => (

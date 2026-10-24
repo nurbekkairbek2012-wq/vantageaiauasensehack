@@ -136,7 +136,8 @@ const mln = (v: number, d = 1) =>
   /* Знак после запятой всегда, а не «до одного»: «2 млн ₸» в столбце рядом
      с «1,3 млн ₸» читается как другая точность, хотя это 2,0. */
   Number.isFinite(v)
-    ? `${(v / 1e6).toLocaleString('ru-RU', { minimumFractionDigits: d, maximumFractionDigits: d })} млн ₸`
+    /* Неразрывные пробелы: «8,3 млн» и «₸» не должны разъезжаться по строкам. */
+    ? `${(v / 1e6).toLocaleString('ru-RU', { minimumFractionDigits: d, maximumFractionDigits: d })} млн ₸`
     : '—';
 
 const kzt = (v: number) =>
@@ -538,16 +539,20 @@ export default function Economy() {
             Помеченные «нужен выезд» в итоговые суммы страницы не входят.
           </p>
 
+          {/* На телефоне — только то, ради чего таблица: объект, ущерб и
+              накопленная доля. Масса, вывоз, сырьё и дата уходят с узкого
+              экрана: раньше таблица была шире экрана, и ущерб оказывался за
+              правым краем без всякого намёка, что её можно листать. */}
           <div className="mt-8 overflow-x-auto">
-            <table className="w-full min-w-[720px] border-collapse text-sm">
+            <table className="w-full border-collapse text-sm md:min-w-[720px]">
               <thead>
                 <tr className="border-b border-grid text-left text-xs uppercase tracking-[0.08em] text-muted-2">
                   <th className="py-3 pr-3 font-normal">#</th>
                   <th className="py-3 pr-3 font-normal">Объект</th>
-                  <th className="py-3 pr-3 text-right font-normal">Возник</th>
-                  <th className="py-3 pr-3 text-right font-normal">Масса</th>
-                  <th className="py-3 pr-3 text-right font-normal">Вывоз</th>
-                  <th className="py-3 pr-3 text-right font-normal">Сырьё</th>
+                  <th className="hidden py-3 pr-3 text-right font-normal sm:table-cell">Возник</th>
+                  <th className="hidden py-3 pr-3 text-right font-normal md:table-cell">Масса</th>
+                  <th className="hidden py-3 pr-3 text-right font-normal md:table-cell">Вывоз</th>
+                  <th className="hidden py-3 pr-3 text-right font-normal md:table-cell">Сырьё</th>
                   <th className="py-3 pr-3 text-right font-normal">Ущерб</th>
                   <th className="py-3 text-right font-normal">Накоплено</th>
                 </tr>
@@ -561,22 +566,23 @@ export default function Economy() {
                     <td className="tabular py-2.5 pr-3 text-muted-2">{n}</td>
                     <td className="py-2.5 pr-3 text-line">
                       {obj.id}
+                      {/* На телефоне метка — строкой ниже номера, целиком. */}
                       {obj.check_source === 'ground' ? (
-                        <span className="ml-2 text-[10px] uppercase tracking-[0.08em] text-emerald">
+                        <span className="block whitespace-nowrap text-[10px] uppercase tracking-[0.08em] text-emerald sm:ml-2 sm:inline">
                           выезд
                         </span>
                       ) : obj.visual_check !== 'landfill' ? (
-                        <span className="ml-2 text-[10px] uppercase tracking-[0.08em] text-amber">
+                        <span className="block whitespace-nowrap text-[10px] uppercase tracking-[0.08em] text-amber sm:ml-2 sm:inline">
                           нужен выезд
                         </span>
                       ) : null}
                     </td>
-                    <td className="tabular py-2.5 pr-3 text-right text-muted">
+                    <td className="tabular hidden py-2.5 pr-3 text-right text-muted sm:table-cell">
                       {obj.break_date ? obj.break_date.slice(0, 7).replace('-', '.') : '—'}
                     </td>
-                    <td className="tabular py-2.5 pr-3 text-right text-muted">{num(obj.mass_t)} т</td>
-                    <td className="tabular py-2.5 pr-3 text-right text-muted">{mln(obj.removal_kzt)}</td>
-                    <td className="tabular py-2.5 pr-3 text-right text-emerald">{mln(obj.recyclable_kzt)}</td>
+                    <td className="tabular hidden py-2.5 pr-3 text-right text-muted md:table-cell">{num(obj.mass_t)} т</td>
+                    <td className="tabular hidden py-2.5 pr-3 text-right text-muted md:table-cell">{mln(obj.removal_kzt)}</td>
+                    <td className="tabular hidden py-2.5 pr-3 text-right text-emerald md:table-cell">{mln(obj.recyclable_kzt)}</td>
                     <td className="tabular py-2.5 pr-3 text-right text-line">{mln(obj.damage_p50)}</td>
                     <td className="tabular py-2.5 text-right text-muted-2">{num(share * 100)}%</td>
                   </tr>
@@ -684,11 +690,15 @@ export default function Economy() {
           <h2 className="max-w-[24ch] text-[clamp(1.6rem,3.4vw,2.4rem)] text-line">
             Откуда взято каждое допущение
           </h2>
+          {/* Число — из данных. Здесь стояло «восемь величин» при
+              двенадцати карточках ниже: восемь — это то, что разыгрывает
+              Монте-Карло, а источник назван у каждой величины расчёта. */}
           <p className="mt-4 max-w-[62ch] text-muted">
-            Восемь величин, и они не равны по надёжности. Пометка стоит у
-            каждой: подтверждено источником, выведено из подтверждённых
-            величин или названо инженерной оценкой там, где открытого
-            источника нет.
+            {Object.keys(data.provenance).length} величин, и они не равны по
+            надёжности. Восемь из них разыгрываются в Монте-Карло, остальные
+            заданы законом или методикой. Пометка стоит у каждой:
+            подтверждено источником, выведено из подтверждённых величин или
+            названо инженерной оценкой там, где открытого источника нет.
           </p>
 
           <div className="mt-8 grid gap-x-10 gap-y-5 md:grid-cols-2">

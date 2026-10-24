@@ -45,6 +45,7 @@ OPTIONAL = {
     "probability": "заполняется только генератором демонстрационных данных",
     "highres_score": "появляется после scripts/attach_chipmodel.py",
     "check_source": "появляется после фильтра публикации",
+    "gov_registry_m": "появляется после scripts/gov_waste.py --attach",
 }
 
 pytestmark = pytest.mark.skipif(not PUBLISHED.exists(), reason="нет выгрузки")

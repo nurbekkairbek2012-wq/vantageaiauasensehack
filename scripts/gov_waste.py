@@ -25,7 +25,13 @@ waste.gharysh.kz), и их мы не трогаем.
     отсева) — полнота поиска на НЕЗАВИСИМОЙ разметке;
   * прошла ли она наш отсев и что о ней сказал человек.
 
-    python scripts/gov_waste.py
+Ключ --attach дописывает каждому объекту сайта поле gov_registry_m —
+расстояние до ближайшей свалки госмониторинга, метров. Карточка по нему
+пишет, есть ли объект на открытой карте госмониторинга, а первый экран
+утверждает «её нет в реестре» только когда это так. Сами полигоны
+госмониторинга на сайт не выкладываются — только расстояние.
+
+    python scripts/gov_waste.py [--attach]
 """
 
 from __future__ import annotations
@@ -68,6 +74,23 @@ def download() -> dict:
     return data
 
 
+SITE = ROOT / "web-next/public/data/candidates.geojson"
+
+
+def attach(gov) -> int:
+    """Записать объектам сайта расстояние до ближайшей свалки госмониторинга."""
+    import geopandas as gpd
+
+    site = gpd.read_file(SITE)
+    metric = site.to_crs(32642)
+    polys = gov.to_crs(32642)
+    site["gov_registry_m"] = [round(float(polys.distance(g).min())) for g in metric.geometry]
+    site.to_file(SITE, driver="GeoJSON")
+    near = int((site["gov_registry_m"] <= MATCH_M).sum())
+    print(f"── gov_registry_m: {len(site)} объектов, на карте госмониторинга {near}")
+    return 0
+
+
 def main() -> int:
     import geopandas as gpd
     import pandas as pd
@@ -75,6 +98,8 @@ def main() -> int:
 
     data = json.loads(OUT.read_text(encoding="utf-8")) if OUT.exists() else download()
     gov = gpd.GeoDataFrame.from_features(data["features"], crs=4326)
+    if "--attach" in sys.argv:
+        return attach(gov)
     print(f"── госмониторинг: {len(gov)} объектов в рамке Астаны")
     for column in ("shooting_date", "Tip_othoda2", "Город"):
         if column in gov:

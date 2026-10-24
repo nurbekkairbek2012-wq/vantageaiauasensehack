@@ -266,6 +266,9 @@ def main() -> int:
     # Любой шаг, переписывающий candidates.geojson целиком, вернул бы на
     # сайт отвергнутые объекты, и заметить это было бы нечем.
     step("Убрать не-свалки из выгрузки", [python, "scripts/publish_filter.py"])
+    # Сверка с открытым госмониторингом отходов: поле gov_registry_m на
+    # карточке и условие фразы «её нет в реестре» на первом экране.
+    step("Сверка с госмониторингом", [python, "scripts/gov_waste.py", "--attach"])
     step("Чипы для разметки", [python, "scripts/export_chips.py"])
     step("Указатель для бота", [python, "scripts/make_bot_index.py"])
     build_cities()

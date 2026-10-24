@@ -156,7 +156,7 @@ const num = (v: number, d = 0) =>
    соседнем экране читается как другое число, хотя это 19,0. */
 const kzt = (v: number) =>
   Math.abs(v) >= 1e6
-    ? `${(v / 1e6).toLocaleString('ru-RU', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} млн ₸`
+    ? `${(v / 1e6).toLocaleString('ru-RU', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} млн ₸`
     : `${num(v / 1e3)} тыс ₸`;
 
 /* Два списка месяцев, а не один. «1 апреля» и «в апреле» — разные падежи,
@@ -296,8 +296,11 @@ export default function App() {
             }}
           />
 
+          {/* На телефоне сначала заголовок, потом график: колонки просто
+              складывались, и первый экран начинался с кривой NDVI без
+              подписи — человек не знал, чей это сайт и что ему предлагают. */}
           <div className="grid items-start gap-8 lg:grid-cols-[1.15fr_1fr]">
-            <div>
+            <div className="order-2 lg:order-1">
               {/* Карточка ленты: рамка светлеет сверху, фон уходит вниз в
                   темноту. Плоский прямоугольник рядом с крупным заголовком
                   выглядел заготовкой, а не главным изображением страницы. */}
@@ -366,7 +369,7 @@ export default function App() {
               </dl>
             </div>
 
-            <div className="lg:pt-2">
+            <div className="order-1 lg:order-2 lg:pt-2">
               {/* Имя продукта на первом экране, а не только в шапке.
                   В шапке оно стоит в ряду с пунктами меню и читается как
                   ещё один пункт: глаз проходит мимо. Здесь оно занимает
@@ -403,7 +406,13 @@ export default function App() {
                 <strong className="font-normal text-line">не вернулась</strong>, и по
                 каждому называет дату, массу отходов и сумму потерь в
                 тенге{hero && whenPhrase(hero.properties?.break_date)
-                  ? `. Самая крупная возникла ${whenPhrase(hero.properties?.break_date)} — и её нет ни в одном открытом реестре.`
+                  ? `. Самая крупная возникла ${whenPhrase(hero.properties?.break_date)}`
+                    /* «Нет в реестре» — только если это проверено: поле
+                       gov_registry_m пишет scripts/gov_waste.py по открытой
+                       карте госмониторинга отходов. */
+                    + (Number(hero.properties?.gov_registry_m) > 100
+                      ? ' — и её нет на открытой карте госмониторинга отходов.'
+                      : '.')
                   : '.'}
               </p>
 

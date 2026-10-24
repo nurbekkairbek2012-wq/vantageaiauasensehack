@@ -164,15 +164,15 @@ class TestFormatting:
         assert make_act().coordinates_text() == "51.208134, 71.612455"
 
     def test_month_is_russian_not_english(self):
-        """strftime('%B') берёт локаль C и печатает May вместо мая.
+        """strftime('%B') берёт локаль C и печатает May вместо «май».
 
         Сбой тихий: документ на русском языке выходит с английским
         месяцем, и это замечают только на защите.
         """
         from vantage.act import format_month_year
 
-        assert format_month_year(date(2022, 5, 15)) == "мая 2022"
-        assert format_month_year(date(2021, 12, 1)) == "декабря 2021"
+        assert format_month_year(date(2022, 5, 15)) == "май 2022"
+        assert format_month_year(date(2021, 12, 1)) == "декабрь 2021"
 
     def test_all_months_are_covered(self):
         from vantage.act import format_month_year
@@ -264,3 +264,22 @@ def _tmp_path():
     from pathlib import Path
 
     return Path(tempfile.mkdtemp()) / "act.pdf"
+
+
+def test_standalone_month_is_nominative_everywhere():
+    """Месяц без числа — «май 2024»; «мая 2024» верно только с днём.
+
+    До 27 сентября родительный стоял и в акте, и в паспортах, и в списке на
+    сайте. Проверяются все таблицы месяцев, которые печатают «месяц год».
+    """
+    import re
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    from vantage.act import format_month_year
+
+    assert format_month_year(date(2024, 5, 1)) == "май 2024"
+    passports = (root / "scripts/make_passports.py").read_text(encoding="utf-8")
+    assert re.search(r'MONTHS = \("январь"', passports)
+    site = (root / "web-next/src/MapApp.tsx").read_text(encoding="utf-8")
+    assert "MONTHS_NOM[d.getMonth()]} ${d.getFullYear()}" in site
