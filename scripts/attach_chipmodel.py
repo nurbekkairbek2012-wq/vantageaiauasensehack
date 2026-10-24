@@ -226,7 +226,8 @@ def run_dinov2() -> int:
         lambda c: verdict(scores[c]) if c in scores else None)
     log.info("оценено %d объектов моделью %s", len(scores), MODEL.name)
     working.to_file(CANDIDATES, driver="GeoJSON")
-    write_quality(working)
+    if WEB.name != "nowhere":          # точность — только по области сайта
+        write_quality(working)
     if WEB.parent.exists() and WEB.name != "nowhere":
         # На сайт — только опубликованные объекты: переносим оценку по номеру.
         site = gpd.read_file(WEB)
@@ -262,6 +263,18 @@ def write_quality(frame) -> None:
         "dumps_below_035": int((score[y == 1] < 0.35).sum()),
         "median_dump": round(float(np.median(score[y == 1])), 3),
         "median_not": round(float(np.median(score[y == 0])), 3),
+    }
+    # Подсказка порядка просмотра (vantage.triage) на тех же объектах:
+    # насколько раньше при ней находятся все свалки.
+    from vantage.triage import review_priority
+
+    priority = review_priority(d).to_numpy(dtype="float64")
+    t_low, t_high = interval(y, priority)
+    rank = np.argsort(np.argsort(-priority, kind="stable"), kind="stable") + 1
+    payload["triage"] = {
+        "roc_auc": round(float(roc_auc_score(y, priority)), 3),
+        "low": round(t_low, 3), "high": round(t_high, 3),
+        "last_dump": int(rank[y == 1].max()), "objects": len(d),
     }
     QUALITY.write_text(json.dumps(payload, indent=1) + "\n", encoding="utf-8")
     log.info("ROC-AUC %.3f (%.2f–%.2f) на %d объектах → %s",

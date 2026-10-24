@@ -764,11 +764,14 @@ export default function MapApp() {
                           чаще всего, а вердикт человека уже стоит справа
                           сверху. Красится по величине, чтобы низкую было
                           видно без чтения — модель ошибается, и прятать
-                          это нечестно. */}
+                          это нечестно. Пороги — под шкалу модели без
+                          AerialWaste: медиана у свалок 0,40, у не-свалок
+                          0,14 (image_model.json). Старые 0,75/0,45 красили
+                          жёлтым почти все свалки. */}
                       {hasModel && (
                         <span
-                          className={`tabular ${model >= 0.75 ? 'text-violet-lit'
-                            : model >= 0.45 ? 'text-muted' : 'text-amber'}`}
+                          className={`tabular ${model >= 0.45 ? 'text-violet-lit'
+                            : model >= 0.25 ? 'text-muted' : 'text-amber'}`}
                           title="оценка модели по снимку 0,4–0,8 м: не вероятность, а место в очереди на проверку"
                         >
                           модель {modelScore(model)}

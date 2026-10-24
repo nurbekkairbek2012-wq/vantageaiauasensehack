@@ -37,6 +37,10 @@
         {
           "key": "Content-Security-Policy",
           "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https://tile.openstreetmap.org https://server.arcgisonline.com; connect-src 'self'; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'none'"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
         }
       ]
     }
@@ -44,7 +48,8 @@
   "functions": {
     "api/telegram.py": {
       "memory": 256,
-      "maxDuration": 10
+      "maxDuration": 10,
+      "includeFiles": "api/*.json"
     }
   }
 }

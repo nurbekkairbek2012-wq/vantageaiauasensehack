@@ -338,13 +338,16 @@ export default function Economy() {
                  'метан за 20 лет по IPCC FOD, в цене углеродной единицы'],
               ].map(([label, value, sign, color, note]) => (
                 <div key={String(label)} className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 py-4">
-                  <div className="min-w-[16ch] flex-1">
-                    <dt className={`text-base ${color}`}>
+                  {/* Пояснение — внутри dt, а не отдельным dd в обёртке:
+                      в <dl> допустимы только пары dt/dd в одном div, иначе
+                      экранный диктор читает пояснение как значение. */}
+                  <dt className="min-w-[16ch] flex-1">
+                    <span className={`text-base ${color}`}>
                       <span className="mr-1.5 text-muted-2">{sign as string}</span>
                       {label as string}
-                    </dt>
-                    <dd className="mt-1 max-w-[46ch] text-xs leading-snug text-muted-2">{note as string}</dd>
-                  </div>
+                    </span>
+                    <span className="mt-1 block max-w-[46ch] text-xs leading-snug text-muted-2">{note as string}</span>
+                  </dt>
                   <dd className={`tabular font-display text-xl leading-none ${color}`}>
                     {mln(value as number)}
                   </dd>
@@ -446,30 +449,30 @@ export default function Economy() {
           <div className="mt-8 grid gap-8 lg:grid-cols-[1.1fr_1fr]">
             <dl className="self-start overflow-hidden rounded-md border border-grid">
               <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-grid px-5 py-4">
-                <div className="min-w-[18ch] flex-1">
-                  <dt className="text-base text-muted">Вывезти как есть</dt>
-                  <dd className="mt-1 max-w-[44ch] text-xs leading-snug text-muted-2">
+                <dt className="min-w-[18ch] flex-1">
+                  <span className="text-base text-muted">Вывезти как есть</span>
+                  <span className="mt-1 block max-w-[44ch] text-xs leading-snug text-muted-2">
                     всё на полигон одним самосвалом; сырьё уезжает вместе с
                     мусором и списывается в ноль
-                  </dd>
-                </div>
+                  </span>
+                </dt>
                 <dd className="tabular whitespace-nowrap font-display text-xl text-muted">
                   {mln(sum.plain_kzt)}
                 </dd>
               </div>
               <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 bg-violet-deep/25 px-5 py-4">
-                <div className="min-w-[18ch] flex-1">
-                  <dt className="text-base text-line">
+                <dt className="min-w-[18ch] flex-1">
+                  <span className="text-base text-line">
                     Вывезти с разбором
                     <span className="ml-2 whitespace-nowrap rounded-full border border-violet-lit/40 px-2 py-0.5 text-[10px] uppercase tracking-[0.08em] text-violet-lit">
                       рекомендуем
                     </span>
-                  </dt>
-                  <dd className="mt-1 max-w-[44ch] text-xs leading-snug text-muted-2">
+                  </span>
+                  <span className="mt-1 block max-w-[44ch] text-xs leading-snug text-muted-2">
                     сортировка на площадке и раздельные рейсы: дороже работой
                     на 30%, но {mln(sum.recyclable_kzt)} возвращается приёмкой
-                  </dd>
-                </div>
+                  </span>
+                </dt>
                 <dd className="tabular whitespace-nowrap font-display text-xl text-line">
                   {mln(sum.sorted_kzt)}
                 </dd>

@@ -30,6 +30,7 @@
 """
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -37,6 +38,8 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 PUBLISHED = Path("web-next/public/data/candidates.geojson")
+#: Поездки для бота (api/telegram.py, команда /route).
+TRIPS = Path("api/trips.json")
 
 #: Точки ближе этого расстояния друг к другу — одна поездка.
 TRIP_GAP_M = 2000.0
@@ -201,11 +204,16 @@ def main() -> int:
         "| Поездка | Объекты по порядку объезда | «Не разобрать» | Маршрут |",
         "|---:|---|---:|---|",
     ]
+    bot_trips = []
     for k, route in enumerate(plan, 1):
         order = " → ".join(f"{i + 1} `{rows[i].candidate_id}`" for i in route)
         unsure = sum(rows[i].visual_check == "unclear" for i in route)
         stops = [(rows[i].geometry.centroid.y, rows[i].geometry.centroid.x) for i in route]
         lines.append(f"| {k} | {order} | {unsure} | [открыть маршрут]({route_link(stops)}) |")
+        bot_trips.append({"trip": k, "ids": [str(rows[i].candidate_id) for i in route],
+                          "unclear": int(unsure), "url": route_link(stops)})
+    # Те же поездки — боту: команда /route отдаёт их выездной группе.
+    TRIPS.write_text(json.dumps(bot_trips, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     lines += [
         "",
         "## Что снимать на месте",

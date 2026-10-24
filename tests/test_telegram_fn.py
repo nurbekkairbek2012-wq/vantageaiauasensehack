@@ -169,3 +169,26 @@ def test_webhook_accepts_the_right_secret(bot, monkeypatch):
     code, handled = _post(bot, {"X-Telegram-Bot-Api-Secret-Token": bot.webhook_secret()})
     assert code == 200
     assert handled == [{"message": {}}]
+
+
+def test_route_is_only_for_the_field_team(bot, monkeypatch):
+    sent = []
+    monkeypatch.setattr(bot, "send", lambda chat, text: sent.append((chat, text)))
+    monkeypatch.setenv("VANTAGE_BOT_SUBSCRIBERS", "111")
+    bot.on_update({"message": {"chat": {"id": 222}, "text": "/route"}})
+    assert "выездной группы" in sent[-1][1]
+    assert "maps" not in sent[-1][1]
+    bot.on_update({"message": {"chat": {"id": 111}, "text": "/route"}})
+    assert "открыть маршрут" in sent[-1][1]
+
+
+def test_route_links_are_valid_telegram_html(bot):
+    """Голый «&» в ссылке роняет сообщение в режиме HTML — только &amp;."""
+    import re
+
+    text = bot.route_text()
+    trips = json.loads((ROOT / "api/trips.json").read_text(encoding="utf-8"))
+    assert text.count("открыть маршрут") == len(trips)
+    assert not re.search(r"&(?!amp;)", text)
+    for trip in trips:
+        assert " → ".join(trip["ids"]) in text

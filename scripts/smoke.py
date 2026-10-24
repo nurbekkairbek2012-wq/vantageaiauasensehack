@@ -49,6 +49,7 @@ if hasattr(sys.stdout, "reconfigure"):
 
 DIST = Path("web-next/dist")
 PORT = 8098
+AXE = Path("web-next/node_modules/axe-core/axe.min.js")
 
 #: Страница и слово, которое обязано на ней появиться. Слово выбрано так,
 #: чтобы оно приходило ИЗ ДАННЫХ, а не из вёрстки: заголовок отрисуется и
@@ -132,6 +133,16 @@ def main() -> int:
                     problems.append(f"{page_name}: страница почти пустая ({len(text)} символов)")
                 elif expected not in text:
                     problems.append(f"{page_name}: нет слова «{expected}» — данные не доехали")
+
+                # Доступность (WCAG 2 A/AA) — axe из node_modules, без сети.
+                # Сайт для госоргана читают и экранным диктором; 27 сентября
+                # так нашлись 12 нарушений на «Экономике», которых глазом не видно.
+                if AXE.exists():
+                    page.add_script_tag(path=str(AXE))
+                    for v in page.evaluate(
+                        "async () => (await axe.run(document, {runOnly: ['wcag2a', 'wcag2aa']}))"
+                        ".violations.map(v => `${v.id} ×${v.nodes.length}: ${v.help}`)"):
+                        problems.append(f"{page_name}: доступность — {v}")
 
                 for error in errors[:3]:
                     problems.append(f"{page_name}: ошибка в консоли — {error[:120]}")

@@ -90,6 +90,11 @@ def numbers() -> dict:
     screen_path = DATA / "screen.json"
     screen = (json.loads(screen_path.read_text(encoding="utf-8"))
               if screen_path.exists() else {})
+    # Модель по снимку и порядок просмотра — из scripts/attach_chipmodel.py.
+    image_path = DATA / "image_model.json"
+    image = (json.loads(image_path.read_text(encoding="utf-8"))
+             if image_path.exists() else {})
+    triage = image.get("triage", {})
     # Деньги, возраст и штрафы — по опознанным как свалка, как на сайте.
     # Объекты «не разобрать» стоят в очереди выезда, но в суммы не входят.
     sure = site[site["visual_check"] == "landfill"]
@@ -165,6 +170,11 @@ def numbers() -> dict:
         "screen_dumps": screen.get("dumps", 0),
         "screen_kept": screen.get("dumps_kept", 0),
         "screen_recall_low": 100 * screen.get("recall_low", 0),
+        "image_auc": image.get("roc_auc", 0),
+        "image_low": image.get("low", 0),
+        "image_high": image.get("high", 0),
+        "triage_last": triage.get("last_dump", 0),
+        "triage_objects": triage.get("objects", 0),
         "lift_low": metrics.get("lift_low", 0),
         "pr_low": metrics.get("pr_auc_low", 0),
         "pr_high": metrics.get("pr_auc_high", 0),
@@ -564,10 +574,13 @@ def slides(n: dict) -> str:
             <tr><td class="k">Риск появления, PR-AUC (интервал)</td>
                 <td class="r">{ru(n['pr_low'], 2)}–{ru(n['pr_high'], 2)}</td></tr>
             <tr><td class="k">Сеть «до/после», ROC-AUC</td><td class="r">0,907</td></tr>
+            <tr><td class="k">Модель по снимку 0,4 м, ROC-AUC</td>
+                <td class="r">{ru(n['image_auc'], 2)} ({ru(n['image_low'], 2)}–{ru(n['image_high'], 2)})</td></tr>
+            <tr><td class="k">Все свалки в очереди просмотра — в первых</td>
+                <td class="r lit">{n['triage_last']} из {n['triage_objects']}</td></tr>
           </table>
-          <p class="note" style="margin-top:16px">Три попытки обучить собственную
-            модель дали отрицательный результат, и все три записаны с числами.
-            «Пробовали трижды, вот измерения» сильнее любого «у нас свой ИИ».</p>
+          <p class="note" style="margin-top:10px">Модель по снимку — без AerialWaste,
+            лицензия позволяет продавать. Неудачные попытки записаны с числами.</p>
         </div>
         <div class="col">
           <p><b style="color:var(--line)">Без ИИ на выходе — тысячи изменений

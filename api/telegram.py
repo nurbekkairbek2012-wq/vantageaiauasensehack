@@ -84,6 +84,42 @@ def candidates() -> list[dict]:
     return _CANDIDATES
 
 
+_TRIPS: list[dict] | None = None
+
+
+def trips() -> list[dict]:
+    """Поездки выездной группы — из scripts/field_list.py (api/trips.json)."""
+    global _TRIPS
+    if _TRIPS is None:
+        try:
+            _TRIPS = json.loads(Path(__file__).with_name("trips.json").read_text(encoding="utf-8"))
+        except OSError:
+            _TRIPS = []
+    return _TRIPS
+
+
+def route_text() -> str:
+    """Ответ на /route: поездки по порядку, в каждой — ссылка на маршрут.
+
+    Та же разбивка, что в docs/FIELD.md: точки ближе двух километров — одна
+    поездка, объезд от центра к ближайшей. Ссылка открывает навигацию в
+    Google Maps прямо с телефона.
+    """
+    items = trips()
+    if not items:
+        return "Поездок нет: список выезда пуст или не собран (scripts/field_list.py)."
+    lines = ["<b>Поездки на выезд</b> — сначала «не разобрать», фото с геометкой.", ""]
+    for trip in items:
+        ids = " → ".join(trip["ids"])
+        unclear = f", не разобрать: {trip['unclear']}" if trip.get("unclear") else ""
+        lines.append(f"<b>{trip['trip']}.</b> {ids}{unclear}")
+        # В режиме HTML Telegram разбирает «&» как начало сущности, и
+        # голый «&destination=» роняет всё сообщение: «can't parse entities».
+        href = trip["url"].replace("&", "&amp;")
+        lines.append(f'<a href="{href}">открыть маршрут</a>')
+    return "\n".join(lines)
+
+
 def haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """Расстояние по поверхности сферы, метры."""
     phi1, phi2 = math.radians(lat1), math.radians(lat2)
@@ -379,6 +415,9 @@ HELP = (
     "/stats — аймақ бойынша объектілер, аудан және залал"
 )
 
+#: Подсказка к отказу в служебной команде.
+HELP_HINT = "Пришлите геопозицию — скажу, знаком ли системе объект в этом месте."
+
 #: Короткая благодарность на казахском — к каждому ответу на геопозицию.
 THANKS_KZ_KNOWN = ("\n\n<i>Рахмет! Бұл жердегі объект жүйеге белгілі — хабарламаңыз оны "
                    "тексеру кезегінде жоғарылатады.</i>")
@@ -460,6 +499,13 @@ def on_update(update: dict) -> None:
         send(chat_id, HELP)
     elif text.startswith("/stats"):
         send(chat_id, stats_text())
+    elif text.startswith("/route"):
+        # Только выездной группе (подписчикам): жителю маршрут объезда не
+        # нужен, а список «куда ехать» — рабочий документ инспектора.
+        if str(chat_id) in subscribers():
+            send(chat_id, route_text())
+        else:
+            send(chat_id, "Эта команда — для выездной группы. " + HELP_HINT)
     elif message.get("photo"):
         send(
             chat_id,
@@ -540,6 +586,7 @@ class handler(BaseHTTPRequestHandler):
         lines += [
             "Vantage AI bot",
             f"Объектов в указателе: {len(candidates())}",
+            f"Поездок на выезд (/route): {len(trips())}",
             f"Токен задан: {'да' if token() else 'НЕТ'}",
             f"Секрет задан: {'да' if secret_given else 'НЕТ'}",
             f"Подписчиков: {len(subscribers()) or 'НЕТ'}",

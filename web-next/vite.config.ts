@@ -23,13 +23,13 @@ export default defineConfig({
     // режимы, разный вес, и грузить Leaflet на лендинге незачем.
     rollupOptions: {
       input: {
-        index: resolve(__dirname, 'index.html'),
-        map: resolve(__dirname, 'map.html'),
-        economy: resolve(__dirname, 'economy.html'),
-        timelapse: resolve(__dirname, 'timelapse.html'),
-        forecast: resolve(__dirname, 'forecast.html'),
-        citizen: resolve(__dirname, 'citizen.html'),
-        label: resolve(__dirname, 'label.html'),
+        index: resolve(import.meta.dirname, 'index.html'),
+        map: resolve(import.meta.dirname, 'map.html'),
+        economy: resolve(import.meta.dirname, 'economy.html'),
+        timelapse: resolve(import.meta.dirname, 'timelapse.html'),
+        forecast: resolve(import.meta.dirname, 'forecast.html'),
+        citizen: resolve(import.meta.dirname, 'citizen.html'),
+        label: resolve(import.meta.dirname, 'label.html'),
       },
     },
   },

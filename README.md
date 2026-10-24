@@ -304,7 +304,7 @@ web-next/
   forecast.html            где появится в следующие 12 месяцев
   citizen.html             гражданский контур и Telegram-бот
   public/                  шрифты и данные локально — работает без сети
-tests/                     746 тестов
+tests/                     762 теста
 docs/
   ARCHITECTURE.md          устройство системы
   AI_RESULTS.md            метрики моделей с интервалами

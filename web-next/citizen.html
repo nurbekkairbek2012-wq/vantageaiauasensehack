@@ -1,17 +1,9 @@
 <!doctype html>
 <html lang="ru">
   <head>
-    <!-- Тема ставится ДО первой отрисовки.
-         Если ждать React, на каждой загрузке мелькает фиолетовый кадр
-         прежде чем страница станет лазурной, — и заметно это именно на
-         проекторе, ради которого вторая тема и сделана. Скрипт крошечный
-         и синхронный намеренно: асинхронный не успеет. -->
-    <script>
-      try {
-        var t = localStorage.getItem('vantage-theme');
-        if (t === 'azure') document.documentElement.dataset.theme = t;
-      } catch (e) {}
-    </script>
+    <!-- Тема ставится ДО первой отрисовки — синхронным скриптом с того же
+         сайта (встроенный блокирует CSP). Подробности в самом файле. -->
+    <script src="/theme-init.js"></script>
 
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />

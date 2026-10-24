@@ -7,5 +7,12 @@
  "dumps": 7,
  "dumps_below_035": 2,
  "median_dump": 0.405,
- "median_not": 0.138
+ "median_not": 0.138,
+ "triage": {
+  "roc_auc": 0.875,
+  "low": 0.791,
+  "high": 0.948,
+  "last_dump": 14,
+  "objects": 51
+ }
 }
