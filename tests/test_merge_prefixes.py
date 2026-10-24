@@ -89,3 +89,65 @@ class TestPrefixesSeparateAreas:
         with pytest.raises(SystemExit) as stop:
             merge_cities.main()
         assert "приставк" in str(stop.value)
+
+
+class TestOverlapDuplicatesAreRemoved:
+    """Объект из полосы пересечения областей не должен считаться дважды.
+
+    Границы перекрываются намеренно — иначе свалка на краю разрезалась бы
+    пополам. Но объект в полосе находится ДВАЖДЫ, по разу в каждом
+    прогоне, и получает два разных номера.
+
+    Так вышло с полем строительного мусора у железнодорожных путей:
+    C00061 в северном кольце и C00056 на юге, расстояние между центрами —
+    ноль метров. После слияния сайт показал бы девять свалок как десять, а
+    сумма ущерба выросла бы на несуществующий объект.
+
+    Ловится только по месту: номера разные, площади разные (контур
+    обрезается границей области), а точка одна.
+    """
+
+    def _two_areas(self, distance_m: float):
+        import geopandas as gpd
+        from shapely.geometry import Point
+
+        # UTM 42N: метры, чтобы расстояние значило то, что написано.
+        return gpd.GeoDataFrame(
+            {"candidate_id": ["AST-C00061", "AUG-C00056"],
+             "area_m2": [3327.0, 2100.0]},
+            geometry=[Point(500000, 5666000), Point(500000 + distance_m, 5666000)],
+            crs=32642,
+        )
+
+    def test_same_place_collapses_to_one(self):
+        from merge_cities import drop_duplicates_by_place
+
+        kept = drop_duplicates_by_place(self._two_areas(0.0))
+        assert len(kept) == 1
+
+    def test_the_bigger_contour_survives(self):
+        """У большего контур обрезан границей области меньше."""
+        from merge_cities import drop_duplicates_by_place
+
+        kept = drop_duplicates_by_place(self._two_areas(10.0))
+        assert list(kept["candidate_id"]) == ["AST-C00061"]
+
+    def test_neighbours_are_not_glued(self):
+        """Две настоящие свалки в сотне метров — разные объекты.
+
+        Порог нельзя поднимать бесконечно: свалки бывают рядом, и
+        склеенные в одну они дадут заниженный счёт и заниженный ущерб.
+        """
+        from merge_cities import drop_duplicates_by_place
+
+        kept = drop_duplicates_by_place(self._two_areas(120.0))
+        assert len(kept) == 2
+
+    def test_empty_input_survives(self):
+        import geopandas as gpd
+
+        from merge_cities import drop_duplicates_by_place
+
+        empty = gpd.GeoDataFrame({"candidate_id": [], "area_m2": []},
+                                 geometry=[], crs=32642)
+        assert drop_duplicates_by_place(empty).empty

@@ -1,22 +1,22 @@
 {
   "cells": 1700.0,
-  "cells_with_history": 1677.0,
-  "pr_auc_future": 0.6168744976893712,
-  "base_rate_future": 0.004770423375074538,
-  "lift": 129.31231657813444,
-  "positives_future": 8.0,
-  "pr_auc_low": 0.29581291931710874,
-  "pr_auc_high": 0.875554680050294,
-  "lift_low": 62.00978321184892,
+  "cells_with_history": 1662.0,
+  "pr_auc_future": 0.6704906204906205,
+  "base_rate_future": 0.006618531889290012,
+  "lift": 101.30503738685557,
+  "positives_future": 11.0,
+  "pr_auc_low": 0.42684437922102403,
+  "pr_auc_high": 0.9159176054630599,
+  "lift_low": 64.49230529684927,
   "cutoff": "2023-09-21",
   "importances": {
-    "dist_road_m": 0.0,
-    "dist_settlement_m": 0.0,
+    "dist_road_m": 0.12368889768454383,
+    "dist_settlement_m": 0.21789036216109242,
     "dist_legal_site_m": 0.0,
-    "existing_density_3km": 0.42581238503985286,
-    "existing_density_10km": 0.11833231146535868,
-    "dist_nearest_existing_m": 0.4558553034947885,
-    "screening_score": 0.0
+    "existing_density_3km": 0.09716999802097764,
+    "existing_density_10km": 0.14011478329705127,
+    "dist_nearest_existing_m": 0.36334850583811595,
+    "screening_score": 0.05778745299821888
   },
   "is_demo": false
 }

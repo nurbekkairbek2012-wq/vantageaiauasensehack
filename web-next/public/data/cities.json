@@ -8,8 +8,8 @@
    71.5
   ],
   "zoom": 11,
-  "count": 16,
-  "reviewed": 49,
+  "count": 17,
+  "reviewed": 59,
   "state": "found"
  },
  {
@@ -61,7 +61,20 @@
   ],
   "zoom": 11,
   "count": 0,
-  "reviewed": 0,
-  "state": "pending"
+  "reviewed": 42,
+  "state": "empty"
+ },
+ {
+  "id": "astana_south",
+  "name": "Астана · юг",
+  "short": "Юг",
+  "center": [
+   51.07,
+   71.48
+  ],
+  "zoom": 11,
+  "count": 0,
+  "reviewed": 21,
+  "state": "empty"
  }
 ]

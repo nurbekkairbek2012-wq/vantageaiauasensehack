@@ -70,6 +70,54 @@ def sources(argv: list[str]) -> list[tuple[str, Path]]:
     return out
 
 
+def drop_duplicates_by_place(objects):
+    """Убрать объекты, найденные дважды в перекрывающихся областях.
+
+    Границы областей перекрываются намеренно: свалка на краю иначе
+    разрезалась бы пополам. Но объект в полосе пересечения находится
+    ДВАЖДЫ — по разу в каждом прогоне, — и получает два разных номера.
+
+    Так вышло с полем строительного мусора у железнодорожных путей:
+    C00061 в северном кольце и C00056 на юге, расстояние между
+    центрами — ноль метров. После слияния сайт показал бы девять свалок
+    как десять, а сумма ущерба выросла бы на несуществующий объект.
+
+    Ловится только по месту: номера разные, площади разные (контур
+    обрезается границей области), а точка одна.
+
+    Оставляется больший по площади: у него контур обрезан меньше.
+    """
+    if objects.empty or "geometry" not in objects:
+        return objects
+
+    import geopandas as gpd
+
+    # Пятьдесят метров: перекрытие смещает центр обрезанного контура, но
+    # не на сотни метров. Меньший порог пропустил бы дубли, больший начал
+    # бы склеивать соседние свалки — а они бывают рядом.
+    #
+    # Пересечение буферов, а не «ближайший сосед»: у sjoin_nearest ближайшим
+    # к точке всегда оказывается она сама, и пары не находятся вовсе.
+    probe = gpd.GeoDataFrame(
+        {"_i": range(len(objects))},
+        geometry=objects.geometry.centroid.buffer(25.0), crs=objects.crs)
+    pairs = gpd.sjoin(probe, probe, predicate="intersects", how="inner")
+    pairs = pairs[pairs["_i_left"] < pairs["_i_right"]]
+    if pairs.empty:
+        return objects
+
+    area = objects["area_m2"] if "area_m2" in objects else objects.geometry.area
+    drop = set()
+    for left, right in zip(pairs["_i_left"], pairs["_i_right"], strict=True):
+        loser = right if area.iat[left] >= area.iat[right] else left
+        drop.add(int(loser))
+
+    kept = objects.iloc[[i for i in range(len(objects)) if i not in drop]]
+    log.info("%-24s убрано дублей из перекрытия областей: %d",
+             "candidates.geojson", len(drop))
+    return kept.reset_index(drop=True)
+
+
 def main() -> int:
     import geopandas as gpd
     import pandas as pd
@@ -120,6 +168,10 @@ def main() -> int:
             pd.concat([p.to_crs(target) for p in parts], ignore_index=True),
             crs=target,
         )
+
+        if layer == "candidates.geojson":
+            joined = drop_duplicates_by_place(joined)
+
         joined.to_file(MERGED / layer, driver="GeoJSON")
         log.info("%-24s объектов %d из %d городов", layer, len(joined), len(parts))
 
