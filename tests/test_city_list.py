@@ -86,3 +86,46 @@ class TestCityListMatchesTheSite:
             assert short and len(short) <= 12, (
                 f"{city['id']}: подпись {short!r} — пустая или длиннее 12 знаков"
             )
+
+
+class TestFunnelAddsUp:
+    """Столбцы воронки обязаны давать в сумме число сырых кандидатов.
+
+    Несходящаяся сумма на лендинге — первое, что считает проверяющий, и
+    после этого он не верит ни одному числу на сайте.
+
+    Так и было: автоматический отсев снимал 326 из 385, оставалось 59 — а
+    на карте семнадцать. Сорок два объекта убрал не алгоритм, а просмотр
+    глазами, и этого шага в воронке не было. Столбцы давали 343 при 385.
+
+    Шаг стоит показывать ещё и потому, что он сильный: команда, отвергшая
+    сорок две собственные находки, вызывает больше доверия, чем команда с
+    ровным списком.
+    """
+
+    def test_rejected_plus_published_equals_raw(self):
+        import json
+
+        import geopandas as gpd
+
+        funnel_path = ROOT / "web-next/public/data/funnel.json"
+        published_path = ROOT / "web-next/public/data/candidates.geojson"
+        if not (funnel_path.exists() and published_path.exists()):
+            pytest.skip("нет выгрузки")
+
+        funnel = json.loads(funnel_path.read_text(encoding="utf-8"))
+        rejected = funnel.get("rejected") or {}
+        published = len(gpd.read_file(published_path))
+
+        auto = sum(v for k, v in rejected.items() if k != "ПРОШЁЛ ОТСЕВ")
+        passed = rejected.get("ПРОШЁЛ ОТСЕВ", 0)
+        by_eye = passed - published
+
+        assert by_eye >= 0, (
+            f"на сайте {published} объектов, а отсев пропустил только {passed} — "
+            "выгрузка не может содержать больше, чем прошло фильтр"
+        )
+        assert auto + by_eye + published == funnel["raw"], (
+            f"воронка: {auto} автоотсев + {by_eye} просмотр + {published} на сайте "
+            f"= {auto + by_eye + published}, а сырых кандидатов {funnel['raw']}"
+        )

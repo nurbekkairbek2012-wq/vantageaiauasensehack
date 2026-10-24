@@ -68,9 +68,9 @@ type Metrics = { lift: number; pr_auc_future: number; base_rate_future: number; 
      границ здесь не измерение, а совпадение подходящего размера. */
   pr_auc_low?: number; pr_auc_high?: number; lift_low?: number; positives_future?: number };
 
-function stagesFrom(funnel: Funnel | null): Stage[] {
+function stagesFrom(funnel: Funnel | null, kept: number): Stage[] {
   if (!funnel?.rejected) return [];
-  return Object.entries(funnel.rejected)
+  const stages = Object.entries(funnel.rejected)
     .filter(([reason]) => reason !== 'ПРОШЁЛ ОТСЕВ')
     .sort((a, b) => b[1] - a[1])
     .map(([reason, count]) => ({
@@ -80,6 +80,26 @@ function stagesFrom(funnel: Funnel | null): Stage[] {
       detail: STAGE_TEXT[reason]?.detail ?? '',
       count,
     }));
+
+  /* Последний шаг — человек, и без него воронка не сходилась.
+     Автоматический отсев снимает 326 из 385, остаётся 59 — а на карте их
+     семнадцать. Сорок два объекта убрал не алгоритм, а просмотр глазами по
+     снимкам 0,5 м, и в воронке этого шага не было: столбцы давали 343 при
+     385 кандидатах. Несходящаяся сумма на лендинге — первое, что считает
+     проверяющий.
+     Шаг стоит показывать ещё и потому, что он сильный: команда, которая
+     отвергла сорок две собственные находки, вызывает больше доверия, чем
+     команда с ровным списком. */
+  const passed = funnel.rejected['ПРОШЁЛ ОТСЕВ'] ?? 0;
+  const byEye = passed - kept;
+  if (byEye > 0) {
+    stages.push({
+      label: 'Отвергнуто при просмотре',
+      detail: 'человек посмотрел каждый по снимку 0,5 м — склад, стройка, старица',
+      count: byEye,
+    });
+  }
+  return stages;
 }
 
 const LIMITS: [string, string][] = [
@@ -408,7 +428,7 @@ export default function App() {
               Причина отсева хранится по каждому. На вопрос «а почему выкинули
               вот это» отвечает файл, а не память выступающего.
             </p>
-            <Funnel stages={stagesFrom(funnel)} kept={totals.count} />
+            <Funnel stages={stagesFrom(funnel, totals.count)} kept={totals.count} />
           </section>
         )}
 
