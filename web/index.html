@@ -3,102 +3,196 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>VANTAGE — карта объектов</title>
+<title>VANTAGE — мониторинг несанкционированных свалок</title>
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#12161c">
+<meta name="theme-color" content="#0a0d12">
+<meta name="description" content="Обнаружение несанкционированных свалок по спутниковым данным, оценка ущерба и прогноз риска. Астана.">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-<div id="demo-banner" class="banner hidden" role="alert">
-  Синтетические данные для отладки интерфейса. Это не результаты прогона.
-</div>
-
-<div id="offline-banner" class="banner offline hidden" role="status">
-  Нет сети — карта работает из локального кеша.
-</div>
+<div id="toast-stack" class="toast-stack" aria-live="polite"></div>
 
 <header class="topbar">
   <div class="brand">
-    <span class="mark">VANTAGE</span>
-    <span class="sub">несанкционированные свалки · Астана</span>
+    <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
+      <circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".35"/>
+      <circle cx="16" cy="16" r="8"  fill="none" stroke="currentColor" stroke-width="1.5" opacity=".6"/>
+      <circle cx="16" cy="16" r="3.2" fill="currentColor"/>
+      <path d="M16 1v5M16 26v5M1 16h5M26 16h5" stroke="currentColor" stroke-width="1.5" opacity=".5"/>
+    </svg>
+    <div class="brand-text">
+      <div class="brand-name">VANTAGE</div>
+      <div class="brand-sub">мониторинг несанкционированных свалок · Астана</div>
+    </div>
   </div>
-  <nav class="modes">
-    <button id="mode-story" class="mode active" type="button">Сценарий</button>
-    <button id="mode-free" class="mode" type="button">Свободный режим</button>
-  </nav>
-  <div class="status">
-    <span id="net-status" class="dot" title="состояние сети"></span>
-    <span id="object-count">—</span>
+
+  <div class="segmented" role="tablist" aria-label="Режим">
+    <button id="mode-story" class="seg active" role="tab" type="button">
+      <svg viewBox="0 0 16 16" class="ico"><path d="M2 3h12M2 8h12M2 13h7" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
+      Сценарий
+    </button>
+    <button id="mode-explore" class="seg" role="tab" type="button">
+      <svg viewBox="0 0 16 16" class="ico"><circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      Обзор
+    </button>
+  </div>
+
+  <div class="topbar-right">
+    <div id="demo-chip" class="chip warn hidden" title="Показаны синтетические данные">
+      <span class="pulse"></span> демо-данные
+    </div>
+    <div id="net-chip" class="chip">
+      <span class="dot"></span><span id="net-label">онлайн</span>
+    </div>
+    <button id="offline-prep" class="btn ghost sm" type="button" title="Скачать тайлы карты в кеш">
+      <svg viewBox="0 0 16 16" class="ico"><path d="M8 2v8M5 7.5L8 10.5l3-3M3 13h10" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Офлайн
+    </button>
   </div>
 </header>
 
-<main class="layout">
+<main class="shell">
 
-  <section class="map-wrap">
+  <!-- ЛЕВАЯ КОЛОНКА: список объектов -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-head">
+      <div class="search">
+        <svg viewBox="0 0 16 16" class="ico"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <input id="search" type="search" placeholder="Поиск по номеру объекта" autocomplete="off">
+      </div>
+      <div class="sort-row">
+        <label for="sort">Сортировка</label>
+        <select id="sort">
+          <option value="probability">по уверенности</option>
+          <option value="damage_p50">по ущербу</option>
+          <option value="area_m2">по площади</option>
+          <option value="break_date">по дате возникновения</option>
+        </select>
+      </div>
+    </div>
+    <div class="list" id="object-list"></div>
+    <div class="sidebar-foot" id="list-summary">—</div>
+  </aside>
+
+  <!-- ЦЕНТР: карта -->
+  <section class="stage">
     <canvas id="map" aria-label="Карта объектов"></canvas>
 
-    <div class="map-controls">
-      <button id="zoom-in" type="button" title="Приблизить">+</button>
-      <button id="zoom-out" type="button" title="Отдалить">−</button>
-      <button id="reset-view" type="button" title="Показать всю область">⤢</button>
+    <div class="map-tools tl">
+      <div class="tool-group" role="group" aria-label="Подложка">
+        <button class="tool" id="base-sat" title="Спутник">СПУТНИК</button>
+        <button class="tool active" id="base-dark" title="Схема">СХЕМА</button>
+      </div>
     </div>
 
-    <div class="legend" id="legend"></div>
+    <div class="map-tools tr">
+      <div class="tool-group vertical">
+        <button class="tool icon" id="zoom-in" title="Приблизить">+</button>
+        <button class="tool icon" id="zoom-out" title="Отдалить">−</button>
+        <button class="tool icon" id="reset-view" title="Вся область">
+          <svg viewBox="0 0 16 16" class="ico"><path d="M2 6V2h4M14 6V2h-4M2 10v4h4M14 10v4h-4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="tool-group vertical" role="group" aria-label="Слои">
+        <button class="tool icon layer active" data-layer="candidates" title="Объекты">
+          <svg viewBox="0 0 16 16" class="ico"><path d="M8 2l5 4-5 4-5-4z" fill="currentColor" opacity=".9"/><path d="M3 9.5l5 4 5-4" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>
+        </button>
+        <button class="tool icon layer" data-layer="risk" title="Зоны риска">
+          <svg viewBox="0 0 16 16" class="ico"><path d="M8 1.8l6.2 11.4H1.8z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 6v3.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="11.2" r=".9" fill="currentColor"/></svg>
+        </button>
+        <button class="tool icon layer active" data-layer="registry" title="Официальный реестр">
+          <svg viewBox="0 0 16 16" class="ico"><rect x="3" y="2.5" width="10" height="11" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M5.5 6h5M5.5 8.5h5M5.5 11h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </div>
 
-    <div class="scale" id="scale"><span class="bar"></span><span id="scale-label">—</span></div>
+    <div class="hud-bottom">
+      <div class="legend" id="legend"></div>
+      <div class="scalebar"><div class="scalebar-line"></div><span id="scale-label">—</span></div>
+      <div class="attribution" id="attribution"></div>
+    </div>
+
+    <div class="loader hidden" id="loader"><div class="spin"></div><span>Загрузка данных…</span></div>
   </section>
 
-  <aside class="panel" id="panel">
+  <!-- ПРАВАЯ КОЛОНКА -->
+  <aside class="inspector" id="inspector">
 
-    <div id="story" class="story">
-      <div class="story-head">
-        <span class="step" id="story-step">1 / 7</span>
+    <!-- Сценарий -->
+    <section id="story" class="pane">
+      <div class="pane-head">
+        <div class="progress" id="story-progress"></div>
+        <div class="eyebrow"><span id="story-step">1</span> из <span id="story-total">7</span></div>
         <h2 id="story-title">Официальный реестр</h2>
       </div>
-      <p class="line" id="story-line">Это то, что государство знает.</p>
-      <div class="story-nav">
-        <button id="story-prev" type="button">Назад</button>
-        <button id="story-next" type="button" class="primary">Дальше</button>
+      <blockquote class="quote" id="story-line">Это то, что государство знает.</blockquote>
+      <div class="row gap">
+        <button id="story-prev" class="btn ghost" type="button">Назад</button>
+        <button id="story-next" class="btn primary grow" type="button">Дальше →</button>
       </div>
-      <div class="story-hint">Пробел — следующая сцена, стрелки — навигация</div>
-    </div>
+      <div class="kbd-hint"><kbd>Space</kbd> дальше · <kbd>←</kbd><kbd>→</kbd> навигация</div>
 
-    <div id="totals" class="totals hidden"></div>
+      <div id="totals" class="stats"></div>
+    </section>
 
-    <div id="details" class="details hidden">
-      <button class="close" id="details-close" type="button" aria-label="Закрыть">×</button>
-      <h3 id="det-id">—</h3>
-      <div class="det-meta" id="det-meta"></div>
+    <!-- Карточка объекта -->
+    <section id="details" class="pane hidden">
+      <button class="pane-close" id="details-close" type="button" aria-label="Закрыть">
+        <svg viewBox="0 0 16 16" class="ico"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      </button>
 
-      <h4>Доказательная цепочка</h4>
-      <div class="signals" id="det-signals"></div>
-      <p class="note" id="det-evidence"></p>
+      <div class="pane-head">
+        <div class="eyebrow">объект</div>
+        <h2 id="det-id">—</h2>
+        <div class="badges" id="det-badges"></div>
+      </div>
 
-      <h4>До и после</h4>
-      <div class="beforeafter" id="det-beforeafter"></div>
+      <div class="facts" id="det-facts"></div>
 
-      <h4>Оценка ущерба</h4>
-      <div class="money" id="det-money"></div>
+      <div class="section">
+        <div class="section-title">
+          Доказательная цепочка
+          <span class="counter" id="det-agree">—</span>
+        </div>
+        <div class="signals" id="det-signals"></div>
+        <p class="hint" id="det-evidence"></p>
+      </div>
 
-      <h4>Правовая норма</h4>
-      <div class="legal" id="det-legal"></div>
+      <div class="section">
+        <div class="section-title">Изменение поверхности</div>
+        <div class="ba" id="det-ba"></div>
+      </div>
 
-      <button id="det-act" class="primary wide" type="button">Сформировать черновик акта</button>
+      <div class="section">
+        <div class="section-title">Оценка ущерба</div>
+        <div class="money" id="det-money"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Правовая норма</div>
+        <div class="legal" id="det-legal"></div>
+      </div>
+
+      <button id="det-act" class="btn primary wide" type="button">Сформировать черновик акта</button>
       <p class="disclaimer">
         Оценка вероятности, а не юридическое доказательство. Решение принимает
         уполномоченное лицо по итогам выездной проверки.
       </p>
-    </div>
+    </section>
 
-    <div id="mistakes" class="mistakes hidden">
-      <h3>Где мы ошиблись</h3>
-      <p class="note">
-        Кандидаты, отсеянные контекстным фильтром. Показываем их намеренно:
+    <!-- Где мы ошиблись -->
+    <section id="mistakes" class="pane hidden">
+      <div class="pane-head">
+        <div class="eyebrow">прозрачность</div>
+        <h2>Где мы ошиблись</h2>
+      </div>
+      <p class="hint">
+        Кандидаты, отсеянные контекстным фильтром. Показываем намеренно:
         явно названная граница модели убедительнее заявленной идеальной точности.
       </p>
-      <div id="mistakes-list"></div>
-    </div>
+      <div id="mistakes-list" class="rejects"></div>
+    </section>
 
   </aside>
 </main>
