@@ -78,3 +78,7 @@ desktop.ini
 # Ставятся клонированием репозиториев, см. docs/HANDOFF.md.
 .claude/skills/
 .impeccable/
+
+# --- Сборка фронтенда ---
+web-next/node_modules/
+web-next/dist/
