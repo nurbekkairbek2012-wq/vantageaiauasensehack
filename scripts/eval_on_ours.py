@@ -65,20 +65,20 @@ def picture(lat: float, lon: float, name: str, cfg, refresh: bool):
 
     from vantage.verify import PROVIDERS, fetch_tile_grid
 
+    from highres_cache import cache_name
+
     CACHE.mkdir(parents=True, exist_ok=True)
-    # Зум в имени файла обязателен. Два скрипта делят этот кэш и качают
-    # на разном зуме: доверификация на 17-м, листы просмотра на 18-м. При
-    # ключе из одного идентификатора тот, кто записал первым, определял,
-    # что увидит второй — и одно и то же измерение давало то 0,643, то
-    # 0,333 в зависимости от порядка запуска.
-    path = CACHE / f"{name}_z{cfg.zoom}.png"
-    legacy = CACHE / f"{name}.png"
+    # Ключ кэша — место и зум, а не номер объекта; почему именно так,
+    # написано в scripts/highres_cache.py. Коротко: номер сквозной внутри
+    # области, но не между областями, и снимок северного кольца однажды
+    # был показан вместо снимка промзоны за 24 км оттуда.
+    path = CACHE / cache_name(lat, lon, cfg.zoom)
+    for legacy in (CACHE / f"{name}_z{cfg.zoom}.png", CACHE / f"{name}.png"):
+        if legacy.exists():
+            # Файл старого вида не читаем: неизвестно, чьё это место.
+            legacy.unlink()
     if path.exists() and not refresh:
         return Image.open(path).convert("RGB")
-    if legacy.exists() and not refresh:
-        # Старый файл неизвестного зума не используем: лучше скачать
-        # заново, чем сравнивать модели на разных снимках.
-        legacy.unlink()
 
     # Первый доступный поставщик: расхождения между ними здесь не важны —
     # доверификация уже сравнила их между собой, а нам нужен снимок.

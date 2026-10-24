@@ -63,7 +63,10 @@ const STAGE_TEXT: Record<string, { label: string; detail: string }> = {
 };
 
 type Funnel = { raw: number; rejected: Record<string, number> };
-type Metrics = { lift: number; pr_auc_future: number; base_rate_future: number; cells?: number };
+type Metrics = { lift: number; pr_auc_future: number; base_rate_future: number; cells?: number;
+  /* Интервал по бутстрэпу. Положительных ячеек единицы, и середина без
+     границ здесь не измерение, а совпадение подходящего размера. */
+  pr_auc_low?: number; pr_auc_high?: number; lift_low?: number; positives_future?: number };
 
 function stagesFrom(funnel: Funnel | null): Stage[] {
   if (!funnel?.rejected) return [];
@@ -467,8 +470,17 @@ export default function App() {
                   Числа модели, не совпадающие с её же выгрузкой, — первое,
                   что проверяют на техническом Q&A. */}
               {[
-                ['Точнее случайного', metrics ? `×${Math.round(metrics.lift)}` : '—'],
-                ['PR-AUC', metrics ? metrics.pr_auc_future.toFixed(3).replace('.', ',') : '—'],
+                /* Называется нижняя граница интервала, а не середина: положительных
+                   ячеек восемь, и на восьми точках PR-AUC 0,62 и 0,30 неразличимы.
+                   «Не хуже ×62» проверяемо, «×129» — нет. */
+                ['Точнее случайного', metrics
+                  ? (metrics.lift_low ? `не хуже ×${Math.round(metrics.lift_low)}` : `×${Math.round(metrics.lift)}`)
+                  : '—'],
+                ['PR-AUC', metrics
+                  ? (metrics.pr_auc_low !== undefined && metrics.pr_auc_high !== undefined
+                      ? `${metrics.pr_auc_low.toFixed(2).replace('.', ',')}–${metrics.pr_auc_high.toFixed(2).replace('.', ',')}`
+                      : metrics.pr_auc_future.toFixed(3).replace('.', ','))
+                  : '—'],
                 ['Базовая частота', metrics ? metrics.base_rate_future.toFixed(5).replace('.', ',') : '—'],
                 ['Ячеек в сетке', metrics?.cells ? Math.round(metrics.cells).toLocaleString('ru-RU') : '—'],
               ].map(([k, v]) => (

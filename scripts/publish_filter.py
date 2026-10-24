@@ -65,6 +65,50 @@ def load_screen() -> dict[str, str]:
     return {k: v["verdict"] for k, v in (data.get("screen") or {}).items()}
 
 
+def rebuild_story(kept) -> None:
+    """Пересобрать сценарий демонстрации под опубликованный список.
+
+    Сценарий строится на выгрузке, до фильтра. Фильтр правил только
+    candidates.geojson, и story.json оставался от полного прогона: на
+    странице таймлапса стояло «Мы нашли 49 объектов» при шестнадцати на
+    карте, а сцена «доказательная цепочка» наводилась на C00018 — объект,
+    который фильтр к тому моменту снял. Наведение на несуществующий объект
+    ничем не выдавало себя: сцена просто открывалась на пустом месте.
+
+    Это тот же тихий откат, что уже ловился дважды: шаг, стоящий последним,
+    правит один файл из нескольких связанных.
+    """
+    import json as _json
+
+    import geopandas as gpd
+
+    from vantage.story import build_story
+
+    story_path = Path(WEB).parent / "story.json"
+    before = None
+    if story_path.exists():
+        try:
+            before = _json.loads(story_path.read_text(encoding="utf-8"))
+        except Exception:
+            before = None
+
+    registry_count = 0
+    registry_path = Path(WEB).parent / "registry.geojson"
+    if registry_path.exists():
+        try:
+            registry_count = len(gpd.read_file(registry_path))
+        except Exception:
+            registry_count = 0
+
+    story = build_story(kept, registry_count=registry_count,
+                        is_demo=bool(before and before.get("is_demo")))
+    story_path.write_text(_json.dumps(story, ensure_ascii=False, indent=2),
+                          encoding="utf-8")
+
+    said = next((s["line"] for s in story["scenes"] if s["id"] == "found"), "")
+    log.info("сценарий пересобран: %s", said)
+
+
 def main() -> int:
     import geopandas as gpd
 
@@ -139,6 +183,8 @@ def main() -> int:
     WEB.parent.mkdir(parents=True, exist_ok=True)
     kept.to_file(WEB, driver="GeoJSON")
     log.info("выгружено: %s", WEB)
+
+    rebuild_story(kept)
     return 0
 
 

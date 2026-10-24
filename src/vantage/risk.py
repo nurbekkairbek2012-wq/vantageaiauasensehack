@@ -192,6 +192,23 @@ def temporal_labels(
     if date_column not in landfills.columns:
         raise KeyError(f"в таблице свалок нет колонки {date_column}")
 
+    # Сетка и объекты обязаны лежать в одной системе координат.
+    #
+    # Иначе пространственное соединение ниже не находит ни одного
+    # пересечения и возвращает сплошные нули — то есть «свалок не было
+    # нигде и никогда». Прогноз, обученный на такой разметке, не падает и
+    # выдаёт правдоподобные числа.
+    #
+    # В самом прогоне так не случается: объекты идут из памяти в рабочей
+    # системе. Но любой путь, читающий объекты с диска, получает их в
+    # градусах — GeoJSON всегда пишется в EPSG:4326, — и тихо ломается.
+    if grid.crs is not None and landfills.crs is not None and grid.crs != landfills.crs:
+        raise ValueError(
+            f"сетка в {grid.crs} и объекты в {landfills.crs} — разные системы "
+            "координат: соединение не найдёт ни одного пересечения и вернёт "
+            "разметку из одних нулей. Привести объекты к системе сетки"
+        )
+
     dates = landfills[date_column]
     cutoff_ts = np.datetime64(cutoff)
     valid = dates.notna()
@@ -277,10 +294,45 @@ def train_risk_model(
             if metrics["base_rate_future"] > 0
             else 0.0
         )
+        # Интервал по бутстрэпу, и он здесь обязателен.
+        #
+        # Положительных ячеек после отсечки — единицы: базовая частота
+        # 0,005 на 1 668 ячейках это восемь штук. На восьми точках PR-AUC
+        # 0,774 и PR-AUC 0,3 неразличимы, а «лучше случайного в 161 раз»
+        # звучит как измерение. Тот же порядок уже был принят для переноса
+        # классификатора: решение по нижней границе, а не по середине.
+        positives = int(y_future[fresh].sum())
+        metrics["positives_future"] = float(positives)
+        truth = np.asarray(y_future[fresh])
+        rng = np.random.default_rng(cfg.seed)
+        draws = []
+        for _ in range(2000):
+            pick = rng.integers(0, len(truth), len(truth))
+            if 0 < truth[pick].sum() < len(pick):
+                draws.append(pr_auc(truth[pick], scores[pick]))
+        if draws:
+            low, high = (float(v) for v in np.percentile(draws, [5, 95]))
+            metrics["pr_auc_low"] = low
+            metrics["pr_auc_high"] = high
+            metrics["lift_low"] = (
+                low / metrics["base_rate_future"] if metrics["base_rate_future"] > 0 else 0.0
+            )
         log.info(
             "Валидация по времени: PR-AUC=%.3f при базовой частоте %.4f (выигрыш x%.1f)",
             metrics["pr_auc_future"], metrics["base_rate_future"], metrics["lift"],
         )
+        if draws:
+            log.info(
+                "   положительных ячеек %d; PR-AUC, 90%% интервал: %.3f – %.3f "
+                "(выигрыш не ниже x%.0f)",
+                positives, metrics["pr_auc_low"], metrics["pr_auc_high"],
+                metrics["lift_low"],
+            )
+            if positives < 15:
+                log.warning(
+                    "   положительных ячеек меньше пятнадцати — называть на защите "
+                    "нижнюю границу, а не середину"
+                )
     else:
         log.warning("После отсечки нет новых объектов — качество прогноза не измерено")
 

@@ -236,6 +236,29 @@ out geom;
 """.strip()
 
 
+#: Линейные водотоки: канал, река, ручей, канава, дренаж.
+#:
+#: Площадные водоёмы (``natural=water``) уже вычитаются, но канал в OSM
+#: нарисован ЛИНИЕЙ, и берега его в полигон не входят. В западной промзоне
+#: Астаны это дало пятнадцать находок из сорока одной — канал Нұра–Есіл,
+#: снятый детектором по всей длине: уровень воды и растительность на
+#: берегу меняются от года к году, необратимого изменения там нет.
+WATERWAY_KINDS = ("canal", "river", "stream", "ditch", "drain")
+
+
+def build_waterway_query(aoi: AOI) -> str:
+    """Overpass QL для линейных водотоков области."""
+    bbox = _bbox_clause(aoi)
+    kinds = "|".join(WATERWAY_KINDS)
+    return f"""
+[out:json][timeout:180];
+(
+  way["waterway"~"^({kinds})$"]({bbox});
+);
+out geom;
+""".strip()
+
+
 #: Земли, на которых стихийная свалка не возникает — не потому, что там
 #: чисто, а потому, что за участком следят. Университетский кампус, парк,
 #: ботанический сад, кладбище, аэродром, воинская часть, водоём: у каждого
@@ -370,14 +393,31 @@ def fetch_context(
         client.query(build_settlements_query(aoi), use_cache=use_cache), target_crs=crs
     )
 
+    # Линейные водотоки идут отдельным запросом и буферизуются.
+    #
+    # Ширина буфера — половина ширины русла с берегами, померенная по
+    # снимку 0,5 м: канал Нұра–Есіл вместе с обеими бермами занимает около
+    # 50 м, то есть 25 м от осевой линии. Взято 40 — с запасом на изгибы,
+    # но осознанно немного: у реки свалки как раз бывают, и широкий буфер
+    # снёс бы настоящие находки вместе с артефактами.
+    waterways = overpass_to_gdf(
+        client.query(build_waterway_query(aoi), use_cache=use_cache), target_crs=crs
+    )
+    if not waterways.empty:
+        buffered = waterways.copy()
+        buffered["geometry"] = buffered.geometry.buffer(settings.context.waterway_buffer_m)
+        excluded = gpd.GeoDataFrame(
+            pd.concat([excluded, buffered[["geometry"]]], ignore_index=True), crs=crs
+        )
+
     implausible = overpass_to_gdf(
         client.query(build_implausible_query(aoi), use_cache=use_cache), target_crs=crs
     )
 
     log.info(
-        "Контекст загружен: %d исключаемых, %d дорог, %d населённых пунктов, "
-        "%d охраняемых участков",
-        len(excluded), len(roads), len(settlements), len(implausible),
+        "Контекст загружен: %d исключаемых (из них %d водотоков), %d дорог, "
+        "%d населённых пунктов, %d охраняемых участков",
+        len(excluded), len(waterways), len(roads), len(settlements), len(implausible),
     )
 
     # Пустой слой дорог — не «в этой области нет дорог», а «Overpass не
@@ -529,6 +569,7 @@ __all__ = [
     "OVERPASS_ENDPOINTS",
     "SETTLEMENT_PLACES",
     "ContextLayers",
+    "build_waterway_query",
     "OverpassClient",
     "apply_context_filter",
     "build_exclusion_query",

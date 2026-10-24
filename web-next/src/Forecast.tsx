@@ -20,6 +20,10 @@ import { createHeatOverlay, riskToPoints, type HeatOverlay } from './components/
 
 type Metrics = {
   pr_auc_future: number;
+  pr_auc_low?: number;
+  pr_auc_high?: number;
+  lift_low?: number;
+  positives_future?: number;
   base_rate_future: number;
   lift: number;
   cutoff: string;
@@ -261,11 +265,24 @@ export default function Forecast() {
                 исключены: они завысили бы результат.
               </p>
 
+              {metrics.positives_future !== undefined && metrics.positives_future < 15 && (
+                <p className="mt-3 text-sm leading-relaxed text-muted-2">
+                  Проверять было на чем немного: свалок, возникших после отсечки,{' '}
+                  <span className="tabular text-line">{metrics.positives_future}</span>. Поэтому
+                  здесь стоит интервал по бутстрэпу и его нижняя граница, а не одно число:
+                  на такой выборке середина сместилась бы от одного объекта.
+                </p>
+              )}
+
               <dl className="mt-7 flex flex-wrap gap-x-12 gap-y-5">
                 {[
-                  ['PR-AUC на будущем', metrics.pr_auc_future.toFixed(3)],
+                  ['PR-AUC на будущем',
+                    metrics.pr_auc_low !== undefined && metrics.pr_auc_high !== undefined
+                      ? `${metrics.pr_auc_low.toFixed(2)}–${metrics.pr_auc_high.toFixed(2)}`
+                      : metrics.pr_auc_future.toFixed(3)],
                   ['Базовая частота', metrics.base_rate_future.toFixed(4)],
-                  ['Выигрыш над случайным', `×${Math.round(metrics.lift)}`],
+                  ['Выигрыш над случайным',
+                    metrics.lift_low ? `не хуже ×${Math.round(metrics.lift_low)}` : `×${Math.round(metrics.lift)}`],
                 ].map(([k, v]) => (
                   <div key={k}>
                     <dt className="text-sm text-muted-2">{k}</dt>

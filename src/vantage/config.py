@@ -109,6 +109,7 @@ class ContextCfg(BaseModel):
     max_distance_to_settlement_m: float
     exclude_landuse: list[str]
     exclude_natural: list[str]
+    waterway_buffer_m: float = 40.0
     min_area_m2: float
     max_area_m2: float
 

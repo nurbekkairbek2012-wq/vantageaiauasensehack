@@ -70,10 +70,31 @@ ZOOM_LADDER = (18, 17, 16)
 
 
 def looks_like_placeholder(grid) -> bool:
-    """Серый квадрат «съёмки нет» вместо снимка."""
+    """Серый квадрат «съёмки нет» вместо снимка.
+
+    Проверяется отдельно центр, а не только кадр целиком.
+
+    Первая версия смотрела разброс по всему кадру и пропускала кадры,
+    закрытые заглушкой ЧАСТИЧНО: сетка 3x3 склеивается из девяти тайлов
+    разных плиток, и у поставщика может не быть съёмки на четырёх из них.
+    Живая половина вытягивала общий разброс выше порога, кадр принимался —
+    а объект оказывался ровно под серым квадратом.
+
+    Так на лист западной промзоны попал C00166 с надписью «Map data not
+    yet available» поперёк центра. Заметить это можно было только глазами,
+    и заметилось на втором просмотре.
+
+    Центр важнее краёв: объект стоит в середине кадра, туда же смотрит
+    прицел. Кадр, у которого живые только углы, для просмотра бесполезен.
+    """
     import numpy as np
 
-    return float(np.asarray(grid).std()) < PLACEHOLDER_STD
+    a = np.asarray(grid)
+    if float(a.std()) < PLACEHOLDER_STD:
+        return True
+    h, w = a.shape[0], a.shape[1]
+    core = a[h // 3: 2 * h // 3, w // 3: 2 * w // 3]
+    return float(core.std()) < PLACEHOLDER_STD
 
 
 def picture(lat: float, lon: float, name: str, cfg, refresh: bool = False):
@@ -87,12 +108,18 @@ def picture(lat: float, lon: float, name: str, cfg, refresh: bool = False):
 
     from vantage.verify import PROVIDERS, fetch_tile_grid
 
+    from highres_cache import cache_name
+
     CACHE.mkdir(parents=True, exist_ok=True)
-    # Зум в имени файла: см. тот же комментарий в eval_on_ours.py. Здесь
-    # зум ещё и подбирается лесенкой, так что без него в ключе кэш вообще
-    # не говорит, что в нём лежит.
+    # Ключ кэша — место и зум, а не номер объекта: см. scripts/highres_cache.py.
+    # Здесь зум ещё и подбирается лесенкой, так что без него в ключе кэш
+    # вообще не говорит, что в нём лежит.
     for zoom in ZOOM_LADDER:
-        path = CACHE / f"{name}_z{zoom}.png"
+        legacy = CACHE / f"{name}_z{zoom}.png"
+        if legacy.exists():
+            legacy.unlink()
+    for zoom in ZOOM_LADDER:
+        path = CACHE / cache_name(lat, lon, zoom)
         if path.exists() and not refresh:
             return Image.open(path).convert("RGB")
 
@@ -109,7 +136,7 @@ def picture(lat: float, lon: float, name: str, cfg, refresh: bool = False):
             if looks_like_placeholder(grid):
                 continue
             image = Image.fromarray(grid.astype("uint8"))
-            image.save(CACHE / f"{name}_z{zoom}.png")
+            image.save(CACHE / cache_name(lat, lon, zoom))
             return image
     return None
 

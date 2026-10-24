@@ -56,7 +56,8 @@ export default function Timelapse() {
   useEffect(() => {
     fetch('./data/metrics.json')
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => setLift(typeof d?.lift === 'number' ? Math.round(d.lift) : null))
+      .then((d) => setLift(typeof d?.lift_low === 'number' ? Math.round(d.lift_low)
+        : typeof d?.lift === 'number' ? Math.round(d.lift) : null))
       .catch(() => setLift(null));
   }, []);
 
@@ -315,7 +316,7 @@ export default function Timelapse() {
             <p className="text-sm text-line">Тепло без объектов — где свалок ещё нет</p>
             <p className="mt-1 text-xs leading-snug text-muted">
               Модель обучена на объектах до сентября 2023 и проверена на
-              возникших после.{lift ? ` Попадает в ${lift} раз точнее случайного выбора.` : ''}
+              возникших после.{lift ? ` Попадает не хуже чем в ${lift} раз точнее случайного выбора.` : ''}
             </p>
           </div>
         )}

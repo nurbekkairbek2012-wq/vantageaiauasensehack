@@ -27,6 +27,8 @@ from probe_city import verdict  # noqa: E402
 MEASURED = {
     "север": (0.322, 0.0302, 94.7),
     "запад · промзона": (0.181, 0.0208, 97.8),
+    "юг": (0.218, 0.0195, 99.9),
+    "Алматы · первая": (0.100, 0.0200, 252.9),
     "юго-восток": (0.245, 0.0006, 18.1),
     "восток": (0.233, 0.0000, 6.8),
 }
@@ -43,7 +45,7 @@ class TestVerdictMatchesWhatWasMeasured:
         """
         assert "НЕ ЗАПУСКАТЬ" in verdict(*MEASURED[name])
 
-    @pytest.mark.parametrize("name", ["север", "запад · промзона"])
+    @pytest.mark.parametrize("name", ["север", "запад · промзона", "юг"])
     def test_areas_where_the_method_works_are_allowed(self, name):
         """Область, давшая восемь свалок, не должна отсеиваться.
 
@@ -76,3 +78,40 @@ class TestVerdictMatchesWhatWasMeasured:
         """Overpass может не ответить — замер обязан деградировать, а не падать."""
         assert verdict(0.322, 0.0302, None)
         assert verdict(0.322, None, None)
+
+
+class TestTheScaleHasATopAsWellAsABottom:
+    """Показатель не монотонный, и выяснилось это на Алматы.
+
+    Первая область Алматы — 252,9 контура на км², плотнее всего
+    измеренного — дала **ноль объектов из 499 кандидатов**. Не «ноль
+    настоящих свалок», а вообще ноль: каждый кандидат оказался либо
+    слишком близко к жилью, либо на уже размеченной земле.
+
+    Это плотная городская застройка, где свободного места просто нет.
+    Провал сверху и провал снизу — разные вещи, и путать их значит
+    объяснять одно другим.
+    """
+
+    def test_solid_city_is_refused(self):
+        answer = verdict(*MEASURED["Алматы · первая"])
+        assert "НЕ ЗАПУСКАТЬ" in answer
+        assert "застройка" in answer, "причина отказа сверху должна отличаться от отказа снизу"
+
+    def test_the_two_refusals_say_different_things(self):
+        """Отказ сверху и снизу обязаны объясняться по-разному.
+
+        Иначе замер говорит «не запускать» и не говорит, что менять:
+        расширить область или, наоборот, отойти от города.
+        """
+        low = verdict(*MEASURED["восток"])
+        high = verdict(*MEASURED["Алматы · первая"])
+        assert low != high
+        assert "нечем" in low and "снимет всё" in high
+
+    def test_good_band_is_between_them(self):
+        """Работающие области лежат между границами, и обе внутри полосы."""
+        for name in ("север", "запад · промзона", "юг"):
+            _share, _ind, density = MEASURED[name]
+            assert 50 <= density <= 200, f"{name}: {density} вне полосы"
+            assert "НЕ ЗАПУСКАТЬ" not in verdict(*MEASURED[name])
