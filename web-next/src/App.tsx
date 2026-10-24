@@ -210,6 +210,9 @@ export default function App() {
       real: real.length,
       rejected: features.length - real.length,
       confirmed: features.filter((f) => f.properties?.visual_check === 'landfill').length,
+      /* Сколько подтверждено человеком на месте. Это про источник
+         проверки, а не про класс объекта, и потому считается отдельно. */
+      ground: features.filter((f) => f.properties?.check_source === 'ground').length,
       damage: real.reduce((s, f) => s + (Number(f.properties?.damage_p50) || 0), 0),
       area: real.reduce((s, f) => s + (Number(f.properties?.area_m2) || 0), 0),
     };
@@ -346,6 +349,19 @@ export default function App() {
                 высокого разрешения — 0,4–0,8 м на пиксель, в зависимости от
                 того, есть ли у поставщика съёмка этого места на максимальном
                 приближении.
+                {/* Выезд назван на первом экране: это единственное
+                    основание, которое нельзя оспорить снимком, и потому
+                    самое сильное, что есть у списка. Число считается из
+                    данных — вписанное разошлось бы при первом же выезде. */}
+                {totals.ground > 0 && (
+                  <>
+                    {' '}Из них{' '}
+                    <span className="text-emerald">
+                      {totals.ground} проверены человеком на месте
+                    </span>
+                    , а не только по снимку.
+                  </>
+                )}{' '}
                 Находки, оказавшиеся складами, промплощадками и болотами, в
                 список не попали: детектор ищет исчезнувшую навсегда
                 растительность, а новая застройка выглядит так же.

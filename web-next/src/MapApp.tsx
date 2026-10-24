@@ -76,7 +76,29 @@ const VISUAL: Record<string, { short: string; full: string; tone: string; dot: s
   },
 };
 
+/* Подтверждение с земли показывается отдельно от разметки по снимку.
+ *
+ * Порядок силы источников: человек на месте > человек по снимку > машина.
+ * Снимок 0,4–0,8 м показывает пятно нужной текстуры; человек рядом видит,
+ * что это и возят ли туда до сих пор. Смешивать их в одной подписи нельзя:
+ * на защите спросят именно «кто смотрел», и ответ должен быть на экране, а
+ * не в памяти выступающего. */
+const GROUND = {
+  short: 'проверено',
+  full: 'Подтверждено человеком на месте, а не по снимку. Выезд перебивает '
+    + 'разметку по снимку: там, где съёмка показывает только нарушенный грунт, '
+    + 'человек рядом видит, что именно лежит и возят ли туда до сих пор.',
+  tone: 'text-emerald',
+  dot: '#3fb950',
+};
+
 const visualOf = (p: Props) => {
+  if (p.check_source === 'ground') {
+    const who = typeof p.ground_by === 'string' ? p.ground_by : '';
+    const when = typeof p.ground_date === 'string' ? p.ground_date : '';
+    const stamp = [who, when].filter(Boolean).join(', ');
+    return { ...GROUND, full: stamp ? `${GROUND.full} Проверил: ${stamp}.` : GROUND.full };
+  }
   const code = typeof p.visual_check === 'string' ? p.visual_check : '';
   return VISUAL[code] ?? null;
 };
@@ -295,6 +317,9 @@ export default function MapApp() {
     return {
       count: list.length,
       confirmed: list.filter((f) => f.properties?.visual_check === 'landfill').length,
+      /* Сколько объектов подтверждено человеком на месте. Считается
+         отдельно от вердикта: выезд — это про источник, а не про класс. */
+      ground: list.filter((f) => f.properties?.check_source === 'ground').length,
       damage: real.reduce((s, f) => s + (Number(f.properties?.damage_p50) || 0), 0),
       area: real.reduce((s, f) => s + (Number(f.properties?.area_m2) || 0), 0),
     };
@@ -506,13 +531,24 @@ export default function MapApp() {
             <div className="px-5 py-8">
               <h2 className="text-xl text-line">Выберите объект</h2>
               <p className="mt-3 max-w-[34ch] text-sm text-muted">
+                {/* Текст считается из данных: сколько объектов и сколько
+                    подтверждено на месте. Вписанное руками разошлось бы с
+                    карточками при первом же новом выезде. */}
                 В реестре слева {totals.count}{' '}
                 {plural(totals.count, 'объект', 'объекта', 'объектов')}
                 {raw ? `, отобранных из ${raw}` : ''}.
-                Каждый просмотрен по снимку 0,4–0,8 м на пиксель:{' '}
-                <span className="text-line">{totals.confirmed}</span> опознаны как
-                свалки, остальные требуют выезда — по снимку не решить.
-                Находки, оказавшиеся складами, промплощадками и болотами, в
+                Каждый просмотрен человеком по снимку 0,4–0,8 м на пиксель
+                {totals.ground > 0 && (
+                  <>
+                    , и{' '}
+                    <span className="text-emerald">
+                      {totals.ground}{' '}
+                      {plural(totals.ground, 'подтверждён', 'подтверждены', 'подтверждены')}
+                    </span>{' '}
+                    выездом на место
+                  </>
+                )}
+                . Находки, оказавшиеся складами, промплощадками и болотами, в
                 список не попали.
               </p>
             </div>

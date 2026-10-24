@@ -70,6 +70,8 @@ def main() -> int:
 
     dumps = int((site["visual_check"] == "landfill").sum())
     unclear = int((site["visual_check"] == "unclear").sum())
+    ground = int((site["check_source"] == "ground").sum()) if "check_source" in site else 0
+    photos = int(site["ground_photos"].fillna(0).sum()) if "ground_photos" in site else 0
     rejected = funnel["rejected"]
     passed = rejected.get("ПРОШЁЛ ОТСЕВ", 0)
     by_eye = passed - len(site)
@@ -99,10 +101,12 @@ def main() -> int:
         # из 385 находок просмотрена человеком» — это неправда: человек
         # смотрел 59, прошедших отсев, а 326 сняла программа по контексту.
         # Ровно такое преувеличение и разбирают на защите первым.
-        f"> **{dumps} {plural(dumps, 'свалка', 'свалки', 'свалок')}** опознаны "
-        f"под Астаной из **{funnel['raw']}** находок детектора. "
-        f"Каждый из **{passed}** объектов, прошедших автоматический отсев, "
-        f"просмотрен человеком по снимку 0,4–0,8 м на пиксель — до единого.",
+        f"> **{dumps} {plural(dumps, 'свалка', 'свалки', 'свалок')}** под Астаной "
+        f"из **{funnel['raw']}** находок детектора. Каждый из **{passed}** объектов, "
+        f"прошедших автоматический отсев, просмотрен человеком по снимку "
+        f"0,4–0,8 м на пиксель — до единого"
+        + (f", и **{ground}** {plural(ground, 'подтверждён', 'подтверждены', 'подтверждены')} "
+           f"выездом на место." if ground else "."),
         "",
         "## Находки",
         "",
@@ -115,6 +119,8 @@ def main() -> int:
         f"| **Опубликовано на сайте** | **{len(site)}** | candidates.geojson |",
         f"| ├─ опознаны как свалки | **{dumps}** | вердикт человека |",
         f"| └─ требуют выезда | {unclear} | вердикт человека |",
+        f"| **Подтверждено выездом на место** | **{ground}** | ground_truth.json |",
+        f"| ├─ из них с фотофиксацией | {photos and ground or 0} | data/field/ |",
         f"| Просмотрено человеком всего | **{reviewed}** | по пяти областям |",
         f"| Меток разметки в источнике | {len(labels)} | labels_manual.geojson |",
         "",

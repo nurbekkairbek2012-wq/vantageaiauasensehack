@@ -71,15 +71,49 @@ class TestPublishedMarksComeFromTheSource:
         )
 
     def test_verdicts_agree_with_the_source(self, data):
-        """Вердикт на сайте обязан совпадать с вердиктом метки под ним."""
+        """Вердикт на сайте обязан совпадать с источником, из которого взят.
+
+        Источников два, и порядок силы между ними жёсткий:
+
+            выезд (ground_truth.json)  >  просмотр по снимку (labels_manual)
+
+        Объект, подтверждённый человеком на месте, сверяется с записью о
+        выезде, а не с меткой по снимку: выезд её и перебивает. Сверять его
+        с меткой значило бы требовать, чтобы съёмка знала то, что видно
+        только вблизи, — и тест падал бы ровно на тех объектах, ради
+        которых на выезд и ездили.
+        """
+        import json
+
         import geopandas as gpd
 
         codes = {"свалка": "landfill", "не свалка": "not_landfill",
                  "не понятно": "unclear"}
         labels, published = data
+
+        ground_path = ROOT / "ground_truth.json"
+        ground = {}
+        if ground_path.exists():
+            for record in json.loads(ground_path.read_text(encoding="utf-8")):
+                ground[str(record["candidate_id"])] = codes.get(record["verdict"])
+
+        visited = published[published.get("check_source") == "ground"]
+        for row in visited.itertuples():
+            expected = ground.get(str(row.candidate_id))
+            assert expected is not None, (
+                f"{row.candidate_id} помечен как подтверждённый выездом, но "
+                "записи о выезде нет в ground_truth.json"
+            )
+            assert row.visual_check == expected, (
+                f"{row.candidate_id}: на сайте {row.visual_check!r}, "
+                f"в записи о выезде {expected!r}"
+            )
+
+        # Дальше сверяются только те, чей вердикт пришёл со снимка.
+        published = published[published.get("check_source") != "ground"]
         marked = published[published["visual_check"].notna()]
         if marked.empty:
-            pytest.skip("на сайте нет размеченных объектов")
+            pytest.skip("все объекты на сайте подтверждены выездом")
 
         joined = gpd.sjoin(marked[["candidate_id", "visual_check", "geometry"]],
                            labels[["verdict", "geometry"]],

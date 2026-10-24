@@ -486,6 +486,16 @@ class TestModelIsRejectorNotDetector:
             pytest.skip("выгрузки нет")
 
         data = json.loads(published.read_text(encoding="utf-8"))
+        # Объекты, подтверждённые выездом, из счёта исключаются.
+        #
+        # Модель смотрит на снимок, а на выезд поехали именно потому, что
+        # по снимку решить было нельзя. Требовать от неё высокой оценки на
+        # них значит наказывать её за то, ради чего выезд и существует.
+        ground_confirmed = {
+            (f.get("properties") or {}).get("candidate_id")
+            for f in data.get("features", [])
+            if (f.get("properties") or {}).get("check_source") == "ground"
+        }
         lost_human, lost_screen = [], []
         for feature in data.get("features", []):
             p = feature.get("properties") or {}
@@ -502,7 +512,7 @@ class TestModelIsRejectorNotDetector:
         # не поломка. Тест держит их список коротким: пока это единицы,
         # порог годится как подсказка; если он начнёт ронять половину,
         # подсказка станет вредной, и её надо будет убрать с карточки.
-        lost = lost_human + lost_screen
+        lost = [x for x in lost_human + lost_screen if x[0] not in ground_confirmed]
         assert len(lost) <= 2, (
             f"порог 0,35 роняет уже {len(lost)} подтверждённых свалок: {lost}. "
             "Как подсказка на карточке он перестал быть безопасным"

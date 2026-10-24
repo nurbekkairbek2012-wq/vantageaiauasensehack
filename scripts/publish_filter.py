@@ -122,6 +122,25 @@ def main() -> int:
         return 1
 
     data = gpd.read_file(source)
+
+    # Выезд перебивает просмотр по снимку.
+    #
+    # Порядок силы источников: человек на месте > человек по снимку >
+    # машина по снимку. Это не вежливость к тому, кто ездил: снимок
+    # 0,4–0,8 м показывает пятно нужной текстуры, а человек рядом видит,
+    # что это и возят ли туда до сих пор. Восемь объектов получили «не
+    # разобрать» именно потому, что по снимку решить было нельзя.
+    #
+    # Вердикт выезда записывается в visual_check, а откуда он взялся —
+    # в check_source. Смешивать источники в одном поле нельзя: на защите
+    # спросят именно «кто смотрел».
+    if "ground_check" in data.columns:
+        ground = data["ground_check"].where(data["ground_check"].notna())
+        moved = int(ground.notna().sum())
+        if moved:
+            data["visual_check"] = ground.fillna(data.get("visual_check"))
+            log.info("подтверждений с земли: %d — они перебивают просмотр по снимку", moved)
+
     screen = load_screen()
     log.info("объектов в прогоне: %d, машинных вердиктов: %d", len(data), len(screen))
 
@@ -159,7 +178,8 @@ def main() -> int:
     # именно «кто смотрел».
     same = {"dump": "landfill", "maybe": "unclear"}
     kept["check_source"] = kept.apply(
-        lambda r: "human" if r.get("visual_check") else ("screen" if r["screen"] else None),
+        lambda r: "ground" if r.get("ground_check")
+        else ("human" if r.get("visual_check") else ("screen" if r["screen"] else None)),
         axis=1,
     )
     kept["visual_check"] = kept.apply(
