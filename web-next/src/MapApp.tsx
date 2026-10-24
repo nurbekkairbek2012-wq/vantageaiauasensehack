@@ -306,7 +306,12 @@ export default function MapApp() {
               id="sort"
               value={sort}
               onChange={(e) => setSort(e.target.value as SortKey)}
-              className="flex-1 rounded-sm border border-grid bg-soot-2 px-2 py-1.5 text-sm text-line"
+              /* min-w-0 обязателен. У элемента flex по умолчанию
+                 min-width: auto, то есть он не сжимается ниже ширины
+                 своего самого длинного пункта — а у списка сортировки это
+                 «По согласию признаков». На экране 360 px он вылезал за
+                 край на 7 пикселей, и страницу можно было утащить вбок. */
+              className="min-w-0 flex-1 rounded-sm border border-grid bg-soot-2 px-2 py-1.5 text-sm text-line"
             >
               {SORTS.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
             </select>
