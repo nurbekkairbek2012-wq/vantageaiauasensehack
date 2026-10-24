@@ -12,9 +12,10 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date
-from typing import Any, Iterable
+from typing import Any
 
 import pystac_client
 
@@ -187,8 +188,8 @@ def summarize(scenes: list[SceneRef]) -> dict[str, Any]:
 
 
 __all__ = [
-    "PLANETARY_COMPUTER_STAC",
     "EARTH_SEARCH_STAC",
+    "PLANETARY_COMPUTER_STAC",
     "SceneRef",
     "StacCatalog",
     "filter_by_month",

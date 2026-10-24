@@ -74,7 +74,15 @@ src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
-ignore = ["E501"]
+ignore = [
+    "E501",   # длину строки контролируем форматтером, а не линтером
+    # Документация и комментарии в проекте на русском языке — правила
+    # «неоднозначных юникод-символов» дают сотни ложных срабатываний
+    # на каждую кириллическую «о», «а», «е» и делают линтер бесполезным.
+    "RUF001", # ambiguous character in string
+    "RUF002", # ambiguous character in docstring
+    "RUF003", # ambiguous character in comment
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

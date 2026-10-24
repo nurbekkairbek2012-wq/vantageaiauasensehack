@@ -14,9 +14,9 @@ from vantage.indices import (
     S2_BASELINE_04_OFFSET,
     baseline_offset_for,
     bsi,
+    nbr,
     ndvi,
     ndwi,
-    nbr,
     pmli,
     scale_reflectance,
 )

@@ -144,7 +144,7 @@ def nbr(nir, swir2):
 FEATURE_INDICES: tuple[str, ...] = ("ndvi", "bsi", "pmli", "ndwi", "ndmi", "nbr")
 
 
-def compute_all(ds: "xr.Dataset") -> "xr.Dataset":
+def compute_all(ds: xr.Dataset) -> xr.Dataset:
     """Посчитать все индексы для Dataset с каналами Sentinel-2.
 
     Ожидаются переменные B02, B03, B04, B08, B11, B12 в отражении 0..1.
@@ -177,16 +177,16 @@ def compute_all(ds: "xr.Dataset") -> "xr.Dataset":
 
 
 __all__ = [
-    "S2_REFLECTANCE_SCALE",
-    "S2_BASELINE_04_OFFSET",
     "FEATURE_INDICES",
-    "scale_reflectance",
+    "S2_BASELINE_04_OFFSET",
+    "S2_REFLECTANCE_SCALE",
     "baseline_offset_for",
-    "ndvi",
     "bsi",
-    "pmli",
-    "ndwi",
-    "ndmi",
-    "nbr",
     "compute_all",
+    "nbr",
+    "ndmi",
+    "ndvi",
+    "ndwi",
+    "pmli",
+    "scale_reflectance",
 ]

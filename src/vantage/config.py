@@ -11,7 +11,7 @@ from __future__ import annotations
 import os
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, ClassVar, Literal
 
 import yaml
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -289,24 +289,49 @@ class Economics(BaseModel):
     def section(self, key: str) -> dict[str, Any]:
         return dict(self.raw[key])
 
-    def unresolved_sources(self) -> list[str]:
-        """Пути к параметрам, у которых source всё ещё TODO.
+    #: Поля, которыми параметр объявляет своё происхождение:
+    #:   source   — ссылка на документ, закон или прайс (подтверждено);
+    #:   derived  — формула вывода из подтверждённых величин;
+    #:   estimate — инженерная оценка там, где открытого источника нет.
+    PROVENANCE_FIELDS: ClassVar[tuple[str, ...]] = ("source", "derived", "estimate")
 
-        Используется в CLI-команде ``vantage doctor``: перед сдачей ни один
-        денежный параметр не должен остаться без ссылки на источник.
-        """
-        todos: list[str] = []
+    def _collect(self, field_names: tuple[str, ...], *, only_todo: bool) -> list[str]:
+        found: list[str] = []
 
         def walk(node: Any, path: list[str]) -> None:
-            if isinstance(node, dict):
-                for k, v in node.items():
-                    if k == "source" and isinstance(v, str) and v.strip().startswith("TODO"):
-                        todos.append(".".join(path) or "<root>")
-                    else:
-                        walk(v, [*path, k])
+            if not isinstance(node, dict):
+                return
+            for k, v in node.items():
+                if k in field_names and isinstance(v, str):
+                    if v.strip().upper().startswith("TODO") == only_todo:
+                        found.append(".".join(path) or "<root>")
+                else:
+                    walk(v, [*path, k])
 
         walk(self.raw, [])
-        return todos
+        return found
+
+    def unresolved_sources(self) -> list[str]:
+        """Параметры, происхождение которых всё ещё помечено TODO.
+
+        Блокирует ``vantage doctor``: перед сдачей ни один денежный параметр
+        не должен остаться без объяснения, откуда взялось число.
+        """
+        return self._collect(self.PROVENANCE_FIELDS, only_todo=True)
+
+    def estimated_parameters(self) -> list[str]:
+        """Параметры, опирающиеся на инженерную оценку, а не на документ.
+
+        Это не ошибка: части величин просто не существует в открытых
+        источниках — морфология конкретной свалки, доля извлечения сырья.
+        Но знать их поимённо обязательно: именно про них спрашивают на Q&A,
+        и именно их чувствительность проверяется методом Монте-Карло.
+        """
+        return self._collect(("estimate",), only_todo=False)
+
+    def documented_parameters(self) -> list[str]:
+        """Параметры с подтверждённым источником или явно выписанным выводом."""
+        return self._collect(("source", "derived"), only_todo=False)
 
 
 # --------------------------------------------------------------------------- #
@@ -347,12 +372,12 @@ def load_economics(path: str | os.PathLike[str] | None = None) -> Economics:
 Role = Literal["public", "operator", "akimat", "admin"]
 
 __all__ = [
-    "REPO_ROOT",
     "CONFIG_DIR",
-    "Settings",
+    "REPO_ROOT",
     "Economics",
-    "Triangular",
     "Role",
-    "load_settings",
+    "Settings",
+    "Triangular",
     "load_economics",
+    "load_settings",
 ]

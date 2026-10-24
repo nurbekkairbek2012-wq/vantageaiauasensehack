@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Optional
 
 import typer
 from rich.console import Console
@@ -57,7 +56,7 @@ def version() -> None:
 
 @app.command()
 def info(
-    config: Optional[str] = typer.Option(None, "--config", "-c", help="Путь к default.yaml"),
+    config: str | None = typer.Option(None, "--config", "-c", help="Путь к default.yaml"),
 ) -> None:
     """Показать текущую конфигурацию: область, период, ключевые пороги."""
     settings = load_settings(config)
@@ -87,7 +86,7 @@ def info(
 
 @app.command()
 def doctor(
-    config: Optional[str] = typer.Option(None, "--config", "-c"),
+    config: str | None = typer.Option(None, "--config", "-c"),
 ) -> None:
     """Проверка готовности к сдаче.
 
@@ -105,20 +104,41 @@ def doctor(
         warnings.append(f"AOI очень большая ({aoi.area_km2:,.0f} км²) — полный прогон будет долгим")
 
     econ = load_economics()
-    todos = econ.unresolved_sources()
-    for path in todos:
-        problems.append(f"economics: не указан источник для «{path}»")
+    for path in econ.unresolved_sources():
+        problems.append(f"economics: происхождение параметра «{path}» помечено TODO")
 
-    if "TODO" in str(econ.raw.get("penalty", {}).get("code_article", "")):
-        problems.append("economics: не указана статья Экологического кодекса РК")
+    penalty = econ.raw.get("penalty", {})
+    if not penalty.get("articles"):
+        problems.append("economics: не заданы статьи КоАП для расчёта штрафа")
+    if not econ.raw.get("mrp_kzt", {}).get("value"):
+        problems.append("economics: не задан размер МРП")
+
+    documented = econ.documented_parameters()
+    estimated = econ.estimated_parameters()
 
     console.rule("[bold]Проверка готовности")
+
+    table = Table(show_header=True, header_style="bold")
+    table.add_column("Происхождение параметров", style="cyan")
+    table.add_column("Кол-во", justify="right")
+    table.add_column("Что это значит")
+    table.add_row("Подтверждено источником", str(len(documented)), "есть ссылка на закон, методику или прайс")
+    table.add_row("Инженерная оценка", str(len(estimated)), "открытого источника нет; проверяется Монте-Карло")
+    table.add_row("Не объяснено (TODO)", str(len(econ.unresolved_sources())), "блокирует сдачу")
+    console.print(table)
+
+    if estimated:
+        console.print("\n[bold]На Q&A спросят именно про эти величины:[/bold]")
+        for path in estimated:
+            console.print(f"  [yellow]~[/yellow] {path}")
+
+    console.print()
     if problems:
-        console.print(f"[bold red]Проблем: {len(problems)}[/bold red]")
+        console.print(f"[bold red]Блокирующих проблем: {len(problems)}[/bold red]")
         for p in problems:
-            console.print(f"  [red]✗[/red] {p}")
+            console.print(f"  [red]x[/red] {p}")
     else:
-        console.print("[bold green]✓ Блокирующих проблем нет[/bold green]")
+        console.print("[bold green]OK — блокирующих проблем нет[/bold green]")
 
     for w in warnings:
         console.print(f"  [yellow]![/yellow] {w}")
@@ -129,9 +149,9 @@ def doctor(
 
 @app.command()
 def scenes(
-    config: Optional[str] = typer.Option(None, "--config", "-c"),
+    config: str | None = typer.Option(None, "--config", "-c"),
     collection: str = typer.Option("s2", "--collection", help="s2 | s1 | landsat"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Сохранить список в JSON"),
+    output: str | None = typer.Option(None, "--output", "-o", help="Сохранить список в JSON"),
 ) -> None:
     """Сколько сцен реально доступно по нашей области и периоду.
 
@@ -178,6 +198,64 @@ def scenes(
         with open(output, "w", encoding="utf-8") as fh:
             json.dump(payload, fh, ensure_ascii=False, indent=2)
         console.print(f"Сохранено: [green]{output}[/green]")
+
+
+@app.command()
+def money(
+    area: float = typer.Argument(..., help="Площадь свалки, м²"),
+    depth: str = typer.Option("medium", "--depth", help="Класс глубины: shallow | medium | deep"),
+    distance: float = typer.Option(15.0, "--distance", help="Расстояние до полигона, км"),
+    violator: str = typer.Option(
+        "individual",
+        "--violator",
+        help="Категория нарушителя: individual | official_or_small | medium | large",
+    ),
+    show_sensitivity: bool = typer.Option(
+        False, "--sensitivity", help="Показать вклад допущений в разброс"
+    ),
+) -> None:
+    """Оценить ущерб от одного объекта.
+
+    Результат — диапазон P10…P90, а не одна цифра: в расчёте участвуют
+    восемь величин, известных лишь приблизительно, и честный интервал
+    переживает вопрос «откуда цифра», а точечная оценка — нет.
+    """
+    from .money import assess
+    from .money import sensitivity as compute_sensitivity
+
+    econ = load_economics()
+    result = assess(
+        area,
+        econ,
+        depth_class=depth,  # type: ignore[arg-type]
+        distance_to_landfill_km=distance,
+        violator=violator,  # type: ignore[arg-type]
+    )
+
+    table = Table(title=f"Оценка ущерба: {area:,.0f} м²".replace(",", " "), show_header=False)
+    table.add_column("", style="cyan", no_wrap=True)
+    table.add_column("")
+    for line in result.summary_lines():
+        key, _, value = line.partition(": ")
+        table.add_row(key, value)
+    console.print(table)
+    console.print(
+        f"[dim]Монте-Карло, {result.iterations:,} итераций; "
+        f"штраф считается отдельно и не входит в ущерб[/dim]".replace(",", " ")
+    )
+
+    if show_sensitivity:
+        sens = compute_sensitivity(area, econ, depth_class=depth)  # type: ignore[arg-type]
+        stable = Table(title="Вклад допущений в разброс", show_header=True)
+        stable.add_column("Допущение", style="cyan")
+        stable.add_column("Корреляция с итогом", justify="right")
+        for name, value in sorted(sens.items(), key=lambda kv: -abs(kv[1])):
+            stable.add_row(name, f"{value:+.2f}")
+        console.print(stable)
+        console.print(
+            "[dim]Чем выше по модулю — тем сильнее эта величина определяет разброс "
+            "и тем важнее уточнить её реальными данными.[/dim]"
+        )
 
 
 if __name__ == "__main__":  # pragma: no cover

@@ -101,23 +101,56 @@ class TestTriangular:
 
 
 class TestSourceAudit:
-    def test_detects_todo_sources(self):
+    """Аудит происхождения экономических величин.
+
+    У каждого числа в денежном слое должно быть одно из трёх объяснений:
+    ссылка на документ (source), формула вывода (derived) или честно
+    названная инженерная оценка (estimate). Число без объяснения —
+    это то, на чём разваливается защита.
+    """
+
+    def test_detects_todo_provenance(self):
         econ = Economics(
             currency="KZT",
             raw={
                 "a": {"min": 1, "typical": 2, "max": 3, "source": "TODO: найти прайс"},
                 "b": {"min": 1, "typical": 2, "max": 3, "source": "Отчёт оператора, 2025"},
+                "c": {"min": 1, "typical": 2, "max": 3, "estimate": "оценка по аналогии"},
+                "d": {"min": 1, "typical": 2, "max": 3, "derived": "a / b"},
             },
         )
-        todos = econ.unresolved_sources()
-        assert todos == ["a"]
+        assert econ.unresolved_sources() == ["a"]
+        assert econ.estimated_parameters() == ["c"]
+        assert sorted(econ.documented_parameters()) == ["b", "d"]
 
-    def test_real_economics_still_has_todos(self):
-        """Сейчас источники не проставлены — и doctor обязан на это ругаться.
-
-        Тест намеренно фиксирует текущее состояние: когда команда проставит
-        реальные ссылки, тест упадёт и его надо будет заменить на проверку
-        `assert not todos`. Это напоминание, а не украшение.
-        """
+    def test_real_economics_has_no_todos(self):
+        """Все параметры реального файла объяснены."""
         econ = load_economics()
-        assert econ.unresolved_sources(), "источники проставлены — обновите этот тест"
+        assert econ.unresolved_sources() == []
+
+    def test_real_economics_declares_its_estimates(self):
+        """Оценочные величины названы поимённо, а не спрятаны среди источников."""
+        estimated = load_economics().estimated_parameters()
+        assert "morphology" in estimated
+        assert "recovery_rate" in estimated
+
+    def test_key_documented_values_are_present(self):
+        econ = load_economics()
+        assert econ.scalar("mrp_kzt", "value") == 4325
+        # Плотность ТБО из методики расчёта тарифа
+        assert econ.triangular("waste_density_t_per_m3").typical == 0.25
+        # Цены приёмок Астаны
+        assert econ.triangular("recyclable_price_kzt_per_kg", "plastic").typical == 70
+
+    def test_penalty_is_per_violation_not_per_ton(self):
+        """Штраф в РК назначается за факт нарушения, а не за тонну.
+
+        Умножение МРП на массу отходов — методологическая ошибка, которую
+        на Q&A заметят немедленно. Тест фиксирует правильную структуру.
+        """
+        penalty = load_economics().section("penalty")
+        article = penalty["articles"]["dumping_with_vehicle"]
+        assert article["article"] == "ст. 344, ч. 2-1"
+        assert article["mrp"]["individual"] == 100
+        assert article["mrp"]["large"] == 1000
+        assert "per_ton" not in str(penalty)

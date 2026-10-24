@@ -27,4 +27,4 @@ __version__ = "0.1.0"
 from .aoi import AOI
 from .config import Economics, Settings, load_economics, load_settings
 
-__all__ = ["__version__", "AOI", "Settings", "Economics", "load_settings", "load_economics"]
+__all__ = ["AOI", "Economics", "Settings", "__version__", "load_economics", "load_settings"]
