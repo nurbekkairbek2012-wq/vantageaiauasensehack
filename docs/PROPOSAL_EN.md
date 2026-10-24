@@ -51,6 +51,14 @@ photo whose GPS coordinates are next to the site.
   check an area before running it. Four negative results of our own models
   are published with numbers.
 
+- **Complements state monitoring, does not replace it.** Every object is
+  checked against the open state waste-monitoring map (KazEOSat-1): of our
+  seven confirmed dumps, one is on it and six are not. The same map shows
+  183 dumps in our areas, and our archive search finds 18 of them — it
+  sees where vegetation disappeared and misses many dumps on bare ground.
+  A second method, scanning very-high-resolution imagery in windows, finds
+  3–4 times more in a first test and is in development.
+
 ## The pilot
 
 | Weeks | What happens | Result |
