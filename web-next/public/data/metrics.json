@@ -1,16 +1,18 @@
 {
-  "pr_auc_future": 0.046117560106082346,
-  "base_rate_future": 0.0001530612244897959,
-  "lift": 301.30139269307136,
+  "cells": 1700.0,
+  "cells_with_history": 1682.0,
+  "pr_auc_future": 0.5254901960784314,
+  "base_rate_future": 0.0017835909631391202,
+  "lift": 294.6248366013072,
   "cutoff": "2023-09-21",
   "importances": {
-    "dist_road_m": 0.22508729519204942,
-    "dist_settlement_m": 0.2969379532634972,
+    "dist_road_m": 0.236427732079906,
+    "dist_settlement_m": 0.17038777908343125,
     "dist_legal_site_m": 0.0,
-    "existing_density_3km": 0.12221326886919151,
-    "existing_density_10km": 0.06271823798012356,
-    "dist_nearest_existing_m": 0.13094278807413376,
-    "screening_score": 0.16210045662100456
+    "existing_density_3km": 0.12126909518213866,
+    "existing_density_10km": 0.05898942420681551,
+    "dist_nearest_existing_m": 0.30011750881316096,
+    "screening_score": 0.1128084606345476
   },
   "is_demo": false
 }

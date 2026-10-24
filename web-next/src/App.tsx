@@ -69,7 +69,7 @@ function plural(count: number, one: string, few: string, many: string): string {
 }
 
 type Funnel = { raw: number; rejected: Record<string, number> };
-type Metrics = { lift: number; pr_auc_future: number; base_rate_future: number };
+type Metrics = { lift: number; pr_auc_future: number; base_rate_future: number; cells?: number };
 
 function stagesFrom(funnel: Funnel | null): Stage[] {
   if (!funnel?.rejected) return [];
@@ -456,7 +456,7 @@ export default function App() {
                 ['Точнее случайного', metrics ? `×${Math.round(metrics.lift)}` : '—'],
                 ['PR-AUC', metrics ? metrics.pr_auc_future.toFixed(3).replace('.', ',') : '—'],
                 ['Базовая частота', metrics ? metrics.base_rate_future.toFixed(5).replace('.', ',') : '—'],
-                ['Ячеек в сетке', '19 621'],
+                ['Ячеек в сетке', metrics?.cells ? Math.round(metrics.cells).toLocaleString('ru-RU') : '—'],
               ].map(([k, v]) => (
                 <div key={k}>
                   <dt className="text-xs text-muted-2">{k}</dt>

@@ -312,7 +312,7 @@ def finish_run(
 
     merged = transfer_to_merged(merged, labelled)
 
-    filtered, outcome.rejection, layers = pipeline.step_context(merged)
+    filtered, outcome.rejection, layers = pipeline.step_context(merged, aoi=area)
     kept = filtered[filtered["passes_context"]].reset_index(drop=True)
     outcome.kept_candidates = len(kept)
 
@@ -364,7 +364,7 @@ def finish_run(
     risk_model = private = public = None
     if with_risk:
         try:
-            risk_model, private, public = pipeline.step_risk(kept, layers)
+            risk_model, private, public = pipeline.step_risk(kept, layers, aoi=area)
         except Exception as exc:
             log.warning("Модель риска не построена: %s", exc)
 

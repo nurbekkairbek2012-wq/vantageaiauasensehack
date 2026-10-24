@@ -43,6 +43,22 @@ export default function Forecast() {
   const host = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
   const cells = useRef<Map<number, L.Path>>(new Map());
+
+  /* Размер сетки — из metrics.json, а не числом в вёрстке. «19 621»
+     стояло здесь и на лендинге и пережило правку, после которой ячеек
+     стало 1 682: сетка строилась по области из настроек, 4 834 км²,
+     вместо кольца прогона в 406 км². */
+  const [gridCells, setGridCells] = useState<string | null>(null);
+  useEffect(() => {
+    fetch('./data/metrics.json')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) =>
+        setGridCells(
+          typeof d?.cells === 'number' ? Math.round(d.cells).toLocaleString('ru-RU') : null,
+        ),
+      )
+      .catch(() => setGridCells(null));
+  }, []);
   const tiles = useRef<L.TileLayer | null>(null);
   const heat = useRef<HeatOverlay | null>(null);
 
@@ -154,7 +170,7 @@ export default function Forecast() {
             <h1 className="text-xl text-line">Маршрут на ближайший месяц</h1>
             <p className="mt-2 text-sm text-muted">
               Двадцать ячеек по 500 м из{' '}
-              <span className="tabular text-line">19 621</span>. Порядок —
+              <span className="tabular text-line">{gridCells ?? "—"}</span>. Порядок —
               порядок объезда.
             </p>
           </div>

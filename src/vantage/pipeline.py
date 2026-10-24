@@ -347,11 +347,23 @@ class Pipeline:
 
         return build_candidates(result, grid, self.settings, dates=dates)
 
-    def step_context(self, candidates, *, use_cache: bool = True):
-        """Контекстный отсев по OpenStreetMap."""
+    def step_context(self, candidates, *, aoi: AOI | None = None, use_cache: bool = True):
+        """Контекстный отсев по OpenStreetMap.
+
+        Область берётся из аргумента, а не из self.aoi, и это не мелочь.
+        Pipeline создаётся с областью по умолчанию из настроек — кольцом
+        вокруг Астаны, 4834 км². Пока считали Астану, разницы не было; на
+        первом же другом городе кандидаты Алматы стали сравниваться с
+        дорогами Астаны.
+
+        Результат выглядел осмысленно: у всех кандидатов «нет подъезда»
+        (до ближайшей астанинской дороги сотни километров) и ноль
+        пересечений с объектами OSM. Два прогона по городам —
+        четыре с половиной часа счёта — ушли в ноль объектов из-за этого.
+        """
         from .context import apply_context_filter, fetch_context, rejection_report
 
-        layers = fetch_context(self.aoi, self.settings, use_cache=use_cache)
+        layers = fetch_context(aoi or self.aoi, self.settings, use_cache=use_cache)
         filtered = apply_context_filter(candidates, layers, self.settings.context)
         return filtered, rejection_report(filtered), layers
 
@@ -392,8 +404,13 @@ class Pipeline:
             result[key] = [row.get(key) for row in rows]
         return result
 
-    def step_risk(self, candidates, layers=None):
-        """Модель риска и две сетки: точная и публичная."""
+    def step_risk(self, candidates, layers=None, *, aoi: AOI | None = None):
+        """Модель риска и две сетки: точная и публичная.
+
+        Область — аргументом по той же причине, что и в step_context:
+        сетка риска, построенная по кольцу Астаны при прогоне Алматы, не
+        накрывает ни одного кандидата.
+        """
         from .risk import (
             aggregate_public,
             build_grid,
@@ -404,7 +421,7 @@ class Pipeline:
             train_risk_model,
         )
 
-        grid = build_grid(self.aoi, self.settings.risk.grid_cell_m)
+        grid = build_grid(aoi or self.aoi, self.settings.risk.grid_cell_m)
         features = spatial_features(
             grid,
             roads=None if layers is None else layers.roads,
@@ -425,7 +442,7 @@ class Pipeline:
         public = aggregate_public(private, self.settings.risk)
         return model, private, public
 
-    def step_registry(self, *, use_cache: bool = True):
+    def step_registry(self, *, aoi: AOI | None = None, use_cache: bool = True):
         """Публично известные объекты обращения с отходами (OSM).
 
         Не наш результат, а точка отсчёта: первая сцена демонстрации
@@ -434,7 +451,7 @@ class Pipeline:
         """
         from .story import fetch_official_registry
 
-        return fetch_official_registry(self.aoi, self.settings, use_cache=use_cache)
+        return fetch_official_registry(aoi or self.aoi, self.settings, use_cache=use_cache)
 
     def step_export(
         self,

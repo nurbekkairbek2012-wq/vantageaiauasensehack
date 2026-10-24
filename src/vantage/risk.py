@@ -262,6 +262,12 @@ def train_risk_model(
     # Честная проверка: только ячейки, где до отсечки свалки НЕ было
     fresh = y_train == 0
     metrics: dict[str, float] = {}
+    # Размер сетки идёт в метрики, а не остаётся числом в вёрстке.
+    # «19 621 ячейка» стояла на двух страницах сайта и пережила правку,
+    # после которой их стало 1 682: сетка строилась по области из
+    # настроек — 4 834 км² — вместо кольца прогона в 406 км².
+    metrics["cells"] = float(len(features))
+    metrics["cells_with_history"] = float(int(fresh.sum()))
     if fresh.sum() and y_future[fresh].sum():
         scores = booster.predict_proba(x.loc[fresh])[:, 1]
         metrics["pr_auc_future"] = pr_auc(y_future[fresh], scores)

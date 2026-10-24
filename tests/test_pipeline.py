@@ -338,3 +338,53 @@ class TestRiskConfigGuard:
 
         with pytest.raises(ValueError):
             aggregate_public(grid, bad)
+
+
+class TestAoiReachesEveryStep:
+    """Область, переданная в прогон, должна доходить до отсева и до риска.
+
+    Pipeline создаётся с областью по умолчанию из настроек — кольцом
+    вокруг Астаны, 4834 км². Пока считали Астану, разницы не было. На
+    первом же другом городе step_context взял self.aoi вместо переданной,
+    и кандидаты Алматы стали сравниваться с дорогами Астаны.
+
+    Результат выглядел осмысленно и потому не вызвал подозрений: у всех
+    кандидатов «нет подъезда» — до ближайшей астанинской дороги сотни
+    километров — и ноль пересечений с объектами OSM. Два прогона по
+    городам, четыре с половиной часа счёта, ушли в ноль объектов.
+
+    После починки тот же файл кандидатов дал 8 объектов из 66.
+    """
+
+    def test_step_context_uses_given_aoi(self, monkeypatch):
+        import geopandas as gpd
+
+        from vantage import pipeline as mod
+
+        seen: list[str] = []
+
+        def fake_fetch(aoi, settings, **kwargs):
+            seen.append(aoi.name)
+            empty = gpd.GeoDataFrame({"geometry": []}, crs=settings.project.crs_working)
+            return mod.__dict__.get("_Layers") or type(
+                "L", (), {"excluded": empty, "roads": empty,
+                          "settlements": empty, "implausible": empty,
+                          "crs": settings.project.crs_working}
+            )()
+
+        from vantage.aoi import AOI
+
+        monkeypatch.setattr("vantage.context.fetch_context", fake_fetch)
+        monkeypatch.setattr("vantage.context.apply_context_filter", lambda c, l, cfg: c)
+        monkeypatch.setattr("vantage.context.rejection_report", lambda f: {})
+
+        pipe = mod.Pipeline()
+        other = AOI.from_bbox((76.6, 43.4, 76.76, 43.5), name="almaty",
+                              crs_working=pipe.settings.project.crs_working)
+        empty = gpd.GeoDataFrame({"geometry": []}, crs=pipe.settings.project.crs_working)
+
+        pipe.step_context(empty, aoi=other)
+        assert seen == ["almaty"], (
+            f"отсев спросил OSM про {seen}, а должен был про almaty — "
+            "кандидаты сравнятся с дорогами чужого города"
+        )
